@@ -22,6 +22,7 @@ package demo.hw.server;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.jws.WebMethod;
 import javax.jws.WebService;
 
 @WebService(endpointInterface = "demo.hw.server.HelloWorld",
@@ -29,7 +30,7 @@ import javax.jws.WebService;
 public class HelloWorldImpl implements HelloWorld {
     Map<Integer, User> users = new LinkedHashMap<Integer, User>();
 
-
+    @WebMethod(exclude=true)
     public String sayHi(String text) {
         System.out.println("sayHi called");
         return "Hello " + text;
