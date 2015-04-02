@@ -1,0 +1,38 @@
+Per cominciare ex novo:
+
+1)In GitHub forka https://github.com/apache/cxf.git  [https://github.com/pinopisello/cxf.git]
+
+2)Crea un workspace ovunque (CXF_Distro per esempio)
+
+3)Lancia Eclipse puntandolo
+
+4)Apri la Git perspective e fai cloning del forkato
+
+5)Dalla root del forkato [cxf] 
+ mvn -Pfastinstall  
+ mvn -Psetup.eclipse  
+
+
+Un folder "workspace" viene creato nel root folder inseme a cxf.
+
+6)Lancia eclipse verso tale folder "workspace"
+
+7)In eclipse : Import ->existing projects -> ... cxf
+
+8)Dalla shell vai in cxf/distribution/src/main/release/samples e lancia 
+
+mvn eclipse:eclipse -Declipse.workspace=path_to_workspace_folder
+
+9)In eclipse Import ->existing projects -> ... samples
+
+
+A questo punto si hanno tutti i projects importati in eclipse
+
+10)Rendere git shared i projects :right click su ogni project e selezionare "Share Project".
+Scegliere il .git repo esistente creato in step #4 
+
+11)Rendere maven i projects: right click su ogni project->configure->Convert to maven project 
+
+Fatto!
+
+
