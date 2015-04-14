@@ -33,8 +33,9 @@ import org.apache.cxf.interceptor.security.RolePrefixSecurityContextImpl;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 import org.apache.cxf.rt.security.claims.ClaimCollection;
-import org.apache.cxf.rt.security.saml.SAMLSecurityContext;
-import org.apache.cxf.rt.security.saml.SAMLUtils;
+import org.apache.cxf.rt.security.saml.claims.SAMLSecurityContext;
+import org.apache.cxf.rt.security.saml.utils.SAMLUtils;
+import org.apache.cxf.rt.security.utils.SecurityUtils;
 import org.apache.cxf.security.SecurityContext;
 import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.wss4j.common.ext.WSSecurityException;
@@ -118,8 +119,8 @@ public class StaxSecurityContextInInterceptor extends AbstractPhaseInterceptor<S
                     Object receivedAssertion = null;
                     
                     if (event.getSecurityEventType() == WSSecurityEventConstants.SamlToken) {
-                        String roleAttributeName = (String)msg.getContextualProperty(
-                                SecurityConstants.SAML_ROLE_ATTRIBUTENAME);
+                        String roleAttributeName = (String)SecurityUtils.getSecurityPropertyValue(
+                                SecurityConstants.SAML_ROLE_ATTRIBUTENAME, msg);
                         if (roleAttributeName == null || roleAttributeName.length() == 0) {
                             roleAttributeName = SAML_ROLE_ATTRIBUTENAME_DEFAULT;
                         }
@@ -191,12 +192,8 @@ public class StaxSecurityContextInInterceptor extends AbstractPhaseInterceptor<S
         }
         
         // Now check that a PublicKey/X509Certificate was used
-        if (token.getPublicKey() != null 
-            || (token.getX509Certificates() != null && token.getX509Certificates().length > 0)) {
-            return true;
-        }
-        
-        return false;
+        return token.getPublicKey() != null 
+            || (token.getX509Certificates() != null && token.getX509Certificates().length > 0);
     }
     
     private boolean isSamlEventSigned(SamlTokenSecurityEvent event) {
@@ -204,13 +201,9 @@ public class StaxSecurityContextInInterceptor extends AbstractPhaseInterceptor<S
             return false;
         }
         
-        if (event.getSecurityToken() != null 
+        return event.getSecurityToken() != null 
             && event.getSecurityToken().getSamlAssertionWrapper() != null
-            && event.getSecurityToken().getSamlAssertionWrapper().isSigned()) {
-            return true;
-        }
-        
-        return false;
+            && event.getSecurityToken().getSamlAssertionWrapper().isSigned();
     }
     
     private SecurityContext createSecurityContext(final Principal p) {

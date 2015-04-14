@@ -451,7 +451,8 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             AlgorithmSuite algorithmSuite = abinding.getAlgorithmSuite();
             if (encrToken.getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
                 try {
-                    WSSecDKEncrypt dkEncr = new WSSecDKEncrypt(wssConfig);
+                    WSSecDKEncrypt dkEncr = new WSSecDKEncrypt();
+                    dkEncr.setIdAllocator(wssConfig.getIdAllocator());
                     dkEncr.setCallbackLookup(callbackLookup);
                     if (recToken.getToken().getVersion() == SPConstants.SPVersion.SP11) {
                         dkEncr.setWscVersion(ConversationConstants.VERSION_05_02);
@@ -480,7 +481,8 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                 }
             } else {
                 try {
-                    WSSecEncrypt encr = new WSSecEncrypt(wssConfig);
+                    WSSecEncrypt encr = new WSSecEncrypt();
+                    encr.setIdAllocator(wssConfig.getIdAllocator());
                     encr.setCallbackLookup(callbackLookup);
                     encr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
                     
@@ -616,7 +618,8 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             // Set up the encrypted key to use
             setupEncryptedKey(wrapper, sigToken);
             
-            WSSecDKSign dkSign = new WSSecDKSign(wssConfig);
+            WSSecDKSign dkSign = new WSSecDKSign();
+            dkSign.setIdAllocator(wssConfig.getIdAllocator());
             dkSign.setCallbackLookup(callbackLookup);
             if (wrapper.getToken().getVersion() == SPConstants.SPVersion.SP11) {
                 dkSign.setWscVersion(ConversationConstants.VERSION_05_02);
@@ -625,8 +628,8 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             dkSign.setExternalKey(this.encryptedKeyValue, this.encryptedKeyId);
 
             // Set the algo info
-            dkSign.setSignatureAlgorithm(abinding.getAlgorithmSuite()
-                    .getSymmetricSignature());
+            dkSign.setSignatureAlgorithm(abinding.getAlgorithmSuite().getSymmetricSignature());
+            dkSign.setSigCanonicalization(abinding.getAlgorithmSuite().getC14n().getValue());
             AlgorithmSuiteType algType = abinding.getAlgorithmSuite().getAlgorithmSuiteType();
             dkSign.setDerivedKeyLength(algType.getSignatureDerivedKeyLength() / 8);
             dkSign.setCustomValueType(WSConstants.SOAPMESSAGE_NS11 + "#"

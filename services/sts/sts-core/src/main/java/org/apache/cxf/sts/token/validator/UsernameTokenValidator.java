@@ -102,10 +102,7 @@ public class UsernameTokenValidator implements TokenValidator {
      * ReceivedToken argument. The realm is ignored in this token Validator.
      */
     public boolean canHandleToken(ReceivedToken validateTarget, String realm) {
-        if (validateTarget.getToken() instanceof UsernameTokenType) {
-            return true;
-        }
-        return false;
+        return validateTarget.getToken() instanceof UsernameTokenType;
     }
     
     /**
@@ -168,7 +165,7 @@ public class UsernameTokenValidator implements TokenValidator {
         //
         try {
             boolean allowNamespaceQualifiedPasswordTypes = 
-                wssConfig.getAllowNamespaceQualifiedPasswordTypes();
+                requestData.isAllowNamespaceQualifiedPasswordTypes();
             UsernameToken ut = 
                 new UsernameToken(usernameTokenElement, allowNamespaceQualifiedPasswordTypes, 
                                   new BSPEnforcer());
@@ -238,6 +235,7 @@ public class UsernameTokenValidator implements TokenValidator {
             response.setPrincipal(principal);
             response.setTokenRealm(tokenRealm);
             validateTarget.setState(STATE.VALID);
+            LOG.fine("Username Token successfully validated");
         } catch (WSSecurityException ex) {
             LOG.log(Level.WARNING, "", ex);
         } catch (Base64DecodingException ex) {

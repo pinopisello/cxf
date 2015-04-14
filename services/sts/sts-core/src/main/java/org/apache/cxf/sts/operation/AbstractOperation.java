@@ -543,11 +543,10 @@ public abstract class AbstractOperation {
         // DOM
         if (results != null) {
             for (WSHandlerResult rResult : results) {
-                List<WSSecurityEngineResult> wsSecEngineResults = rResult.getResults();
-                for (WSSecurityEngineResult wser : wsSecEngineResults) {
-                    int wserAction = 
-                        ((java.lang.Integer)wser.get(WSSecurityEngineResult.TAG_ACTION)).intValue();
-                    if (wserAction == WSConstants.SIGN) {
+                List<WSSecurityEngineResult> signedResults = 
+                    rResult.getActionResults().get(WSConstants.SIGN);
+                if (signedResults != null) {
+                    for (WSSecurityEngineResult wser : signedResults) {
                         X509Certificate cert = 
                             (X509Certificate)wser.get(WSSecurityEngineResult.TAG_X509_CERTIFICATE);
                         if (cert != null) {
@@ -602,6 +601,10 @@ public abstract class AbstractOperation {
         validatorParameters.setTokenRequirements(validateRequirements);
         validatorParameters.setToken(token);
 
+        if (tokenValidators.isEmpty()) {
+            LOG.fine("No token validators have been configured to validate the received token");
+        }
+        
         TokenValidatorResponse tokenResponse = null;
         for (TokenValidator tokenValidator : tokenValidators) {
             boolean canHandle = false;
@@ -624,6 +627,10 @@ public abstract class AbstractOperation {
                 }
                 break;
             }
+        }
+        
+        if (tokenResponse == null) {
+            LOG.fine("No token validator has been configured to validate the received token");
         }
         return tokenResponse;
     }

@@ -221,15 +221,15 @@ final class NegotiationUtils {
         }
         
         for (WSHandlerResult rResult : results) {
-            List<WSSecurityEngineResult> wsSecEngineResults = rResult.getResults();
-
-            for (WSSecurityEngineResult wser : wsSecEngineResults) {
-                Integer actInt = (Integer)wser.get(WSSecurityEngineResult.TAG_ACTION);
-                if (actInt.intValue() == WSConstants.SCT) {
+            
+            List<WSSecurityEngineResult> sctResults = 
+                rResult.getActionResults().get(WSConstants.SCT);
+            if (sctResults != null) {
+                for (WSSecurityEngineResult wser : sctResults) {
                     SecurityContextToken tok = 
                         (SecurityContextToken)wser.get(WSSecurityEngineResult.TAG_SECURITY_CONTEXT_TOKEN);
                     message.getExchange().put(SecurityConstants.TOKEN_ID, tok.getIdentifier());
-                    
+
                     SecurityToken token = TokenStoreUtils.getTokenStore(message).getToken(tok.getIdentifier());
                     if (token == null || token.isExpired()) {
                         byte[] secret = (byte[])wser.get(WSSecurityEngineResult.TAG_SECRET);

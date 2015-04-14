@@ -28,7 +28,6 @@ import org.apache.cxf.rt.security.utils.SecurityUtils;
 import org.apache.cxf.xkms.crypto.CryptoProviderException;
 import org.apache.wss4j.common.crypto.Merlin;
 import org.apache.wss4j.common.ext.WSPasswordCallback;
-import org.apache.wss4j.common.ext.WSSecurityException;
 
 final class CryptoProviderUtils {
 
@@ -36,7 +35,7 @@ final class CryptoProviderUtils {
     }
 
     public static Properties loadKeystoreProperties(Message message, String propKey) {
-        Object o = message.getContextualProperty(propKey);
+        Object o = SecurityUtils.getSecurityPropertyValue(propKey, message);
         if (o == null) {
             throw new CryptoProviderException("Keystore properties path is not defined");
         }
@@ -68,7 +67,7 @@ final class CryptoProviderUtils {
             }
     
             return getCallbackPwd(userName, usage, handler);
-        } catch (WSSecurityException ex) {
+        } catch (Exception ex) {
             throw new CryptoProviderException("No callback handler and no password available", ex);
         }
     }

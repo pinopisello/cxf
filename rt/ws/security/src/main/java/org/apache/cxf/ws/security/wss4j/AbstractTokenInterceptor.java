@@ -51,7 +51,6 @@ import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.cxf.ws.security.policy.PolicyUtils;
 import org.apache.cxf.ws.security.tokenstore.TokenStore;
 import org.apache.wss4j.common.ext.WSPasswordCallback;
-import org.apache.wss4j.common.ext.WSSecurityException;
 import org.apache.wss4j.dom.WSConstants;
 import org.apache.wss4j.policy.SPConstants;
 import org.apache.wss4j.policy.model.AbstractToken;
@@ -137,10 +136,7 @@ public abstract class AbstractTokenInterceptor extends AbstractSoapInterceptor {
     protected boolean isTLSInUse(SoapMessage message) {
         // See whether TLS is in use or not
         TLSSessionInfo tlsInfo = message.get(TLSSessionInfo.class);
-        if (tlsInfo != null) {
-            return true;
-        }
-        return false;
+        return tlsInfo != null;
     }
     
     protected TokenStore getTokenStore(SoapMessage message) {
@@ -181,13 +177,13 @@ public abstract class AbstractTokenInterceptor extends AbstractSoapInterceptor {
         //Then try to get the password from the given callback handler
         CallbackHandler handler = null;
         try {
-            Object o = message.getContextualProperty(SecurityConstants.CALLBACK_HANDLER);
+            Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, message);
             handler = SecurityUtils.getCallbackHandler(o);
             if (handler == null) {
                 policyNotAsserted(info, "No callback handler and no password available", message);
                 return null;
             }
-        } catch (WSSecurityException ex) {
+        } catch (Exception ex) {
             policyNotAsserted(info, "No callback handler and no password available", message);
             return null;
         }

@@ -45,7 +45,6 @@ import javax.xml.transform.dom.DOMSource;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import org.apache.cxf.binding.soap.SoapFault;
 import org.apache.cxf.binding.soap.SoapMessage;
 import org.apache.cxf.binding.soap.SoapVersion;
@@ -61,8 +60,8 @@ import org.apache.cxf.interceptor.security.RolePrefixSecurityContextImpl;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.phase.Phase;
 import org.apache.cxf.rt.security.claims.ClaimCollection;
-import org.apache.cxf.rt.security.saml.SAMLSecurityContext;
-import org.apache.cxf.rt.security.saml.SAMLUtils;
+import org.apache.cxf.rt.security.saml.claims.SAMLSecurityContext;
+import org.apache.cxf.rt.security.saml.utils.SAMLUtils;
 import org.apache.cxf.rt.security.utils.SecurityUtils;
 import org.apache.cxf.security.SecurityContext;
 import org.apache.cxf.security.transport.TLSSessionInfo;
@@ -266,7 +265,8 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
              *isn't available
              */
             boolean enableRevocation = reqData.isRevocationEnabled() 
-                || MessageUtils.isTrue(msg.getContextualProperty(SecurityConstants.ENABLE_REVOCATION));
+                || MessageUtils.isTrue(SecurityUtils.getSecurityPropertyValue(SecurityConstants.ENABLE_REVOCATION,
+                                       msg));
             reqData.setEnableRevocation(enableRevocation);
             
             Element soapBody = SAAJUtils.getBody(doc);
@@ -281,8 +281,8 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
             
             if (!(wsResult.getResults() == null || wsResult.getResults().isEmpty())) { 
                 // security header found
-                if (reqData.getWssConfig().isEnableSignatureConfirmation()) {
-                    checkSignatureConfirmation(reqData, wsResult.getResults());
+                if (reqData.isEnableSignatureConfirmation()) {
+                    checkSignatureConfirmation(reqData, wsResult);
                 }
 
                 checkActions(msg, reqData, wsResult.getResults(), actions, SAAJUtils.getBody(doc));
@@ -332,17 +332,18 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
         } catch (SOAPException e) {
             throw new SoapFault(new Message("SAAJ_EX", LOG), e, version.getSender());
         } finally {
-            reqData.clear();
             reqData = null;
         }
     }
     
     private void configureAudienceRestriction(SoapMessage msg, RequestData reqData) {
         // Add Audience Restrictions for SAML
-        boolean enableAudienceRestriction = 
-            MessageUtils.getContextualBoolean(msg, 
-                                              SecurityConstants.AUDIENCE_RESTRICTION_VALIDATION, 
-                                              true);
+        boolean enableAudienceRestriction = true;
+        String audRestrValStr = 
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.AUDIENCE_RESTRICTION_VALIDATION, msg);
+        if (audRestrValStr != null) {
+            enableAudienceRestriction = Boolean.parseBoolean(audRestrValStr);
+        }
         if (enableAudienceRestriction) {
             List<String> audiences = new ArrayList<>();
             if (msg.getContextualProperty(org.apache.cxf.message.Message.REQUEST_URL) != null) {
@@ -397,11 +398,13 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
         // Try to get Crypto Provider from message context properties. 
         // It gives a possibility to use external Crypto Provider 
         //
-        Crypto encCrypto = (Crypto)msg.getContextualProperty(SecurityConstants.ENCRYPT_CRYPTO);
+        Crypto encCrypto = 
+            (Crypto)SecurityUtils.getSecurityPropertyValue(SecurityConstants.ENCRYPT_CRYPTO, msg);
         if (encCrypto != null) {
             reqData.setDecCrypto(encCrypto);
         }
-        Crypto sigCrypto = (Crypto)msg.getContextualProperty(SecurityConstants.SIGNATURE_CRYPTO);
+        Crypto sigCrypto = 
+            (Crypto)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SIGNATURE_CRYPTO, msg);
         if (sigCrypto != null) {
             reqData.setSigVerCrypto(sigCrypto);
         }
@@ -451,30 +454,21 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
      * Is a Nonce Cache required, i.e. are we expecting a UsernameToken 
      */
     protected boolean isNonceCacheRequired(List<Integer> actions, SoapMessage msg) {
-        if (actions.contains(WSConstants.UT) || actions.contains(WSConstants.UT_NOPASSWORD)) {
-            return true;
-        }
-        return false;
+        return actions.contains(WSConstants.UT) || actions.contains(WSConstants.UT_NOPASSWORD);
     }
     
     /**
      * Is a Timestamp cache required, i.e. are we expecting a Timestamp 
      */
     protected boolean isTimestampCacheRequired(List<Integer> actions, SoapMessage msg) {
-        if (actions.contains(WSConstants.TS)) {
-            return true;
-        }
-        return false;
+        return actions.contains(WSConstants.TS);
     }
     
     /**
      * Is a SAML Cache required, i.e. are we expecting a SAML Token 
      */
     protected boolean isSamlCacheRequired(List<Integer> actions, SoapMessage msg) {
-        if (actions.contains(WSConstants.ST_UNSIGNED) || actions.contains(WSConstants.ST_SIGNED)) {
-            return true;
-        }
-        return false;
+        return actions.contains(WSConstants.ST_UNSIGNED) || actions.contains(WSConstants.ST_SIGNED);
     }
     
     /**
@@ -514,9 +508,17 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
         }
         results.add(0, wsResult);
         
-        Boolean allowUnsignedSamlPrincipals = 
-                MessageUtils.getContextualBoolean(msg, 
-                        SecurityConstants.ENABLE_UNSIGNED_SAML_ASSERTION_PRINCIPAL, false);
+        String allowUnsigned = 
+            (String)SecurityUtils.getSecurityPropertyValue(
+                SecurityConstants.ENABLE_UNSIGNED_SAML_ASSERTION_PRINCIPAL, msg
+            );
+        boolean allowUnsignedSamlPrincipals = Boolean.parseBoolean(allowUnsigned);
+        boolean useJAASSubject = true; 
+        String useJAASSubjectStr = 
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SC_FROM_JAAS_SUBJECT, msg);
+        if (useJAASSubjectStr != null) {
+            useJAASSubject = Boolean.parseBoolean(useJAASSubjectStr);
+        }
         
         for (int i = wsResult.getResults().size() - 1; i >= 0; i--) {
             WSSecurityEngineResult o = wsResult.getResults().get(i);
@@ -524,8 +526,6 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
             Integer action = (Integer)o.get(WSSecurityEngineResult.TAG_ACTION);
             final Principal p = (Principal)o.get(WSSecurityEngineResult.TAG_PRINCIPAL);
             final Subject subject = (Subject)o.get(WSSecurityEngineResult.TAG_SUBJECT);
-            final boolean useJAASSubject = MessageUtils
-                .getContextualBoolean(msg, SecurityConstants.SC_FROM_JAAS_SUBJECT, true);
             final Object binarySecurity = o.get(WSSecurityEngineResult.TAG_BINARY_SECURITY_TOKEN);
             
             final boolean isValidSamlToken = action == WSConstants.ST_SIGNED 
@@ -588,8 +588,8 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
             }
             
             if (receivedAssertion instanceof SamlAssertionWrapper) {
-                String roleAttributeName = (String)msg.getContextualProperty(
-                        SecurityConstants.SAML_ROLE_ATTRIBUTENAME);
+                String roleAttributeName = (String)SecurityUtils.getSecurityPropertyValue(
+                        SecurityConstants.SAML_ROLE_ATTRIBUTENAME, msg);
                 if (roleAttributeName == null || roleAttributeName.length() == 0) {
                     roleAttributeName = SAML_ROLE_ATTRIBUTENAME_DEFAULT;
                 }
@@ -667,9 +667,15 @@ public class WSS4JInInterceptor extends AbstractWSS4JInterceptor {
     }
     
     protected CallbackHandler getCallback(RequestData reqData) throws WSSecurityException {
-        Object o = ((SoapMessage)reqData.getMsgContext())
-            .getContextualProperty(SecurityConstants.CALLBACK_HANDLER);
-        CallbackHandler cbHandler = SecurityUtils.getCallbackHandler(o);
+        Object o = 
+            SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, 
+                                                   (SoapMessage)reqData.getMsgContext());
+        CallbackHandler cbHandler = null;
+        try {
+            cbHandler = SecurityUtils.getCallbackHandler(o);
+        } catch (Exception ex) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, ex);
+        }
         
         if (cbHandler == null) {
             try {

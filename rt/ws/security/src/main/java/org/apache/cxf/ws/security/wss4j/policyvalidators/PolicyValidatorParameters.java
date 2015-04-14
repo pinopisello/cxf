@@ -19,13 +19,15 @@
 
 package org.apache.cxf.ws.security.wss4j.policyvalidators;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.w3c.dom.Element;
-
 import org.apache.cxf.message.Message;
 import org.apache.cxf.ws.policy.AssertionInfoMap;
+import org.apache.wss4j.dom.WSDataRef;
 import org.apache.wss4j.dom.WSSecurityEngineResult;
+import org.apache.wss4j.dom.handler.WSHandlerResult;
 
 /**
  * Holds various parameters to the policy validators
@@ -34,13 +36,16 @@ public class PolicyValidatorParameters {
     private AssertionInfoMap assertionInfoMap;
     private Message message;
     private Element soapBody;
-    private List<WSSecurityEngineResult> results;
+    private Element soapHeader;
+    private WSHandlerResult results;
     private List<WSSecurityEngineResult> signedResults;
     private List<WSSecurityEngineResult> encryptedResults;
     private List<WSSecurityEngineResult> usernameTokenResults;
     private List<WSSecurityEngineResult> samlResults;
     private Element timestampElement;
     private boolean utWithCallbacks;
+    private Collection<WSDataRef> signed;
+    private Collection<WSDataRef> encrypted;
  
     public Message getMessage() {
         return message;
@@ -58,11 +63,11 @@ public class PolicyValidatorParameters {
         this.soapBody = soapBody;
     }
     
-    public List<WSSecurityEngineResult> getResults() {
+    public WSHandlerResult getResults() {
         return results;
     }
     
-    public void setResults(List<WSSecurityEngineResult> results) {
+    public void setResults(WSHandlerResult results) {
         this.results = results;
     }
     
@@ -120,6 +125,30 @@ public class PolicyValidatorParameters {
 
     public void setUtWithCallbacks(boolean utWithCallbacks) {
         this.utWithCallbacks = utWithCallbacks;
+    }
+
+    public Element getSoapHeader() {
+        return soapHeader;
+    }
+
+    public void setSoapHeader(Element soapHeader) {
+        this.soapHeader = soapHeader;
+    }
+
+    public Collection<WSDataRef> getSigned() {
+        return signed;
+    }
+
+    public void setSigned(Collection<WSDataRef> signed) {
+        this.signed = signed;
+    }
+
+    public Collection<WSDataRef> getEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(Collection<WSDataRef> encrypted) {
+        this.encrypted = encrypted;
     }
 
 }

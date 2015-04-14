@@ -33,9 +33,7 @@ public class MetricsMessageInInterceptor extends AbstractMetricsInterceptor {
         addBefore(AttachmentInInterceptor.class.getName());
     }
     public void handleMessage(Message message) throws Fault {
-        if (isRequestor(message)) {
-            //
-        } else {
+        if (!isRequestor(message)) {
             ExchangeMetrics ctx = getExchangeMetrics(message, true);
             InputStream in = message.getContent(InputStream.class);
             if (in != null) {
@@ -47,7 +45,10 @@ public class MetricsMessageInInterceptor extends AbstractMetricsInterceptor {
         }
     }
     public void handleFault(Message message) {
-        if (message.getExchange().isOneWay()) {
+        if (isRequestor(message)) {
+            //fault on the incoming chains for the client.  It will be thrown back to client so stop
+            stop(message);
+        } else if (message.getExchange().isOneWay()) {
             stop(message);
         }
     }

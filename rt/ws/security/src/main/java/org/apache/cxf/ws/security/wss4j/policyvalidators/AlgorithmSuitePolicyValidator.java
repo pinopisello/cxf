@@ -31,6 +31,7 @@ import javax.xml.namespace.QName;
 
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.ws.policy.AssertionInfo;
+import org.apache.cxf.ws.security.policy.PolicyUtils;
 import org.apache.wss4j.common.principal.WSDerivedKeyTokenPrincipal;
 import org.apache.wss4j.dom.WSConstants;
 import org.apache.wss4j.dom.WSDataRef;
@@ -52,13 +53,9 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
      * policy defined by the AssertionInfo parameter
      */
     public boolean canValidatePolicy(AssertionInfo assertionInfo) {
-        if (assertionInfo.getAssertion() != null 
+        return assertionInfo.getAssertion() != null 
             && (SP12Constants.ALGORITHM_SUITE.equals(assertionInfo.getAssertion().getName())
-                || SP11Constants.ALGORITHM_SUITE.equals(assertionInfo.getAssertion().getName()))) {
-            return true;
-        }
-        
-        return false;
+                || SP11Constants.ALGORITHM_SUITE.equals(assertionInfo.getAssertion().getName()));
     }
     
     /**
@@ -69,7 +66,7 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
             AlgorithmSuite algorithmSuite = (AlgorithmSuite)ai.getAssertion();
             ai.setAsserted(true);
             
-            boolean valid = validatePolicy(ai, algorithmSuite, parameters.getResults());
+            boolean valid = validatePolicy(ai, algorithmSuite, parameters.getResults().getResults());
             if (valid) {
                 String namespace = algorithmSuite.getAlgorithmSuiteType().getNamespace();
                 String name = algorithmSuite.getAlgorithmSuiteType().getName();
@@ -80,6 +77,10 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
                         algSuiteAi.setAsserted(true);
                     }
                 }
+                
+                PolicyUtils.assertPolicy(parameters.getAssertionInfoMap(), 
+                                         new QName(algorithmSuite.getName().getNamespaceURI(), 
+                                                   algorithmSuite.getC14n().name()));
             } else if (!valid && ai.isAsserted()) {
                 ai.setNotAsserted("Error in validating AlgorithmSuite policy");
             }
@@ -89,18 +90,19 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
     private boolean validatePolicy(
         AssertionInfo ai, AlgorithmSuite algorithmPolicy, List<WSSecurityEngineResult> results
     ) {
-        boolean success = true;
+        
         for (WSSecurityEngineResult result : results) {
-            Integer actInt = (Integer)result.get(WSSecurityEngineResult.TAG_ACTION);
-            if (WSConstants.SIGN == actInt 
+            Integer action = (Integer)result.get(WSSecurityEngineResult.TAG_ACTION);
+            if (WSConstants.SIGN == action 
                 && !checkSignatureAlgorithms(result, algorithmPolicy, ai)) {
-                success = false;
-            } else if (WSConstants.ENCR == actInt
+                return false;
+            } else if (WSConstants.ENCR == action
                 && !checkEncryptionAlgorithms(result, algorithmPolicy, ai)) {
-                success = false;
+                return false;
             }
         }
-        return success;
+        
+        return true;
     }
     
     /**
@@ -135,11 +137,7 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
             return false;
         }
         
-        if (!checkKeyLengths(result, algorithmPolicy, ai, true)) {
-            return false;
-        }
-        
-        return true;
+        return checkKeyLengths(result, algorithmPolicy, ai, true);
     }
     
     /**
@@ -168,6 +166,7 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
             }
             for (String transformAlgorithm : transformAlgorithms) {
                 if (!(algorithmPolicy.getC14n().getValue().equals(transformAlgorithm)
+                    || WSConstants.C14N_EXCL_OMIT_COMMENTS.equals(transformAlgorithm)
                     || STRTransform.TRANSFORM_URI.equals(transformAlgorithm)
                     || WSConstants.SWA_ATTACHMENT_CONTENT_SIG_TRANS.equals(transformAlgorithm)
                     || WSConstants.SWA_ATTACHMENT_COMPLETE_SIG_TRANS.equals(transformAlgorithm))) {
@@ -213,11 +212,7 @@ public class AlgorithmSuitePolicyValidator extends AbstractSecurityPolicyValidat
             }
         }
         
-        if (!checkKeyLengths(result, algorithmPolicy, ai, false)) {
-            return false;
-        }
-        
-        return true;
+        return checkKeyLengths(result, algorithmPolicy, ai, false);
     }
     
     /**

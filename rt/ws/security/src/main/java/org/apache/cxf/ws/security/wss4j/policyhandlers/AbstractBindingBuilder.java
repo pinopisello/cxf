@@ -317,7 +317,9 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             if (ttl <= 0) {
                 ttl = 300;
             }
-            timestampEl = new WSSecTimestamp(wssConfig);
+            timestampEl = new WSSecTimestamp();
+            timestampEl.setIdAllocator(wssConfig.getIdAllocator());
+            timestampEl.setWsTimeSource(wssConfig.getCurrentTime());
             timestampEl.setTimeToLive(ttl);
             timestampEl.prepare(saaj.getSOAPPart());
             
@@ -450,11 +452,12 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         
                 if (secToken.getX509Certificate() == null) {  
                     ret.add(
-                        new SupportingToken(token, new WSSecurityTokenHolder(wssConfig, secToken),
+                        new SupportingToken(token, new WSSecurityTokenHolder(secToken),
                                             getSignedParts(suppTokens))
                     );
                 } else {
-                    WSSecSignature sig = new WSSecSignature(wssConfig);
+                    WSSecSignature sig = new WSSecSignature();
+                    sig.setIdAllocator(wssConfig.getIdAllocator());
                     sig.setCallbackLookup(callbackLookup);
                     sig.setX509Certificate(secToken.getX509Certificate());
                     sig.setCustomTokenId(id);
@@ -723,15 +726,19 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             return null;
         }
         
-        String userName = (String)message.getContextualProperty(SecurityConstants.USERNAME);
+        String userName = (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.USERNAME, message);
         if (!StringUtils.isEmpty(userName)) {
-            WSSecUsernameToken utBuilder = new WSSecUsernameToken(wssConfig);
+            WSSecUsernameToken utBuilder = new WSSecUsernameToken();
+            utBuilder.setIdAllocator(wssConfig.getIdAllocator());
+            utBuilder.setWsTimeSource(wssConfig.getCurrentTime());
+            
             // If NoPassword property is set we don't need to set the password
             if (token.getPasswordType() == UsernameToken.PasswordType.NoPassword) {
                 utBuilder.setUserInfo(userName, null);
                 utBuilder.setPasswordType(null);
             } else {
-                String password = (String)message.getContextualProperty(SecurityConstants.PASSWORD);
+                String password = 
+                    (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.PASSWORD, message);
                 if (StringUtils.isEmpty(password)) {
                     password = getPassword(userName, token, WSPasswordCallback.USERNAME_TOKEN);
                 }
@@ -770,11 +777,14 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             return null;
         }
         
-        String userName = (String)message.getContextualProperty(SecurityConstants.USERNAME);
+        String userName = (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.USERNAME, message);
         if (!StringUtils.isEmpty(userName)) {
-            WSSecUsernameToken utBuilder = new WSSecUsernameToken(wssConfig);
+            WSSecUsernameToken utBuilder = new WSSecUsernameToken();
+            utBuilder.setIdAllocator(wssConfig.getIdAllocator());
+            utBuilder.setWsTimeSource(wssConfig.getCurrentTime());
             
-            String password = (String)message.getContextualProperty(SecurityConstants.PASSWORD);
+            String password = 
+                (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.PASSWORD, message);
             if (StringUtils.isEmpty(password)) {
                 password = getPassword(userName, token, WSPasswordCallback.USERNAME_TOKEN);
             }
@@ -805,7 +815,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         //
         // Get the SAML CallbackHandler
         //
-        Object o = message.getContextualProperty(SecurityConstants.SAML_CALLBACK_HANDLER);
+        Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.SAML_CALLBACK_HANDLER, message);
     
         if (o == null) {
             SecurityToken securityToken = getSecurityToken();
@@ -824,12 +834,6 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             }
         }
         
-        CallbackHandler handler = SecurityUtils.getCallbackHandler(o);
-        if (handler == null) {
-            unassertPolicy(token, "No SAML CallbackHandler available");
-            return null;
-        }
-        
         SAMLCallback samlCallback = new SAMLCallback();
         SamlTokenType tokenType = token.getSamlTokenType();
         if (tokenType == SamlTokenType.WssSamlV11Token10 || tokenType == SamlTokenType.WssSamlV11Token11) {
@@ -837,14 +841,23 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         } else if (tokenType == SamlTokenType.WssSamlV20Token11) {
             samlCallback.setSamlVersion(Version.SAML_20);
         }
-        SAMLUtil.doSAMLCallback(handler, samlCallback);
+        try {
+            CallbackHandler handler = SecurityUtils.getCallbackHandler(o);
+            if (handler == null) {
+                unassertPolicy(token, "No SAML CallbackHandler available");
+                return null;
+            }
+            SAMLUtil.doSAMLCallback(handler, samlCallback);
+        } catch (Exception ex) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, ex);
+        }
         SamlAssertionWrapper assertion = new SamlAssertionWrapper(samlCallback);
         
         if (samlCallback.isSignAssertion()) {
             String issuerName = samlCallback.getIssuerKeyName();
             if (issuerName == null) {
                 String userNameKey = SecurityConstants.SIGNATURE_USERNAME;
-                issuerName = (String)message.getContextualProperty(userNameKey);
+                issuerName = (String)SecurityUtils.getSecurityPropertyValue(userNameKey, message);
             }
             String password = samlCallback.getIssuerKeyPassword();
             if (password == null) {
@@ -907,7 +920,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     
     public String getPassword(String userName, Assertion info, int usage) {
         //Then try to get the password from the given callback handler
-        Object o = message.getContextualProperty(SecurityConstants.CALLBACK_HANDLER);
+        Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, message);
         CallbackHandler handler = null;
         try {
             handler = SecurityUtils.getCallbackHandler(o);
@@ -915,7 +928,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                 unassertPolicy(info, "No callback handler and no password available");
                 return null;
             }
-        } catch (WSSecurityException ex) {
+        } catch (Exception ex) {
             unassertPolicy(info, "No callback handler and no password available");
             return null;
         }
@@ -1347,7 +1360,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     
     protected WSSecEncryptedKey getEncryptedKeyBuilder(AbstractTokenWrapper wrapper, 
                                                        AbstractToken token) throws WSSecurityException {
-        WSSecEncryptedKey encrKey = new WSSecEncryptedKey(wssConfig);
+        WSSecEncryptedKey encrKey = new WSSecEncryptedKey();
+        encrKey.setIdAllocator(wssConfig.getIdAllocator());
         encrKey.setCallbackLookup(callbackLookup);
         Crypto crypto = getEncryptionCrypto(wrapper);
         message.getExchange().put(SecurityConstants.ENCRYPT_CRYPTO, crypto);
@@ -1385,7 +1399,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
 
     private X509Certificate getEncryptCert(Crypto crypto, String encrUser) throws WSSecurityException {
         // Check for prepared encryption certificate
-        X509Certificate encrCert = (X509Certificate)message.getContextualProperty(SecurityConstants.ENCRYPT_CERT);
+        X509Certificate encrCert = 
+            (X509Certificate)SecurityUtils.getSecurityPropertyValue(SecurityConstants.ENCRYPT_CERT, message);
         if (encrCert != null) {
             return encrCert;
         }
@@ -1408,11 +1423,16 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     public Crypto getEncryptionCrypto(AbstractTokenWrapper wrapper) throws WSSecurityException {
         Crypto crypto = getCrypto(wrapper, SecurityConstants.ENCRYPT_CRYPTO,
                                   SecurityConstants.ENCRYPT_PROPERTIES);
-        boolean enableRevocation = MessageUtils.isTrue(
-                                       message.getContextualProperty(SecurityConstants.ENABLE_REVOCATION));
+        boolean enableRevocation = false;
+        String enableRevStr = 
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.ENABLE_REVOCATION, message);
+        if (enableRevStr != null) {
+            enableRevocation = Boolean.parseBoolean(enableRevStr);
+        }
         if (enableRevocation && crypto != null) {
             CryptoType cryptoType = new CryptoType(CryptoType.TYPE.ALIAS);
-            String encrUser = (String)message.getContextualProperty(SecurityConstants.ENCRYPT_USERNAME);
+            String encrUser = 
+                (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.ENCRYPT_USERNAME, message);
             if (encrUser == null) {
                 try {
                     encrUser = crypto.getDefaultX509Identifier();
@@ -1435,12 +1455,12 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         String cryptoKey, 
         String propKey
     ) throws WSSecurityException {
-        Crypto crypto = (Crypto)message.getContextualProperty(cryptoKey);
+        Crypto crypto = (Crypto)SecurityUtils.getSecurityPropertyValue(cryptoKey, message);
         if (crypto != null) {
             return crypto;
         }
         
-        Object o = message.getContextualProperty(propKey);
+        Object o = SecurityUtils.getSecurityPropertyValue(propKey, message);
         if (o == null) {
             return null;
         }
@@ -1471,13 +1491,13 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             return passwordEncryptor;
         }
         
-        Object o = message.getContextualProperty(SecurityConstants.CALLBACK_HANDLER);
+        Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, message);
         try {
             CallbackHandler callbackHandler = SecurityUtils.getCallbackHandler(o);
             if (callbackHandler != null) {
                 return new JasyptPasswordEncryptor(callbackHandler);
             }
-        } catch (WSSecurityException ex) {
+        } catch (Exception ex) {
             return null;
         }
         
@@ -1535,15 +1555,16 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     public String setEncryptionUser(WSSecEncryptedKey encrKeyBuilder, AbstractTokenWrapper token,
                                   boolean sign, Crypto crypto) {
         // Check for prepared certificate property
-        X509Certificate encrCert = (X509Certificate)message.getContextualProperty(SecurityConstants.ENCRYPT_CERT);
+        X509Certificate encrCert = 
+            (X509Certificate)SecurityUtils.getSecurityPropertyValue(SecurityConstants.ENCRYPT_CERT, message);
         if (encrCert != null) {
             encrKeyBuilder.setUseThisCert(encrCert);
             return null;
         }
         
-        String encrUser = (String)message.getContextualProperty(sign 
-                                                                ? SecurityConstants.SIGNATURE_USERNAME
-                                                                : SecurityConstants.ENCRYPT_USERNAME);
+        String key = sign ? SecurityConstants.SIGNATURE_USERNAME : SecurityConstants.ENCRYPT_USERNAME;
+        String encrUser = (String)SecurityUtils.getSecurityPropertyValue(key, message);
+        
         if (crypto != null && (encrUser == null || "".equals(encrUser))) {
             try {
                 encrUser = crypto.getDefaultX509Identifier();
@@ -1581,16 +1602,19 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         * receiving Actor and the sending Actor match.
         */
         for (WSHandlerResult rResult : results) {
-            List<WSSecurityEngineResult> wsSecEngineResults = rResult.getResults();
-            /*
-            * Scan the results for the first Signature action. Use the
-            * certificate of this Signature to set the certificate for the
-            * encryption action :-).
-            */
-            for (WSSecurityEngineResult wser : wsSecEngineResults) {
-                Integer actInt = (Integer)wser.get(WSSecurityEngineResult.TAG_ACTION);
-                if (actInt.intValue() == WSConstants.SIGN) {
-                    return (X509Certificate)wser.get(WSSecurityEngineResult.TAG_X509_CERTIFICATE);
+            List<WSSecurityEngineResult> signedResults = 
+                rResult.getActionResults().get(WSConstants.SIGN);
+            if (signedResults != null) {
+                /*
+                 * Scan the results for the first Signature action. Use the
+                 * certificate of this Signature to set the certificate for the
+                 * encryption action :-).
+                 */
+                for (WSSecurityEngineResult signedResult : signedResults) {
+                    if (signedResult.containsKey(WSSecurityEngineResult.TAG_X509_CERTIFICATE)) {
+                        return (X509Certificate)signedResult.get(
+                            WSSecurityEngineResult.TAG_X509_CERTIFICATE);
+                    }
                 }
             }
         }
@@ -1634,15 +1658,13 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             .get(WSHandlerConstants.RECV_RESULTS));
         
         for (WSHandlerResult rResult : results) {
-            List<WSSecurityEngineResult> wsSecEngineResults = rResult.getResults();
-            
-            for (WSSecurityEngineResult wser : wsSecEngineResults) {
-                Integer actInt = (Integer)wser.get(WSSecurityEngineResult.TAG_ACTION);
-                String encryptedKeyID = (String)wser.get(WSSecurityEngineResult.TAG_ID);
-                if (actInt.intValue() == WSConstants.ENCR
-                    && encryptedKeyID != null
-                    && encryptedKeyID.length() != 0) {
-                    return wser;
+            List<WSSecurityEngineResult> encryptedResults = rResult.getActionResults().get(WSConstants.ENCR);
+            if (encryptedResults != null) {
+                for (WSSecurityEngineResult wser : encryptedResults) {
+                    String encryptedKeyID = (String)wser.get(WSSecurityEngineResult.TAG_ID);
+                    if (encryptedKeyID != null && encryptedKeyID.length() != 0) {
+                        return wser;
+                    }
                 }
             }
         }
@@ -1669,7 +1691,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     protected WSSecSignature getSignatureBuilder(
         AbstractTokenWrapper wrapper, AbstractToken token, boolean attached, boolean endorse
     ) throws WSSecurityException {
-        WSSecSignature sig = new WSSecSignature(wssConfig);
+        WSSecSignature sig = new WSSecSignature();
+        sig.setIdAllocator(wssConfig.getIdAllocator());
         sig.setCallbackLookup(callbackLookup);
         sig.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
         checkForX509PkiPath(sig, token);
@@ -1753,7 +1776,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         if (!endorse) {
             message.getExchange().put(SecurityConstants.SIGNATURE_CRYPTO, crypto);
         }
-        String user = (String)message.getContextualProperty(userNameKey);
+        String user = (String)SecurityUtils.getSecurityPropertyValue(userNameKey, message);
         if (StringUtils.isEmpty(user)) {
             if (crypto != null) {
                 try {
@@ -1781,7 +1804,6 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         AlgorithmSuiteType algType = binding.getAlgorithmSuite().getAlgorithmSuiteType();
         sig.setDigestAlgo(algType.getDigest());
         sig.setSigCanonicalization(binding.getAlgorithmSuite().getC14n().getValue());
-        sig.setWsConfig(wssConfig);
         try {
             sig.prepare(saaj.getSOAPPart(), crypto, secHeader);
         } catch (WSSecurityException e) {
@@ -1884,7 +1906,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         throws WSSecurityException {
         
         Document doc = saaj.getSOAPPart();
-        WSSecDKSign dkSign = new WSSecDKSign(wssConfig);
+        WSSecDKSign dkSign = new WSSecDKSign();
+        dkSign.setIdAllocator(wssConfig.getIdAllocator());
         dkSign.setCallbackLookup(callbackLookup);
         
         //Check whether it is security policy 1.2 and use the secure conversation accordingly
@@ -1927,6 +1950,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
 
         //Set the algo info
         dkSign.setSignatureAlgorithm(binding.getAlgorithmSuite().getSymmetricSignature());
+        dkSign.setSigCanonicalization(binding.getAlgorithmSuite().getC14n().getValue());
         AlgorithmSuiteType algType = binding.getAlgorithmSuite().getAlgorithmSuiteType();
         dkSign.setDerivedKeyLength(algType.getSignatureDerivedKeyLength() / 8);
         if (tok.getSHA1() != null) {
@@ -1962,7 +1986,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         throws WSSecurityException {
         
         Document doc = saaj.getSOAPPart();
-        WSSecSignature sig = new WSSecSignature(wssConfig);
+        WSSecSignature sig = new WSSecSignature();
+        sig.setIdAllocator(wssConfig.getIdAllocator());
         sig.setCallbackLookup(callbackLookup);
         
         // If a EncryptedKeyToken is used, set the correct value type to
@@ -2006,8 +2031,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         sigTokId = XMLUtils.getIDFromReference(sigTokId);
         sig.setCustomTokenId(sigTokId);
         sig.setSecretKey(tok.getSecret());
-        sig.setSignatureAlgorithm(binding.getAlgorithmSuite().getAsymmetricSignature());
         sig.setSignatureAlgorithm(binding.getAlgorithmSuite().getSymmetricSignature());
+        sig.setSigCanonicalization(binding.getAlgorithmSuite().getC14n().getValue());
         sig.prepare(doc, getSignatureCrypto(null), secHeader);
 
         sig.getParts().addAll(sigParts);
@@ -2093,18 +2118,19 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
          * signature results in the signatureActions list
          */
         List<WSSecurityEngineResult> signatureActions = new ArrayList<>();
-        final List<Integer> signedActions = new ArrayList<>(2);
-        signedActions.add(WSConstants.SIGN);
-        signedActions.add(WSConstants.UT_SIGN);
         for (WSHandlerResult wshResult : results) {
-            signatureActions.addAll(
-                WSSecurityUtil.fetchAllActionResults(wshResult.getResults(), signedActions)
-            );
+            if (wshResult.getActionResults().containsKey(WSConstants.SIGN)) {
+                signatureActions.addAll(wshResult.getActionResults().get(WSConstants.SIGN));
+            }
+            if (wshResult.getActionResults().containsKey(WSConstants.UT_SIGN)) {
+                signatureActions.addAll(wshResult.getActionResults().get(WSConstants.UT_SIGN));
+            }
         }
         
         sigConfList = new ArrayList<>();
         // prepare a SignatureConfirmation token
-        WSSecSignatureConfirmation wsc = new WSSecSignatureConfirmation(wssConfig);
+        WSSecSignatureConfirmation wsc = new WSSecSignatureConfirmation();
+        wsc.setIdAllocator(wssConfig.getIdAllocator());
         if (signatureActions.size() > 0) {
             for (WSSecurityEngineResult wsr : signatureActions) {
                 byte[] sigVal = (byte[]) wsr.get(WSSecurityEngineResult.TAG_SIGNATURE_VALUE);

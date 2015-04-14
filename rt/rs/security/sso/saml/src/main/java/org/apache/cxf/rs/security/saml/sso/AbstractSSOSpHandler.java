@@ -46,6 +46,7 @@ public class AbstractSSOSpHandler {
     private String signaturePropertiesFile;
     private CallbackHandler callbackHandler;
     private String callbackHandlerClass;
+    private String signatureUsername;
     
     static {
         OpenSAMLUtil.initSamlEngine();
@@ -133,11 +134,7 @@ public class AbstractSSOSpHandler {
             return true;
         }
         
-        if (expiresAt > 0 && currentTime.after(new Date(expiresAt))) {
-            return true;
-        }
-        
-        return false;
+        return expiresAt > 0 && currentTime.after(new Date(expiresAt));
     }
     
     public void setStateProvider(SPStateManager stateProvider) {
@@ -181,12 +178,29 @@ public class AbstractSSOSpHandler {
                     LOG.fine("Cannot load CallbackHandler using: " + callbackHandlerClass);
                     return null;
                 }
-            } catch (WSSecurityException ex) {
+            } catch (Exception ex) {
                 LOG.log(Level.FINE, "Error in loading callback handler", ex);
                 return null;
             }
         }
         return callbackHandler;
+    }
+    
+    /**
+     * Set the username/alias to use to sign any request
+     * @param signatureUsername the username/alias to use to sign any request
+     */
+    public void setSignatureUsername(String signatureUsername) {
+        this.signatureUsername = signatureUsername;
+        LOG.fine("Setting signatureUsername: " + signatureUsername);
+    }
+    
+    /**
+     * Get the username/alias to use to sign any request
+     * @return the username/alias to use to sign any request
+     */
+    public String getSignatureUsername() {
+        return signatureUsername;
     }
     
 }

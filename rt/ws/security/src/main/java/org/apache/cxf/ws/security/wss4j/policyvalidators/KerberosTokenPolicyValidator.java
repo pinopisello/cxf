@@ -55,20 +55,17 @@ public class KerberosTokenPolicyValidator extends AbstractSecurityPolicyValidato
      * policy defined by the AssertionInfo parameter
      */
     public boolean canValidatePolicy(AssertionInfo assertionInfo) {
-        if (assertionInfo.getAssertion() != null 
+        return assertionInfo.getAssertion() != null 
             && (SP12Constants.KERBEROS_TOKEN.equals(assertionInfo.getAssertion().getName())
-                || SP11Constants.KERBEROS_TOKEN.equals(assertionInfo.getAssertion().getName()))) {
-            return true;
-        }
-        
-        return false;
+                || SP11Constants.KERBEROS_TOKEN.equals(assertionInfo.getAssertion().getName()));
     }
     
     /**
      * Validate policies.
      */
     public void validatePolicies(PolicyValidatorParameters parameters, Collection<AssertionInfo> ais) {
-        List<WSSecurityEngineResult> kerberosResults = findKerberosResults(parameters.getResults());
+        List<WSSecurityEngineResult> kerberosResults = 
+            findKerberosResults(parameters.getResults().getActionResults().get(WSConstants.BST));
         
         for (WSSecurityEngineResult kerberosResult : kerberosResults) {
             KerberosSecurity kerberosToken = 
@@ -145,11 +142,10 @@ public class KerberosTokenPolicyValidator extends AbstractSecurityPolicyValidato
         return false;
     }
     
-    private List<WSSecurityEngineResult> findKerberosResults(List<WSSecurityEngineResult> wsSecEngineResults) {
+    private List<WSSecurityEngineResult> findKerberosResults(List<WSSecurityEngineResult> bstResults) {
         List<WSSecurityEngineResult> results = new ArrayList<>();
-        for (WSSecurityEngineResult wser : wsSecEngineResults) {
-            Integer actInt = (Integer)wser.get(WSSecurityEngineResult.TAG_ACTION);
-            if (actInt.intValue() == WSConstants.BST) {
+        if (bstResults != null) {
+            for (WSSecurityEngineResult wser : bstResults) {
                 BinarySecurity binarySecurity = 
                     (BinarySecurity)wser.get(WSSecurityEngineResult.TAG_BINARY_SECURITY_TOKEN);
                 if (binarySecurity instanceof KerberosSecurity) {

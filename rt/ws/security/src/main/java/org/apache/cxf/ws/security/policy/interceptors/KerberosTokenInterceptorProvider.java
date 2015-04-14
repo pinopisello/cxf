@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
+import javax.xml.namespace.QName;
 
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.endpoint.Endpoint;
@@ -51,7 +52,6 @@ import org.apache.cxf.ws.security.wss4j.PolicyBasedWSS4JStaxInInterceptor;
 import org.apache.cxf.ws.security.wss4j.PolicyBasedWSS4JStaxOutInterceptor;
 import org.apache.cxf.ws.security.wss4j.StaxSecurityContextInInterceptor;
 import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor;
-import org.apache.cxf.ws.security.wss4j.policyvalidators.KerberosTokenPolicyValidator;
 import org.apache.cxf.ws.security.wss4j.policyvalidators.PolicyValidatorParameters;
 import org.apache.cxf.ws.security.wss4j.policyvalidators.SecurityPolicyValidator;
 import org.apache.wss4j.common.ext.WSSecurityException;
@@ -196,10 +196,14 @@ public class KerberosTokenInterceptorProvider extends AbstractPolicyInterceptorP
             PolicyValidatorParameters parameters = new PolicyValidatorParameters();
             parameters.setAssertionInfoMap(message.get(AssertionInfoMap.class));
             parameters.setMessage(message);
-            parameters.setResults(rResult.getResults());
+            parameters.setResults(rResult);
             
-            SecurityPolicyValidator kerberosValidator = new KerberosTokenPolicyValidator();
-            kerberosValidator.validatePolicies(parameters, ais);
+            QName qName = ais.iterator().next().getAssertion().getName();
+            Map<QName, SecurityPolicyValidator> validators = 
+                PolicyUtils.getSecurityPolicyValidators(message);
+            if (validators.containsKey(qName)) {
+                validators.get(qName).validatePolicies(parameters, ais);
+            }
         }
         
     }

@@ -39,8 +39,8 @@ import org.apache.cxf.interceptor.security.DefaultSecurityContext;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.rt.security.claims.ClaimCollection;
-import org.apache.cxf.rt.security.saml.SAMLSecurityContext;
-import org.apache.cxf.rt.security.saml.SAMLUtils;
+import org.apache.cxf.rt.security.saml.claims.SAMLSecurityContext;
+import org.apache.cxf.rt.security.saml.utils.SAMLUtils;
 import org.apache.cxf.rt.security.utils.SecurityUtils;
 import org.apache.cxf.security.SecurityContext;
 import org.apache.cxf.ws.policy.AssertionInfo;
@@ -151,7 +151,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
     private SecurityContext createSecurityContext(Message msg,
                                                   SamlAssertionWrapper samlAssertion) {
         String roleAttributeName = 
-            (String)msg.getContextualProperty(SecurityConstants.SAML_ROLE_ATTRIBUTENAME);
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SAML_ROLE_ATTRIBUTENAME, msg);
         if (roleAttributeName == null || roleAttributeName.length() == 0) {
             roleAttributeName = WSS4JInInterceptor.SAML_ROLE_ATTRIBUTENAME_DEFAULT;
         }
@@ -198,8 +198,12 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         WSDocInfo wsDocInfo = new WSDocInfo(tokenElement.getOwnerDocument());
         
         RequestData data = new CXFRequestData();
-        Object o = message.getContextualProperty(SecurityConstants.CALLBACK_HANDLER);
-        data.setCallbackHandler(SecurityUtils.getCallbackHandler(o));
+        Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, message);
+        try {
+            data.setCallbackHandler(SecurityUtils.getCallbackHandler(o));
+        } catch (Exception ex) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, ex);
+        }
         data.setMsgContext(message);
 
         // Configure replay caching
@@ -209,9 +213,8 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
             );
         data.setNonceReplayCache(nonceCache);
 
-        WSSConfig config = WSSConfig.getNewInstance();
-        config.setAllowUsernameTokenNoPassword(allowNoPassword);
-        data.setWssConfig(config);
+        data.setAllowUsernameTokenNoPassword(allowNoPassword);
+        data.setWssConfig(WSSConfig.getNewInstance());
         if (!bspCompliant) {
             data.setDisableBSPEnforcement(true);
         }
@@ -358,11 +361,8 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         org.apache.wss4j.policy.model.UsernameToken usernameTokenPolicy
     ) {
         AbstractSecurityAssertion supportingToken = usernameTokenPolicy.getParentAssertion();
-        if (supportingToken instanceof SupportingTokens
-            && ((SupportingTokens)supportingToken).isEndorsing()) {
-            return false;
-        }
-        return true;
+        return !(supportingToken instanceof SupportingTokens
+            && ((SupportingTokens)supportingToken).isEndorsing());
     }
 
     protected void addToken(SoapMessage message) {
@@ -389,7 +389,8 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
 
 
     protected WSSecUsernameToken addUsernameToken(SoapMessage message, UsernameToken token) {
-        String userName = (String)message.getContextualProperty(SecurityConstants.USERNAME);
+        String userName = 
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.USERNAME, message);
         WSSConfig wssConfig = (WSSConfig)message.getContextualProperty(WSSConfig.class.getName());
         if (wssConfig == null) {
             wssConfig = WSSConfig.getNewInstance();
@@ -398,20 +399,25 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         if (!StringUtils.isEmpty(userName)) {
             // If NoPassword property is set we don't need to set the password
             if (token.getPasswordType() == UsernameToken.PasswordType.NoPassword) {
-                WSSecUsernameToken utBuilder = new WSSecUsernameToken(wssConfig);
+                WSSecUsernameToken utBuilder = new WSSecUsernameToken();
+                utBuilder.setIdAllocator(wssConfig.getIdAllocator());
+                utBuilder.setWsTimeSource(wssConfig.getCurrentTime());
                 utBuilder.setUserInfo(userName, null);
                 utBuilder.setPasswordType(null);
                 return utBuilder;
             }
             
-            String password = (String)message.getContextualProperty(SecurityConstants.PASSWORD);
+            String password = 
+                (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.PASSWORD, message);
             if (StringUtils.isEmpty(password)) {
                 password = getPassword(userName, token, WSPasswordCallback.USERNAME_TOKEN, message);
             }
             
             if (!StringUtils.isEmpty(password)) {
                 //If the password is available then build the token
-                WSSecUsernameToken utBuilder = new WSSecUsernameToken(wssConfig);
+                WSSecUsernameToken utBuilder = new WSSecUsernameToken();
+                utBuilder.setIdAllocator(wssConfig.getIdAllocator());
+                utBuilder.setWsTimeSource(wssConfig.getCurrentTime());
                 if (token.getPasswordType() == UsernameToken.PasswordType.HashPassword) {
                     utBuilder.setPasswordType(WSConstants.PASSWORD_DIGEST);  
                 } else {

@@ -64,11 +64,14 @@ import org.apache.wss4j.stax.ext.WSSSecurityProperties;
 public abstract class AbstractWSS4JStaxInterceptor implements SoapInterceptor, 
     PhaseInterceptor<SoapMessage> {
 
-    private static final Set<QName> HEADERS = 
-        Collections.singleton(new QName(WSConstants.WSSE_NS, "Security"));
-    
     private static final Logger LOG = LogUtils.getL7dLogger(AbstractWSS4JStaxInterceptor.class);
-
+    private static final Set<QName> HEADERS = new HashSet<>();
+    
+    static {
+        HEADERS.add(new QName(WSConstants.WSSE_NS, "Security"));
+        HEADERS.add(new QName(WSConstants.ENC_NS, "EncryptedData"));
+    }
+    
     private final Map<String, Object> properties;
     private final WSSSecurityProperties userSecurityProperties;
     private Map<String, Crypto> cryptos = new ConcurrentHashMap<>();
@@ -143,14 +146,15 @@ public abstract class AbstractWSS4JStaxInterceptor implements SoapInterceptor,
         }
         
         String certConstraints = 
-            (String)msg.getContextualProperty(SecurityConstants.SUBJECT_CERT_CONSTRAINTS);
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SUBJECT_CERT_CONSTRAINTS, msg);
         if (certConstraints != null && !"".equals(certConstraints)) {
             securityProperties.setSubjectCertConstraints(convertCertConstraints(certConstraints));
         }
         
         // Now set SAML SenderVouches + Holder Of Key requirements
         String validateSAMLSubjectConf = 
-            (String)msg.getContextualProperty(SecurityConstants.VALIDATE_SAML_SUBJECT_CONFIRMATION);
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.VALIDATE_SAML_SUBJECT_CONFIRMATION,
+                                                           msg);
         if (validateSAMLSubjectConf != null) {
             securityProperties.setValidateSamlSubjectConfirmation(Boolean.valueOf(validateSAMLSubjectConf));
         }
@@ -189,8 +193,13 @@ public abstract class AbstractWSS4JStaxInterceptor implements SoapInterceptor,
     protected void configureCallbackHandler(
         SoapMessage soapMessage, WSSSecurityProperties securityProperties
     ) throws WSSecurityException {
-        Object o = soapMessage.getContextualProperty(SecurityConstants.CALLBACK_HANDLER);
-        CallbackHandler callbackHandler = SecurityUtils.getCallbackHandler(o);
+        Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, soapMessage);
+        CallbackHandler callbackHandler = null;
+        try {
+            callbackHandler = SecurityUtils.getCallbackHandler(o);
+        } catch (Exception ex) {
+            throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, ex);
+        }
             
         if (callbackHandler != null) {
             EndpointInfo info = soapMessage.getExchange().get(Endpoint.class).getEndpointInfo();
@@ -258,7 +267,7 @@ public abstract class AbstractWSS4JStaxInterceptor implements SoapInterceptor,
     }
 
     public Object getProperty(Object msgContext, String key) {
-        Object obj = ((Message)msgContext).getContextualProperty(key);
+        Object obj = SecurityUtils.getSecurityPropertyValue(key, (Message)msgContext);
         if (obj == null) {
             obj = getOption(key);
         }

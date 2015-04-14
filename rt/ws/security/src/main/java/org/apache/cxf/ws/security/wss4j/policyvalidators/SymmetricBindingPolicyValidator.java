@@ -46,34 +46,25 @@ public class SymmetricBindingPolicyValidator extends AbstractBindingPolicyValida
      * policy defined by the AssertionInfo parameter
      */
     public boolean canValidatePolicy(AssertionInfo assertionInfo) {
-        if (assertionInfo.getAssertion() != null 
+        return assertionInfo.getAssertion() != null 
             && (SP12Constants.SYMMETRIC_BINDING.equals(assertionInfo.getAssertion().getName())
-                || SP11Constants.SYMMETRIC_BINDING.equals(assertionInfo.getAssertion().getName()))) {
-            return true;
-        }
-        
-        return false;
+                || SP11Constants.SYMMETRIC_BINDING.equals(assertionInfo.getAssertion().getName()));
     }
     
     /**
      * Validate policies.
      */
     public void validatePolicies(PolicyValidatorParameters parameters, Collection<AssertionInfo> ais) {
-        boolean hasDerivedKeys = false;
-        for (WSSecurityEngineResult result : parameters.getResults()) {
-            Integer actInt = (Integer)result.get(WSSecurityEngineResult.TAG_ACTION);
-            if (actInt.intValue() == WSConstants.DKT) {
-                hasDerivedKeys = true;
-                break;
-            }
-        }
+        boolean hasDerivedKeys = 
+            parameters.getResults().getActionResults().containsKey(WSConstants.DKT);
         
         for (AssertionInfo ai : ais) {
             SymmetricBinding binding = (SymmetricBinding)ai.getAssertion();
             ai.setAsserted(true);
 
             // Check the protection order
-            if (!checkProtectionOrder(binding, parameters.getAssertionInfoMap(), ai, parameters.getResults())) {
+            if (!checkProtectionOrder(binding, parameters.getAssertionInfoMap(), ai, 
+                                      parameters.getResults().getResults())) {
                 continue;
             }
             

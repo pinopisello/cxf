@@ -54,11 +54,12 @@ import org.apache.cxf.rs.security.saml.SAMLUtils;
 import org.apache.cxf.rs.security.saml.assertion.Subject;
 import org.apache.cxf.rs.security.saml.sso.state.RequestState;
 import org.apache.cxf.rs.security.saml.sso.state.ResponseState;
+import org.apache.cxf.rt.security.SecurityConstants;
 import org.apache.cxf.rt.security.claims.ClaimCollection;
-import org.apache.cxf.rt.security.saml.SAMLSecurityContext;
+import org.apache.cxf.rt.security.saml.claims.SAMLSecurityContext;
+import org.apache.cxf.rt.security.utils.SecurityUtils;
 import org.apache.cxf.security.SecurityContext;
 import org.apache.cxf.staxutils.StaxUtils;
-import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.wss4j.common.saml.OpenSAMLUtil;
 import org.apache.wss4j.common.saml.SamlAssertionWrapper;
 import org.opensaml.saml.saml2.core.AuthnRequest;
@@ -78,7 +79,6 @@ public abstract class AbstractServiceProviderFilter extends AbstractSSOSpHandler
     private String assertionConsumerServiceAddress;
     private AuthnRequestBuilder authnRequestBuilder = new DefaultAuthnRequestBuilder();
     private boolean signRequest;
-    private String signatureUsername;
     
     private String webAppDomain;
     private boolean addWebAppContext = true;
@@ -115,23 +115,6 @@ public abstract class AbstractServiceProviderFilter extends AbstractSSOSpHandler
 
     public String getIdpServiceAddress() {
         return idpServiceAddress;
-    }
-    
-    /**
-     * Set the username/alias to use to sign any request
-     * @param signatureUsername the username/alias to use to sign any request
-     */
-    public void setSignatureUsername(String signatureUsername) {
-        this.signatureUsername = signatureUsername;
-        LOG.fine("Setting signatureUsername: " + signatureUsername);
-    }
-    
-    /**
-     * Get the username/alias to use to sign any request
-     * @return the username/alias to use to sign any request
-     */
-    public String getSignatureUsername() {
-        return signatureUsername;
     }
     
     @PreDestroy
@@ -188,21 +171,21 @@ public abstract class AbstractServiceProviderFilter extends AbstractSSOSpHandler
         
         if (name != null) {
             String roleAttributeName = 
-                (String)m.getContextualProperty(SecurityConstants.SAML_ROLE_ATTRIBUTENAME);
+                (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SAML_ROLE_ATTRIBUTENAME, m);
             if (roleAttributeName == null || roleAttributeName.length() == 0) {
                 roleAttributeName = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role";
             }
             ClaimCollection claims = 
-                org.apache.cxf.rt.security.saml.SAMLUtils.getClaims(assertionWrapper);
+                org.apache.cxf.rt.security.saml.utils.SAMLUtils.getClaims(assertionWrapper);
             Set<Principal> roles = 
-                org.apache.cxf.rt.security.saml.SAMLUtils.parseRolesFromClaims(
+                org.apache.cxf.rt.security.saml.utils.SAMLUtils.parseRolesFromClaims(
                     claims, roleAttributeName, null);
 
             SAMLSecurityContext context = 
                 new SAMLSecurityContext(new SimplePrincipal(name), roles, claims);
-            context.setIssuer(org.apache.cxf.rt.security.saml.SAMLUtils.getIssuer(assertionWrapper));
+            context.setIssuer(org.apache.cxf.rt.security.saml.utils.SAMLUtils.getIssuer(assertionWrapper));
             context.setAssertionElement(
-                org.apache.cxf.rt.security.saml.SAMLUtils.getAssertionElement(assertionWrapper));
+                org.apache.cxf.rt.security.saml.utils.SAMLUtils.getAssertionElement(assertionWrapper));
             m.put(SecurityContext.class, context);
         }
     }
