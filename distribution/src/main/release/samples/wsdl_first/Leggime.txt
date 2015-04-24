@@ -1,0 +1,56 @@
+============  generare code da src/main/resources/CustomerService.wsdl  in src/main/generated   =======
+
+cd /Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/wsdl_first
+
+mvn generate-sources
+
+Se non dovesse funzionare:
+
+mvn clean install
+
+Il codice generato e' in :wsdl_first/src/main/generated
+
+
+=============  Lanciare Server ===========
+
+1)Non Spring jetty transport cxf-rt-transports-http-jetty [http://localhost:9090/CustomerServicePort]
+
+mvn -Pserver
+
+
+2)Spring (server-applicationContext.xml) jetty transport cxf-rt-transports-http-jetty [http://localhost:9090/CustomerServicePort]  
+mvn -Pserver-spring
+
+
+
+3)Non Spring jetty transport cxf-rt-transports-http-netty-server [http://localhost:9090/CustomerServicePort]
+
+mvn -Pserver-netty
+
+4)Tomcat 7 (cxf-servlet.xml) [http://localhost:8080/wsdl_first/services/CustomerServicePort?wsdl]
+
+mvn tomcat7:run
+
+
+
+=============  Lanciare Client ===========
+
+
+
+
+1)Non Spring jetty transport cxf-rt-transports-http-jetty
+
+mvn -Pclient
+
+2)Non Spring jetty transport cxf-rt-transports-http-netty-client
+mvn -Pclient-netty
+
+
+3)Spring jetty transport  cxf-rt-transports-http-jetty
+mvn -Pclient-netty
+
+
+
+
+
+

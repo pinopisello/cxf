@@ -1,0 +1,26 @@
+Il transport-server cxf che viene usato per ricevere le calls viene startato in org.apache.cxf.endpoint.ServerImpl.start() .
+In particolare : bindingFactory.addListener(destination, endpoint);
+
+"destination" e' l interface "org.apache.cxf.transport.Destination" definita in org.apache.cxf.endpoint.ServerImpl.initDestination() e viene impostata  nei seguenti modi:
+
+
+
+=============    com.example.customerservice.server.CustomerServiceSpringServer + cxf-rt-transports-http-jetty  ====================
+
+org.apache.cxf.transport.http.HTTPTransportFactory.getDestination(EndpointInfo endpointInfo, Bus bus)
+
+
+HttpDestinationFactory jettyFactory = bus.getExtension(HttpDestinationFactory.class); ritorna org.apache.cxf.transport.http_jetty.JettyDestinationFactory
+Questa e' storata in ServerImpl ed usata in ServerImpl.start().
+
+
+
+====================   Tomcat  ====================
+
+
+
+
+
+
+
+

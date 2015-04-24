@@ -25,6 +25,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.annotation.Resource;
+import javax.jws.WebMethod;
 import javax.xml.ws.WebServiceContext;
 
 import com.example.customerservice.Customer;
@@ -42,6 +43,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Resource
     WebServiceContext wsContext;
 
+    
+    @WebMethod(exclude=false)
     public List<Customer> getCustomersByName(String name) throws NoSuchCustomerException {
         if ("None".equals(name)) {
             NoSuchCustomer noSuchCustomer = new NoSuchCustomer();

@@ -20,15 +20,15 @@
 package demo.server;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import javax.xml.ws.Endpoint;
 
-import org.apache.cxf.jaxws.JaxWsServerFactoryBean;
-import org.apache.cxf.transport.jms.spec.JMSSpecConstants;
-
 import demo.service.HelloWorld;
 import demo.service.impl.HelloWorldImpl;
+
+import org.apache.activemq.broker.BrokerService;
+import org.apache.cxf.jaxws.JaxWsServerFactoryBean;
+import org.apache.cxf.transport.jms.spec.JMSSpecConstants;
 
 
 public final class ServerJMS {
@@ -73,7 +73,7 @@ public final class ServerJMS {
     }
 
     private static void launchAMQBroker() throws ClassNotFoundException, InstantiationException,
-        IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+        IllegalAccessException, NoSuchMethodException, InvocationTargetException,Exception {
         /*
          * The following make it easier to run this against something other than ActiveMQ. You will have
          * to get a JMS broker onto the right port of localhost.
@@ -84,13 +84,22 @@ public final class ServerJMS {
             System.err.println("ActiveMQ is not in the classpath, cannot launch broker.");
             return;
         }
+        
+        BrokerService broker = new BrokerService();
+        broker.addConnector("tcp://localhost:61616");
+        broker.setDataDirectory( "target/activemq-data");
+        broker.start();
+        
+        /*Per quale cazzo di motivo dovrei usare mai le reflection API??
+         * 
+         * 
         Object broker = brokerClass.newInstance();
         Method addConnectorMethod = brokerClass.getMethod("addConnector", String.class);
         addConnectorMethod.invoke(broker, "tcp://localhost:61616");
         Method setDataDirectory = brokerClass.getMethod("setDataDirectory", String.class);
         setDataDirectory.invoke(broker, "target/activemq-data");
         Method startMethod = brokerClass.getMethod("start");
-        startMethod.invoke(broker);
+        startMethod.invoke(broker);*/
     }
 
     private static void launchCxfApi() {

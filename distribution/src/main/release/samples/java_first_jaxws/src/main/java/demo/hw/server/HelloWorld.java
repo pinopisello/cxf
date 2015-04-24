@@ -22,21 +22,25 @@ import java.util.Map;
 
 import javax.jws.WebMethod;
 import javax.jws.WebService;
+import javax.jws.soap.SOAPBinding;
+import javax.jws.soap.SOAPBinding.Style;
+import javax.jws.soap.SOAPBinding.Use;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 // START SNIPPET: service
 
 @WebService
+@SOAPBinding(style=Style.RPC,use=Use.ENCODED)
 public interface HelloWorld {
 
-    
+    @WebMethod
     String sayHi(String text);
 
 
     /* Advanced usecase of passing an Interface in.  JAX-WS/JAXB does not
      * support interfaces directly.  Special XmlAdapter classes need to
      * be written to handle them
-     */
+     */    @WebMethod
     String sayHiToUser(User user);
 
 
@@ -44,7 +48,7 @@ public interface HelloWorld {
      * JAXB also does not support Maps.  It handles Lists great, but Maps are
      * not supported directly.  They also require use of a XmlAdapter to map
      * the maps into beans that JAXB can use. 
-     */
+     */    @WebMethod
     @XmlJavaTypeAdapter(IntegerUserMapAdapter.class)
     Map<Integer, User> getUsers();
 }

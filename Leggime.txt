@@ -35,4 +35,24 @@ Scegliere il .git repo esistente creato in step #4
 
 Fatto!
 
+==========================  Syncronizzare il forked con il repository sorgente ============
+
+Per incorporare le commits fatte sul repo sorgente nel forked:
+
+1)git pull upstream master
+
+2)git push origin master
+
+voila'!
+
+
+=========================  Esempi inclusi nella distro  ====================================
+
+
+
+
+http://cxf.apache.org/docs/sample-projects.html
+
+
+
 

@@ -22,6 +22,6 @@ package demo.hw.server;
 public class HelloWorldImpl implements HelloWorld {
 
     public String sayHi(String text) {
-        return "Hello " + text;
+        return "Hello fanculo" + text;
     }
 }

@@ -1,0 +1,61 @@
+
+===============   Parsing dello srpring.xml e registrazione BeanDefinition =========================================
+AbstractApplicationContext.refresh()  =>  beanFactory = obtainFreshBeanFactory();
+
+
+
+Lo spring configuration xml e' parsato in DefaultBeanDefinitionDocumentReader.parseBeanDefinitions()
+
+Per ogni elemento incontrato, viene estratto il namespace e trovato il matching NamespaceHandler .
+
+Handler.parse() ritorna la BeanDefinition  
+
+Per esempio per <jaxws:endpoint l ' handler e' org.apache.cxf.jaxws.spring.NamespaceHandler [vedi /cxf-rt-frontend-jaxws/src/main/resources/META-INF/spring.handlers]
+
+Questo handler have una map di Pareser.Per "endpoint" e' EndpointDefinitionParser
+
+handler invoca il parser registrato per quell element.
+
+EndpointDefinitionParser.doParse() gira ,parsa la definizione xml e alla fine registra la BeanDefinition in context.registry [registerBeanDefinition(holder, parserContext.getRegistry());]
+
+
+
+=================  Inizializzazione dei beans dichiarati in spring.xml  ==========================
+AbstractApplicationContext.refresh()  =>  AbstractApplicationContext.finishBeanFactoryInitialization(beanFactory) =>DefaultListableBeanFactory.preInstantiateSingletons();
+
+
+Per esempio <jaxws:endpoint xmlns:customer="http://customerservice.example.com/" id="CustomerServiceHTTP"...>
+DefaultListableBeanFactory.preInstantiateSingletons() itera tutti in beans e per i singletons invoca getBean(beanName)
+
+
+L' inizializzazione del bean avviene in  org.apache.cxf.jaxws.spring.EndpointDefinitionParser$SpringEndpointImpl.doPublish(String addr).
+Questo perche in EndpointDefinitionParser c'e'  bean.setInitMethodName("publish"); porco cazzo!!
+Il server e' org.apache.cxf.endpoint.ServerImpl e viene startato in start().
+Il server jetty viene startato in JettyHTTPDestination.activate()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
