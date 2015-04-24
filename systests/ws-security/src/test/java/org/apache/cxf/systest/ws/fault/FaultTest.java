@@ -86,12 +86,12 @@ public class FaultTest extends AbstractBusClientServerTestBase {
         updateAddressPort(utPort, PORT);
         
         // Make a successful invocation
-        ((BindingProvider)utPort).getRequestContext().put("ws-security.username", "alice");
+        ((BindingProvider)utPort).getRequestContext().put("security.username", "alice");
         utPort.doubleIt(25);
         
         // Now make an invocation using another username
-        ((BindingProvider)utPort).getRequestContext().put("ws-security.username", "bob");
-        ((BindingProvider)utPort).getRequestContext().put("ws-security.password", "password");
+        ((BindingProvider)utPort).getRequestContext().put("security.username", "bob");
+        ((BindingProvider)utPort).getRequestContext().put("security.password", "password");
         try {
             utPort.doubleIt(25);
             fail("Expected failure on bob");
@@ -119,12 +119,12 @@ public class FaultTest extends AbstractBusClientServerTestBase {
         updateAddressPort(utPort, PORT);
         
         // Make a successful invocation
-        ((BindingProvider)utPort).getRequestContext().put("ws-security.username", "alice");
+        ((BindingProvider)utPort).getRequestContext().put("security.username", "alice");
         utPort.doubleIt(25);
         
         // Now make an invocation using another username
-        ((BindingProvider)utPort).getRequestContext().put("ws-security.username", "bob");
-        ((BindingProvider)utPort).getRequestContext().put("ws-security.password", "password");
+        ((BindingProvider)utPort).getRequestContext().put("security.username", "bob");
+        ((BindingProvider)utPort).getRequestContext().put("security.password", "password");
         try {
             utPort.doubleIt(25);
             fail("Expected failure on bob");
@@ -161,25 +161,25 @@ public class FaultTest extends AbstractBusClientServerTestBase {
         // Add WS-Security configuration
         Client client = ((DispatchImpl<DOMSource>) dispatch).getClient();
         client.getRequestContext().put(
-            "ws-security.callback-handler",
+            "security.callback-handler",
             "org.apache.cxf.systest.ws.common.KeystorePasswordCallback"
         );
         client.getRequestContext().put(
-            "ws-security.encryption.properties", 
+            "security.encryption.properties", 
             "bob.properties"
         );
-        client.getRequestContext().put("ws-security.encryption.username", "bob");
+        client.getRequestContext().put("security.encryption.username", "bob");
 
         updateAddressPort(dispatch, PORT);
         
         // Make a successful request
-        client.getRequestContext().put("ws-security.username", "alice");
+        client.getRequestContext().put("security.username", "alice");
         DOMSource response = dispatch.invoke(request);
         assertNotNull(response);
         
         // Now make an invocation using another username
-        client.getRequestContext().put("ws-security.username", "bob");
-        client.getRequestContext().put("ws-security.password", "password");
+        client.getRequestContext().put("security.username", "bob");
+        client.getRequestContext().put("security.password", "password");
         try {
             dispatch.invoke(request);
             fail("Expected failure on bob");

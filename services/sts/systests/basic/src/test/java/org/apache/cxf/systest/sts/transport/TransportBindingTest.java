@@ -321,7 +321,7 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
         
         // Make a successful request
         Client client = ((DispatchImpl<DOMSource>) dispatch).getClient();
-        client.getRequestContext().put("ws-security.username", "alice");
+        client.getRequestContext().put("security.username", "alice");
         client.getRequestContext().put("ws-security.sts.client", stsClient);
         
         if (test.isStreaming()) {
@@ -364,7 +364,7 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
         
         // Make a successful request
         Client client = ((DispatchImpl<DOMSource>) dispatch).getClient();
-        client.getRequestContext().put("ws-security.username", "alice");
+        client.getRequestContext().put("security.username", "alice");
         client.getRequestContext().put("ws-security.sts.client", stsClient);
         
         if (test.isStreaming()) {
@@ -375,6 +375,40 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
         DOMSource response = dispatch.invoke(request);
         assertNotNull(response);
         
+        bus.shutdown(true);
+    }
+    
+    @org.junit.Test
+    public void testSAML2EndorsingX509() throws Exception {
+        
+        // Only works for DOM (clients)
+        if (test.isStreaming()) {
+            return;
+        }
+
+        SpringBusFactory bf = new SpringBusFactory();
+        URL busFile = TransportBindingTest.class.getResource("cxf-client.xml");
+
+        Bus bus = bf.createBus(busFile.toString());
+        SpringBusFactory.setDefaultBus(bus);
+        SpringBusFactory.setThreadDefaultBus(bus);
+
+        URL wsdl = TransportBindingTest.class.getResource("DoubleIt.wsdl");
+        Service service = Service.create(wsdl, SERVICE_QNAME);
+        QName portQName = new QName(NAMESPACE, "DoubleItTransportSAML2X509EndorsingPort");
+        DoubleItPortType transportSaml1Port = 
+            service.getPort(portQName, DoubleItPortType.class);
+        updateAddressPort(transportSaml1Port, test.getPort());
+
+        TokenTestUtils.updateSTSPort((BindingProvider)transportSaml1Port, test.getStsPort());
+        
+        if (test.isStreaming()) {
+            SecurityTestUtil.enableStreaming(transportSaml1Port);
+        }
+        
+        doubleIt(transportSaml1Port, 25);
+        
+        ((java.io.Closeable)transportSaml1Port).close();
         bus.shutdown(true);
     }
     
@@ -398,8 +432,8 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
         stsClient.setEndpointName("{http://docs.oasis-open.org/ws-sx/ws-trust/200512/}Transport_Port");
         
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.username", "alice");
-        properties.put("ws-security.callback-handler",
+        properties.put("security.username", "alice");
+        properties.put("security.callback-handler",
                        "org.apache.cxf.systest.sts.common.CommonCallbackHandler");
         properties.put("ws-security.sts.token.username", "myclientkey");
         properties.put("ws-security.sts.token.properties", "clientKeystore.properties");

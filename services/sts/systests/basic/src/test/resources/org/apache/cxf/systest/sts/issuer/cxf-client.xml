@@ -25,8 +25,8 @@
     </cxf:bus>
     <jaxws:client name="{http://www.example.org/contract/DoubleIt}DoubleItTransportSAML1Port" createdFromAPI="true">
         <jaxws:properties>
-            <entry key="ws-security.username" value="alice"/>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
+            <entry key="security.username" value="alice"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
             <entry key="ws-security.sts.disable-wsmex-call-using-epr-address" value="true"/>
             <entry key="ws-security.sts.client">
                 <bean class="org.apache.cxf.ws.security.trust.STSClient">
@@ -45,8 +45,8 @@
     </jaxws:client>
     <jaxws:client name="{http://www.example.org/contract/DoubleIt}DoubleItTransportSAML2Port" createdFromAPI="true">
         <jaxws:properties>
-            <entry key="ws-security.username" value="alice"/>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
+            <entry key="security.username" value="alice"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
             <entry key="ws-security.sts.token.username" value="myclientkey"/>
             <entry key="ws-security.sts.token.properties" value="clientKeystore.properties"/>
             <entry key="ws-security.sts.token.usecert" value="true"/>
@@ -54,8 +54,8 @@
     </jaxws:client>
     <jaxws:client name="{http://www.example.org/contract/DoubleIt}DoubleItTransportSAML2Soap12Port" createdFromAPI="true">
         <jaxws:properties>
-            <entry key="ws-security.username" value="alice"/>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
+            <entry key="security.username" value="alice"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
             <entry key="ws-security.sts.token.username" value="myclientkey"/>
             <entry key="ws-security.sts.token.properties" value="clientKeystore.properties"/>
             <entry key="ws-security.sts.token.usecert" value="true"/>

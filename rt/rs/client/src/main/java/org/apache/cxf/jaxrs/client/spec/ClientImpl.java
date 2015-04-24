@@ -40,6 +40,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
+import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.ClientProviderFactory;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -47,6 +48,11 @@ import org.apache.cxf.jaxrs.model.FilterProviderInfo;
 import org.apache.cxf.transport.https.SSLUtils;
 
 public class ClientImpl implements Client {
+    private static final String HTTP_CONNECTION_TIMEOUT_PROP = "http.connection.timeout";
+    private static final String HTTP_RECEIVE_TIMEOUT_PROP = "http.receive.timeout";
+    private static final String HTTP_PROXY_SERVER_PROP = "http.proxy.server.uri";
+    private static final String HTTP_PROXY_SERVER_PORT_PROP = "http.proxy.server.port";
+    
     private Configurable<Client> configImpl;
     private TLSConfiguration secConfig;
     private boolean closed;
@@ -254,21 +260,44 @@ public class ClientImpl implements Client {
             }
             
             pf.setUserProviders(providers);
-            WebClient.getConfig(targetClient).getRequestContext().putAll(getConfiguration().getProperties());
-            WebClient.getConfig(targetClient).getRequestContext().put(Client.class.getName(), ClientImpl.this);
-            WebClient.getConfig(targetClient).getRequestContext().put(Configuration.class.getName(), 
+            Map<String, Object> configProps = getConfiguration().getProperties();
+            ClientConfiguration clientCfg = WebClient.getConfig(targetClient);
+            
+            clientCfg.getRequestContext().putAll(configProps);
+            clientCfg.getRequestContext().put(Client.class.getName(), ClientImpl.this);
+            clientCfg.getRequestContext().put(Configuration.class.getName(), 
                                                                       getConfiguration());
             // TLS
             TLSClientParameters tlsParams = secConfig.getTlsClientParams();
             if (tlsParams.getSSLSocketFactory() != null 
                 || tlsParams.getTrustManagers() != null) {
-                WebClient.getConfig(targetClient).getHttpConduit().setTlsClientParameters(tlsParams);
+                clientCfg.getHttpConduit().setTlsClientParameters(tlsParams);
             }
+            
+            setConnectionProperties(configProps, clientCfg);
             
             // start building the invocation
             return new InvocationBuilderImpl(WebClient.fromClient(targetClient));
         }
-        
+        private void setConnectionProperties(Map<String, Object> configProps, ClientConfiguration clientCfg) {
+            Long connTimeOutValue = getLongValue(configProps.get(HTTP_CONNECTION_TIMEOUT_PROP));
+            if (connTimeOutValue != null) {
+                clientCfg.getHttpConduit().getClient().setConnectionTimeout(connTimeOutValue);
+            }
+            Long recTimeOutValue = getLongValue(configProps.get(HTTP_RECEIVE_TIMEOUT_PROP));
+            if (recTimeOutValue != null) {
+                clientCfg.getHttpConduit().getClient().setReceiveTimeout(recTimeOutValue);
+            }
+            Object proxyServerValue = configProps.get(HTTP_PROXY_SERVER_PROP);
+            if (proxyServerValue != null) {
+                clientCfg.getHttpConduit().getClient().setProxyServer((String)proxyServerValue);
+            }
+            Integer proxyServerPortValue = getIntValue(configProps.get(HTTP_PROXY_SERVER_PORT_PROP));
+            if (proxyServerPortValue != null) {
+                clientCfg.getHttpConduit().getClient().setProxyServerPort(proxyServerPortValue);
+            }
+        }
+
         private void initTargetClientIfNeeded() {
             URI uri = uriBuilder.build();
             if (targetClient == null) {
@@ -465,5 +494,11 @@ public class ClientImpl implements Client {
             checkNull(templatesMap.keySet().toArray());
             checkNull(templatesMap.values().toArray());
         }
+    }
+    private static Long getLongValue(Object o) {
+        return o instanceof Long ? (Long)o : o instanceof String ? Long.valueOf(o.toString()) : null;
+    }
+    private static Integer getIntValue(Object o) {
+        return o instanceof Integer ? (Integer)o : o instanceof String ? Integer.valueOf(o.toString()) : null;
     }
 }

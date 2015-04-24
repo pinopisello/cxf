@@ -91,8 +91,8 @@ under the License.
             <ref bean="xmlSigOutHandler"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
         </jaxrs:properties>
     </jaxrs:server>
     
@@ -107,8 +107,8 @@ under the License.
             <ref bean="xmlSigOutHandler"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
         </jaxrs:properties>
     </jaxrs:server>
     
@@ -123,8 +123,8 @@ under the License.
             <ref bean="xmlSigOutHandlerNoKeyInfo"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
         </jaxrs:properties>
     </jaxrs:server>
     
@@ -139,8 +139,8 @@ under the License.
             <ref bean="xmlEncOutHandler"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
         </jaxrs:properties>
     </jaxrs:server>
     <jaxrs:server address="https://localhost:${testutil.ports.jaxrs-xmlsec}/xmlsec">
@@ -156,9 +156,9 @@ under the License.
             <ref bean="xmlEncOutHandler"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
-            <entry key="ws-security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
+            <entry key="security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
         </jaxrs:properties>
     </jaxrs:server>
     <jaxrs:server address="https://localhost:${testutil.ports.jaxrs-xmlsec}/xmlsec-validate">
@@ -174,9 +174,9 @@ under the License.
             <ref bean="xmlEncOutHandlerWithProps"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
-            <entry key="ws-security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
+            <entry key="security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
         </jaxrs:properties>
     </jaxrs:server>
     <jaxrs:server address="https://localhost:${testutil.ports.jaxrs-xmlsec}/xmlsec-useReqSigCert">
@@ -192,10 +192,10 @@ under the License.
             <ref bean="xmlEncOutHandler"/>
         </jaxrs:outInterceptors>
         <jaxrs:properties>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
-            <entry key="ws-security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
-            <entry key="ws-security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
-            <entry key="ws-security.encryption.username" value="useReqSigCert"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback"/>
+            <entry key="security.signature.properties" value="org/apache/cxf/systest/jaxrs/security/bob.properties"/>
+            <entry key="security.encryption.properties" value="org/apache/cxf/systest/jaxrs/security/alice.properties"/>
+            <entry key="security.encryption.username" value="useReqSigCert"/>
         </jaxrs:properties>
     </jaxrs:server>
 </beans>

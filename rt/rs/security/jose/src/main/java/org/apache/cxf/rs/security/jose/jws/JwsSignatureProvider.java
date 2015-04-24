@@ -18,15 +18,14 @@
  */
 package org.apache.cxf.rs.security.jose.jws;
 
-import org.apache.cxf.rs.security.jose.JoseHeaders;
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 
 
 public interface JwsSignatureProvider {
     SignatureAlgorithm getAlgorithm();
-    byte[] sign(JoseHeaders headers, byte[] content);
+    byte[] sign(JwsHeaders headers, byte[] content);
     /**
      * Create a signature handler capable of updating the signature input (optional operation)
      */
-    JwsSignature createJwsSignature(JoseHeaders headers);
+    JwsSignature createJwsSignature(JwsHeaders headers);
 }

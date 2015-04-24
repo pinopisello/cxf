@@ -86,6 +86,41 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     }
     
     @Test
+    public void testOldConfiguration() throws Exception {
+        String address = "https://localhost:" + test.port + "/xmlsig";
+        JAXRSClientFactoryBean bean = new JAXRSClientFactoryBean();
+        bean.setAddress(address);
+        
+        SpringBusFactory bf = new SpringBusFactory();
+        URL busFile = JAXRSXmlSecTest.class.getResource("client.xml");
+        Bus springBus = bf.createBus(busFile.toString());
+        bean.setBus(springBus);
+
+        Map<String, Object> newProperties = new HashMap<>();
+        newProperties.put("ws-security.callback-handler", 
+            "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
+        newProperties.put("ws-security.signature.username", "alice");
+
+        String cryptoUrl = "org/apache/cxf/systest/jaxrs/security/alice.properties";
+        newProperties.put("ws-security.signature.properties", cryptoUrl);
+        bean.setProperties(newProperties);
+        
+        if (test.streaming) {
+            XmlSecOutInterceptor sigInterceptor = new XmlSecOutInterceptor();
+            sigInterceptor.setSignRequest(true);
+            bean.getOutInterceptors().add(sigInterceptor);
+        } else {
+            XmlSigOutInterceptor sigInterceptor = new XmlSigOutInterceptor();
+            bean.getOutInterceptors().add(sigInterceptor);
+        }
+        bean.setServiceClass(BookStore.class);
+        
+        BookStore store = bean.create(BookStore.class);
+        Book book = store.addBook(new Book("CXF", 126L));
+        assertEquals(126L, book.getId());
+    }
+    
+    @Test
     public void testPostBookWithEnvelopedSigAndProxy2() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlsig";
         doTestSignatureProxy(address, false, "", test.streaming);
@@ -107,22 +142,22 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
         
         // Successful test with "bob"
         Map<String, Object> newProperties = new HashMap<String, Object>();
-        newProperties.put("ws-security.callback-handler", 
+        newProperties.put("security.callback-handler", 
             "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        newProperties.put("ws-security.signature.username", "bob");
+        newProperties.put("security.signature.username", "bob");
 
         String cryptoUrl = "org/apache/cxf/systest/jaxrs/security/bob.properties";
-        newProperties.put("ws-security.signature.properties", cryptoUrl);
+        newProperties.put("security.signature.properties", cryptoUrl);
         doTestSignatureProxy(address, false, null, test.streaming, newProperties);
         
         // Constraint validation fails with "alice"
         newProperties.clear();
-        newProperties.put("ws-security.callback-handler", 
+        newProperties.put("security.callback-handler", 
             "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        newProperties.put("ws-security.signature.username", "alice");
+        newProperties.put("security.signature.username", "alice");
 
         cryptoUrl = "org/apache/cxf/systest/jaxrs/security/alice.properties";
-        newProperties.put("ws-security.signature.properties", cryptoUrl);
+        newProperties.put("security.signature.properties", cryptoUrl);
         try {
             doTestSignatureProxy(address, false, null, test.streaming, newProperties);
             fail("Failure expected on a failing cert constraint");
@@ -150,15 +185,15 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
 
         Map<String, Object> newProperties = new HashMap<String, Object>(properties);
         if (newProperties.isEmpty()) {
-            newProperties.put("ws-security.callback-handler", 
+            newProperties.put("security.callback-handler", 
                            "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-            newProperties.put("ws-security.signature.username", "alice");
+            newProperties.put("security.signature.username", "alice");
             
             String cryptoUrl = "org/apache/cxf/systest/jaxrs/security/alice.properties";
             if (cryptoUrlPrefix != null) {
                 cryptoUrl = cryptoUrlPrefix + this.getClass().getResource("/" + cryptoUrl).toURI().getPath();
             }
-            newProperties.put("ws-security.signature.properties", cryptoUrl);
+            newProperties.put("security.signature.properties", cryptoUrl);
         }
         bean.setProperties(newProperties);
         
@@ -226,10 +261,10 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
         bean.setBus(springBus);
 
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.signature.username", "alice");
-        properties.put("ws-security.signature.properties", 
+        properties.put("security.signature.username", "alice");
+        properties.put("security.signature.properties", 
                        "org/apache/cxf/systest/jaxrs/security/alice.properties");
         bean.setProperties(properties);
         if (streaming) {
@@ -282,10 +317,10 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     public void testPostEncryptedBook() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlenc/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
         doTestPostEncryptedBook(address, false, properties, test.streaming);
     }
@@ -306,10 +341,10 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
         
         String address = "https://localhost:" + test.port + "/xmlenc/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
         
         EncryptionProperties encryptionProperties = new EncryptionProperties();
@@ -324,10 +359,10 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     public void testPostEncryptedBookSHA256() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlenc/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
         
         EncryptionProperties encryptionProperties = new EncryptionProperties();
@@ -344,10 +379,10 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     public void testPostEncryptedBookIssuerSerial() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlenc/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
         
         EncryptionProperties encryptionProperties = new EncryptionProperties();
@@ -363,13 +398,13 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     public void testPostEncryptedSignedBook() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlsec-validate/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
-        properties.put("ws-security.signature.username", "alice");
-        properties.put("ws-security.signature.properties", 
+        properties.put("security.signature.username", "alice");
+        properties.put("security.signature.properties", 
                        "org/apache/cxf/systest/jaxrs/security/alice.properties");
         doTestPostEncryptedBook(address, true, properties, test.streaming);
         
@@ -379,13 +414,13 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     public void testPostEncryptedSignedBookInvalid() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlsec-validate/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
-        properties.put("ws-security.signature.username", "alice");
-        properties.put("ws-security.signature.properties", 
+        properties.put("security.signature.username", "alice");
+        properties.put("security.signature.properties", 
                        "org/apache/cxf/systest/jaxrs/security/alice.properties");
         
         EncryptionProperties encryptionProperties = new EncryptionProperties();
@@ -405,13 +440,13 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
     public void testPostEncryptedSignedBookUseReqSigCert() throws Exception {
         String address = "https://localhost:" + test.port + "/xmlsec-useReqSigCert/bookstore/books";
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
-        properties.put("ws-security.signature.username", "alice");
-        properties.put("ws-security.signature.properties", 
+        properties.put("security.signature.username", "alice");
+        properties.put("security.signature.properties", 
                        "org/apache/cxf/systest/jaxrs/security/alice.properties");
         doTestPostEncryptedBook(address, true, properties, test.streaming);
     }
@@ -538,12 +573,12 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
         bean.setBus(springBus);
         
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
-        properties.put("ws-security.signature.properties", 
+        properties.put("security.signature.properties", 
                        "org/apache/cxf/systest/jaxrs/security/alice.properties");
         bean.setProperties(properties);
         
@@ -582,12 +617,12 @@ public class JAXRSXmlSecTest extends AbstractBusClientServerTestBase {
         bean.setBus(springBus);
         
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.callback-handler", 
+        properties.put("security.callback-handler", 
                        "org.apache.cxf.systest.jaxrs.security.saml.KeystorePasswordCallback");
-        properties.put("ws-security.encryption.username", "bob");
-        properties.put("ws-security.encryption.properties", 
+        properties.put("security.encryption.username", "bob");
+        properties.put("security.encryption.properties", 
                        "org/apache/cxf/systest/jaxrs/security/bob.properties");
-        properties.put("ws-security.signature.properties", 
+        properties.put("security.signature.properties", 
                        "org/apache/cxf/systest/jaxrs/security/alice.properties");
         bean.setProperties(properties);
         

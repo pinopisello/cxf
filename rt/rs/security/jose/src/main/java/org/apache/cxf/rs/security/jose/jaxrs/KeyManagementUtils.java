@@ -211,6 +211,10 @@ public final class KeyManagementUtils {
         return (RSAPrivateKey)loadPrivateKey(keyStore, m, props, bus, cb, keyOper, alias);
     }
     public static KeyStore loadPersistKeyStore(Message m, Properties props) {
+        if (!props.containsKey(RSSEC_KEY_STORE_FILE)) {
+            LOG.warning("No keystore file has been configured");
+            throw new JoseException("No keystore file has been configured");
+        }
         KeyStore keyStore = (KeyStore)m.getExchange().get(props.get(RSSEC_KEY_STORE_FILE));
         if (keyStore == null) {
             keyStore = loadKeyStore(props, m.getExchange().getBus());
@@ -222,6 +226,10 @@ public final class KeyManagementUtils {
         String keyStoreType = props.getProperty(RSSEC_KEY_STORE_TYPE);
         String keyStoreLoc = props.getProperty(RSSEC_KEY_STORE_FILE);
         String keyStorePswd = props.getProperty(RSSEC_KEY_STORE_PSWD);
+        
+        if (keyStorePswd == null) {
+            throw new JoseException("No keystore password was defined");
+        }
         try {
             InputStream is = ResourceUtils.getResourceStream(keyStoreLoc, bus);
             return CryptoUtils.loadKeyStore(is, keyStorePswd.toCharArray(), keyStoreType);

@@ -30,10 +30,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.w3c.dom.Document;
-
 import org.apache.cxf.common.i18n.BundleUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.utils.ExceptionUtils;
+import org.apache.cxf.jaxrs.utils.JAXRSUtils;
+import org.apache.cxf.message.Message;
 import org.apache.wss4j.common.crypto.Crypto;
 import org.apache.wss4j.common.crypto.CryptoType;
 import org.apache.wss4j.common.ext.WSPasswordCallback;
@@ -44,7 +45,9 @@ public class MetadataService extends AbstractSSOSpHandler {
     protected static final ResourceBundle BUNDLE = BundleUtils.getBundle(MetadataService.class);
     
     private String serviceAddress;
+    private String assertionConsumerServiceAddress;
     private String logoutServiceAddress;
+    private boolean addEndpointAddressToContext;
     
     @GET
     @Produces("text/xml")
@@ -85,8 +88,20 @@ public class MetadataService extends AbstractSSOSpHandler {
             // Get the private key
             PrivateKey privateKey = crypto.getPrivateKey(signatureUser, password);
             
-            return metadataWriter.getMetaData(serviceAddress, logoutServiceAddress, privateKey, issuerCerts[0], 
-                                              true);
+            if (addEndpointAddressToContext) {
+                Message message = JAXRSUtils.getCurrentMessage();
+                String rawPath = (String)message.get("http.base.path");
+                return metadataWriter.getMetaData(rawPath + serviceAddress, 
+                                                  rawPath + assertionConsumerServiceAddress, 
+                                                  rawPath + logoutServiceAddress, 
+                                                  privateKey, issuerCerts[0], 
+                                                  true);
+            } else {
+                return metadataWriter.getMetaData(serviceAddress, assertionConsumerServiceAddress,
+                                                  logoutServiceAddress, 
+                                                  privateKey, issuerCerts[0], 
+                                                  true);
+            }
         } catch (Exception ex) {
             LOG.log(Level.FINE, ex.getMessage(), ex);
             throw ExceptionUtils.toInternalServerErrorException(ex, null);
@@ -100,5 +115,33 @@ public class MetadataService extends AbstractSSOSpHandler {
         LOG.warning(errorMsg.toString());
     }
 
+    public String getServiceAddress() {
+        return serviceAddress;
+    }
 
+    public void setServiceAddress(String serviceAddress) {
+        this.serviceAddress = serviceAddress;
+    }
+
+    public String getLogoutServiceAddress() {
+        return logoutServiceAddress;
+    }
+
+    public void setLogoutServiceAddress(String logoutServiceAddress) {
+        this.logoutServiceAddress = logoutServiceAddress;
+    }
+
+    public void setAddEndpointAddressToContext(boolean add) {
+        addEndpointAddressToContext = add;
+    }
+
+
+    public String getAssertionConsumerServiceAddress() {
+        return assertionConsumerServiceAddress;
+    }
+
+
+    public void setAssertionConsumerServiceAddress(String assertionConsumerServiceAddress) {
+        this.assertionConsumerServiceAddress = assertionConsumerServiceAddress;
+    }
 }

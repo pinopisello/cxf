@@ -350,11 +350,11 @@ public class SymmetricBindingTest extends AbstractBusClientServerTestBase {
         stsClient.setEndpointName("{http://docs.oasis-open.org/ws-sx/ws-trust/200512/}UT_Port");
         
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.username", "alice");
-        properties.put("ws-security.callback-handler",
+        properties.put("security.username", "alice");
+        properties.put("security.callback-handler",
                        "org.apache.cxf.systest.sts.common.CommonCallbackHandler");
-        properties.put("ws-security.encryption.username", "mystskey");
-        properties.put("ws-security.encryption.properties", "clientKeystore.properties");
+        properties.put("security.encryption.username", "mystskey");
+        properties.put("security.encryption.properties", "clientKeystore.properties");
         properties.put("ws-security.is-bsp-compliant", "false");
         stsClient.setProperties(properties);
         

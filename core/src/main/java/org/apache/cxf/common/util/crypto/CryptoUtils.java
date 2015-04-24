@@ -637,6 +637,12 @@ public final class CryptoUtils {
     }
     public static Certificate loadCertificate(KeyStore keyStore, String alias) {
         try {
+            if (alias == null) {
+                throw new SecurityException("No keystore alias was defined");
+            }
+            if (!keyStore.containsAlias(alias)) {
+                throw new SecurityException("No alias exists in the keystore for: " + alias);
+            }
             return keyStore.getCertificate(alias);
         } catch (Exception ex) { 
             throw new SecurityException(ex);
@@ -686,6 +692,12 @@ public final class CryptoUtils {
                                             char[] keyPassword, 
                                             String alias) {
         try {
+            if (alias == null) {
+                throw new SecurityException("No keystore alias was defined");
+            }
+            if (!keyStore.containsAlias(alias)) {
+                throw new SecurityException("No alias exists in the keystore for: " + alias);
+            }
             KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
                 keyStore.getEntry(alias, new KeyStore.PasswordProtection(keyPassword));
             return pkEntry.getPrivateKey();

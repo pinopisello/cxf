@@ -24,8 +24,8 @@
             <entry key="ws-security.saml2.validator">
                 <bean class="org.apache.cxf.systest.sts.cross_domain.CrossDomainValidator"/>
             </entry>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
-            <entry key="ws-security.signature.properties" value="serviceKeystore.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
+            <entry key="security.signature.properties" value="serviceKeystore.properties"/>
         </jaxws:properties>
     </jaxws:endpoint>
     <jaxws:endpoint xmlns:s="http://www.example.org/contract/DoubleIt" id="doubleitcrossdomainmex" implementor="org.apache.cxf.systest.sts.common.DoubleItPortTypeImpl" endpointName="s:DoubleItCrossDomainMEXPort" serviceName="s:DoubleItService" depends-on="ClientAuthHttpsSettings" address="https://localhost:${testutil.ports.Server}/doubleit/services/doubleitcrossdomainmex" wsdlLocation="org/apache/cxf/systest/sts/cross_domain/DoubleIt.wsdl">
@@ -33,8 +33,8 @@
             <entry key="ws-security.saml2.validator">
                 <bean class="org.apache.cxf.systest.sts.cross_domain.CrossDomainValidator"/>
             </entry>
-            <entry key="ws-security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
-            <entry key="ws-security.signature.properties" value="serviceKeystore.properties"/>
+            <entry key="security.callback-handler" value="org.apache.cxf.systest.sts.common.CommonCallbackHandler"/>
+            <entry key="security.signature.properties" value="serviceKeystore.properties"/>
         </jaxws:properties>
     </jaxws:endpoint>
     

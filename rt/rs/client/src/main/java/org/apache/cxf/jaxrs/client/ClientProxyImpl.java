@@ -21,6 +21,7 @@ package org.apache.cxf.jaxrs.client;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -60,6 +61,8 @@ import org.apache.cxf.common.classloader.ClassLoaderUtils.ClassLoaderHolder;
 import org.apache.cxf.common.i18n.BundleUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.PropertyUtils;
+import org.apache.cxf.common.util.ReflectionUtil;
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.interceptor.Fault;
@@ -476,20 +479,34 @@ public class ClientProxyImpl extends AbstractClient implements
         
         for (Method m : bean.getClass().getMethods()) {
             if (m.getName().startsWith("set")) {
-                Annotation annotation = m.getAnnotation(annClass);
-                if (annotation != null) {
-                    try {
-                        String propertyName = m.getName().substring(3);
+                try {
+                    String propertyName = m.getName().substring(3);
+                    Annotation annotation = m.getAnnotation(annClass);
+                    if (annotation != null) {
                         Method getter = bean.getClass().getMethod("get" + propertyName, new Class[]{});
                         Object value = getter.invoke(bean, new Object[]{});
                         if (value != null) {
                             String annotationValue = AnnotationUtils.getAnnotationValue(annotation);
                             values.put(annotationValue, new BeanPair(value, m.getParameterAnnotations()[0]));
                         }
-                    } catch (Throwable t) {
-                        // ignore
+                    } else {
+                        String fieldName = StringUtils.uncapitalize(propertyName);
+                        Field f = ReflectionUtil.getDeclaredField(bean.getClass(), fieldName);
+                        if (f == null) {
+                            continue;
+                        }
+                        annotation = f.getAnnotation(annClass);
+                        if (annotation != null) {
+                            Object value = ReflectionUtil.accessDeclaredField(f, bean, Object.class);
+                            if (value != null) {
+                                String annotationValue = AnnotationUtils.getAnnotationValue(annotation);
+                                values.put(annotationValue, new BeanPair(value, f.getAnnotations()));
+                            }    
+                        }
                     }
-                }
+                } catch (Throwable t) {
+                    // ignore
+                }    
             }
         }
         return values;

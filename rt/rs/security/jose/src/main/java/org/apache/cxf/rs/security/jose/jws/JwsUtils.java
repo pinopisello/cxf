@@ -97,9 +97,17 @@ public final class JwsUtils {
         return theSigProvider;
     }
     public static JwsSignatureProvider getRSAKeySignatureProvider(RSAPrivateKey key, String algo) {
+        if (algo == null) {
+            LOG.warning("No signature algorithm was defined");
+            throw new JwsException(JwsException.Error.ALGORITHM_NOT_SET);
+        }
         return new PrivateKeyJwsSignatureProvider(key, SignatureAlgorithm.getAlgorithm(algo));
     }
     public static JwsSignatureProvider getHmacSignatureProvider(byte[] key, String algo) {
+        if (algo == null) {
+            LOG.warning("No signature algorithm was defined");
+            throw new JwsException(JwsException.Error.ALGORITHM_NOT_SET);
+        }
         if (AlgorithmUtils.isHmacSign(algo)) {
             return new HmacJwsSignatureProvider(key, SignatureAlgorithm.getAlgorithm(algo));
         }
@@ -126,9 +134,18 @@ public final class JwsUtils {
         return getRSAKeySignatureVerifier((RSAPublicKey)cert.getPublicKey(), algo);
     }
     public static JwsSignatureVerifier getRSAKeySignatureVerifier(RSAPublicKey key, String algo) {
+        if (algo == null) {
+            LOG.warning("No signature algorithm was defined");
+            throw new JwsException(JwsException.Error.ALGORITHM_NOT_SET);
+        }
         return new PublicKeyJwsSignatureVerifier(key, SignatureAlgorithm.getAlgorithm(algo));
     }
     public static JwsSignatureVerifier getHmacSignatureVerifier(byte[] key, String algo) {
+        if (algo == null) {
+            LOG.warning("No signature algorithm was defined");
+            throw new JwsException(JwsException.Error.ALGORITHM_NOT_SET);
+        }
+        
         if (AlgorithmUtils.isHmacSign(algo)) {
             return new HmacJwsSignatureVerifier(key, SignatureAlgorithm.getAlgorithm(algo));
         }
@@ -324,7 +341,7 @@ public final class JwsUtils {
         return jws;
     }
     public static String sign(JwsSignatureProvider jwsSig, String content, String ct) {
-        JoseHeaders headers = new JoseHeaders();
+        JwsHeaders headers = new JwsHeaders();
         if (ct != null) {
             headers.setContentType(ct);
         }

@@ -206,11 +206,11 @@ public class WSSCUnitTest extends AbstractBusClientServerTestBase {
         stsClient.setPolicy(createSymmetricBindingPolicy());
         
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.encryption.username", "bob");
+        properties.put("security.encryption.username", "bob");
         TokenCallbackHandler callbackHandler = new TokenCallbackHandler();
-        properties.put("ws-security.callback-handler", callbackHandler);
-        properties.put("ws-security.signature.properties", "alice.properties");
-        properties.put("ws-security.encryption.properties", "bob.properties");
+        properties.put("security.callback-handler", callbackHandler);
+        properties.put("security.signature.properties", "alice.properties");
+        properties.put("security.encryption.properties", "bob.properties");
         stsClient.setProperties(properties);
         
         SecurityToken securityToken = 
@@ -241,11 +241,11 @@ public class WSSCUnitTest extends AbstractBusClientServerTestBase {
         stsClient.setPolicy(createSymmetricBindingPolicy());
         
         Map<String, Object> properties = new HashMap<String, Object>();
-        properties.put("ws-security.encryption.username", "bob");
+        properties.put("security.encryption.username", "bob");
         TokenCallbackHandler callbackHandler = new TokenCallbackHandler();
-        properties.put("ws-security.callback-handler", callbackHandler);
-        properties.put("ws-security.signature.properties", "alice.properties");
-        properties.put("ws-security.encryption.properties", "bob.properties");
+        properties.put("security.callback-handler", callbackHandler);
+        properties.put("security.signature.properties", "alice.properties");
+        properties.put("security.encryption.properties", "bob.properties");
         stsClient.setProperties(properties);
         
         SecurityToken securityToken = 
