@@ -16,23 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.cxf.systest.jaxrs;
 
-package org.apache.cxf.jaxrs.resources;
+import java.io.IOException;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 
-public interface BookInterface {
-    
-    @GET
-    @Path("/path2")
-    @Produces("text/bar2")
-    @Consumes("text/foo2")
-    String getAuthor();
-    
-    @Path("/books/sub/{bookId}")
-    Book getBook(@PathParam("bookId") String id);
+public class BookContinuationFilter implements ContainerResponseFilter {
+
+    @Override
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
+        throws IOException {
+        if (requestContext.getUriInfo().getPath().endsWith("unmappedFromFilter")) {
+            throw new RuntimeException("Async exception from response filter");
+        }
+        
+    }
+
 }
