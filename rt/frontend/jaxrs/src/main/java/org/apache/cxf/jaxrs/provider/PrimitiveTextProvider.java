@@ -24,6 +24,8 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -35,13 +37,14 @@ import org.apache.cxf.jaxrs.model.ParameterType;
 import org.apache.cxf.jaxrs.utils.HttpUtils;
 import org.apache.cxf.jaxrs.utils.InjectionUtils;
 
+@Consumes("text/plain")
+@Produces("text/plain")
 public class PrimitiveTextProvider<T> extends AbstractConfigurableProvider
     implements MessageBodyReader<T>, MessageBodyWriter<T> {
-    private int bufferSize = IOUtils.DEFAULT_BUFFER_SIZE;
     
     private static boolean isSupported(Class<?> type, MediaType mt) { 
-        boolean isSupported = InjectionUtils.isPrimitive(type);
-        return isSupported && (String.class == type || mt.isCompatible(MediaType.TEXT_PLAIN_TYPE));
+        boolean isPrimitive = InjectionUtils.isPrimitiveOnly(type);
+        return isPrimitive && mt.isCompatible(MediaType.TEXT_PLAIN_TYPE);
     }
     
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mt) {
@@ -51,7 +54,7 @@ public class PrimitiveTextProvider<T> extends AbstractConfigurableProvider
     public T readFrom(Class<T> type, Type genType, Annotation[] anns, MediaType mt, 
                       MultivaluedMap<String, String> headers, InputStream is) throws IOException {
         String string = IOUtils.toString(is, HttpUtils.getEncoding(mt, "UTF-8"));
-        if (String.class != type && StringUtils.isEmpty(string)) {
+        if (StringUtils.isEmpty(string)) {
             reportEmptyContentLength();
         }
         if (type == Character.class) {
@@ -80,23 +83,9 @@ public class PrimitiveTextProvider<T> extends AbstractConfigurableProvider
                         MediaType mt, MultivaluedMap<String, Object> headers,
                         OutputStream os) throws IOException {
         String encoding = HttpUtils.getSetEncoding(mt, headers, "UTF-8");
-        //REVISIT try to avoid instantiating the whole byte array
         byte[] bytes = obj.toString().getBytes(encoding);
-        if (bytes.length > bufferSize) {
-            int pos = 0;
-            while (pos < bytes.length) {
-                int bl = bytes.length - pos;
-                if (bl > bufferSize) {
-                    bl = bufferSize;
-                }
-                os.write(bytes, pos, bl);
-                pos += bl;
-            }
-        } else {
-            os.write(bytes);
-        }
+        os.write(bytes);
+        
     }
-    public void setBufferSize(int bufferSize) {
-        this.bufferSize = bufferSize;
-    }
+    
 }

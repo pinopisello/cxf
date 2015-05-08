@@ -84,8 +84,7 @@ import org.junit.runner.RunWith;
 
 @CreateKdcServer(
     transports = {
-        // @CreateTransport(protocol = "TCP", address = "127.0.0.1", port=1024)
-        @CreateTransport(protocol = "UDP", address = "127.0.0.1")
+        @CreateTransport(protocol = "KRB", address = "127.0.0.1")
         },
     primaryRealm = "service.ws.apache.org",
     kdcPrincipal = "krbtgt/service.ws.apache.org@service.ws.apache.org"
@@ -141,13 +140,11 @@ public class JAXRSKerberosBookTest extends AbstractLdapTestUnit {
             String basedir = System.getProperty("basedir");
             if (basedir == null) {
                 basedir = new File(".").getCanonicalPath();
-            } else {
-                basedir += "/..";
             }
 
             // System.setProperty("sun.security.krb5.debug", "true");
             System.setProperty("java.security.auth.login.config", 
-                               basedir + "/kerberos/src/test/resources/kerberos.jaas");
+                               basedir + "/src/test/resources/kerberos.jaas");
             
         }
         

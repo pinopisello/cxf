@@ -24,13 +24,18 @@ import java.security.interfaces.ECPublicKey;
 
 import org.apache.cxf.common.util.Base64UrlUtility;
 import org.apache.cxf.common.util.StringUtils;
-import org.apache.cxf.common.util.crypto.CryptoUtils;
 import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
 import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JwkUtils;
+import org.apache.cxf.rt.security.crypto.CryptoUtils;
 
 
 public class EcdhDirectKeyJweEncryption extends JweEncryption {
+    public EcdhDirectKeyJweEncryption(ECPublicKey peerPublicKey,
+                                      String curve,
+                                      ContentAlgorithm ctAlgo) {
+        this(peerPublicKey, curve, null, null, ctAlgo);
+    }
     public EcdhDirectKeyJweEncryption(ECPublicKey peerPublicKey,
                                       String curve,
                                       String apuString,
@@ -77,7 +82,9 @@ public class EcdhDirectKeyJweEncryption extends JweEncryption {
             this.ctAlgo = ctAlgo;
             this.peerPublicKey = peerPublicKey;
             this.ecurve = curve;
-            this.apuBytes = toBytes(apuString);
+            // JWA spec suggests the "apu" field MAY either be omitted or
+            // represent a random 512-bit value (...) and the "apv" field SHOULD NOT be present."
+            this.apuBytes = toApuBytes(apuString);
             this.apvBytes = toBytes(apvString);
         }
         public byte[] getDerivedKey(JweHeaders headers) {
@@ -92,6 +99,14 @@ public class EcdhDirectKeyJweEncryption extends JweEncryption {
             
             return JweUtils.getECDHKey(privateKey, peerPublicKey, apuBytes, apvBytes, 
                                        jwtAlgo.getJwaName(), jwtAlgo.getKeySizeBits());
+            
+        }
+        private byte[] toApuBytes(String apuString) {
+            if (apuString != null) {
+                return toBytes(apuString);
+            } else {
+                return CryptoUtils.generateSecureRandomBytes(512 / 8);    
+            }
             
         }
         private byte[] toBytes(String str) {

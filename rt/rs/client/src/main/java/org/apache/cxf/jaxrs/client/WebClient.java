@@ -941,7 +941,6 @@ public class WebClient extends AbstractClient {
             ParameterizedType pt = (ParameterizedType)outType;
             if (pt.getRawType() instanceof Class) {
                 respClass = (Class<?>)pt.getRawType();
-                outType = InjectionUtils.getActualType(pt);
             }
         } 
         
@@ -984,15 +983,7 @@ public class WebClient extends AbstractClient {
         
         doRunInterceptorChain(m);
         
-        Future<T> future = cb.createFuture();
-        if (m.getExchange().get(Exception.class) != null) {
-            Throwable ex = m.getExchange().get(Exception.class);
-            if (ex instanceof Fault) {
-                ex = ex.getCause();
-            }
-            cb.handleException(m, ex);
-        }
-        return future;
+        return cb.createFuture();
     }
 
     
