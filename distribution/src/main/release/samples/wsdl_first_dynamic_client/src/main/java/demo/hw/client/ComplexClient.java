@@ -21,6 +21,7 @@ package demo.hw.client;
 
 import java.beans.PropertyDescriptor;
 import java.io.File;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.List;
 
@@ -41,9 +42,7 @@ import org.apache.cxf.service.model.ServiceInfo;
  */
 public final class ComplexClient {
     
-    private static final QName SERVICE_NAME 
-        = new QName("http://Company.com/Application", 
-                     "Company_ESB_Application_Biztalk_AgentDetails_4405_AgentDetails_Prt");
+    private static final QName SERVICE_NAME  = new QName("http://Company.com/Application",  "Company_ESB_Application_Biztalk_AgentDetails_4405_AgentDetails_Prt");
     
     private ComplexClient() {
     }
@@ -69,8 +68,24 @@ public final class ComplexClient {
         
         JaxWsDynamicClientFactory factory = JaxWsDynamicClientFactory.newInstance();
         Client client = factory.createClient(wsdlURL.toExternalForm(), SERVICE_NAME);
-        ClientImpl clientImpl = (ClientImpl) client;
-        Endpoint endpoint = clientImpl.getEndpoint();
+        
+        
+        //############   Modo 1: Costruisco requet objects usando refelction conoscendo gia i nomi classi
+        Object agentWSRequest = Thread.currentThread().getContextClassLoader().loadClass("com.company.application.AgentWSRequest").newInstance();
+        Method m1 = agentWSRequest.getClass().getMethod("setAgentNumber", int.class);
+        m1.invoke(agentWSRequest, 1111);
+        
+        Object agentDetails = Thread.currentThread().getContextClassLoader().loadClass("com.company.application.GetAgentDetails").newInstance();
+        Method m2 = agentDetails.getClass().getMethod("setPart", agentWSRequest.getClass());
+        m2.invoke(agentDetails, agentWSRequest);
+        
+        //Chiamata 1
+        Object[] response = client.invoke("GetAgentDetails", agentDetails);
+        
+        
+        //############   Modo 2: Costruisco requet objects usando CXF model classes
+        //ClientImpl clientImpl = (ClientImpl) client;client.
+        Endpoint endpoint = client.getEndpoint();
         ServiceInfo serviceInfo = endpoint.getService().getServiceInfos().get(0);
         QName bindingName = new QName("http://Company.com/Application", 
             "Company_ESB_Application_Biztalk_AgentDetails_4405_AgentDetails_PrtSoap");

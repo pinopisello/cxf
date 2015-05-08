@@ -23,6 +23,12 @@
             <xs:element name="getCustomersByName" type="tns:getCustomersByName"/>
             <xs:element name="getCustomersByNameResponse" type="tns:getCustomersByNameResponse"/>
             <xs:element name="updateCustomer" type="tns:updateCustomer"/>
+            <xs:element name="updateCustomerResponse" type="tns:updateCustomerResponse"/>
+            <xs:complexType name="updateCustomerResponse">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="name" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
             <xs:complexType name="updateCustomer">
                 <xs:sequence>
                     <xs:element minOccurs="0" name="customer" type="tns:customer"/>
@@ -64,34 +70,36 @@
             </xs:complexType>
         </xs:schema>
     </wsdl:types>
+    
     <wsdl:message name="getCustomersByNameResponse">
-        <wsdl:part name="parameters" element="tns:getCustomersByNameResponse">
-    </wsdl:part>
+        <wsdl:part name="parameters" element="tns:getCustomersByNameResponse"></wsdl:part>
     </wsdl:message>
+    
     <wsdl:message name="getCustomersByName">
-        <wsdl:part name="parameters" element="tns:getCustomersByName">
-    </wsdl:part>
+        <wsdl:part name="parameters" element="tns:getCustomersByName"></wsdl:part>
     </wsdl:message>
+    
     <wsdl:message name="updateCustomer">
-        <wsdl:part name="parameters" element="tns:updateCustomer">
-    </wsdl:part>
+        <wsdl:part name="parameters" element="tns:updateCustomer"> </wsdl:part>
     </wsdl:message>
+    
+    <wsdl:message name="updateCustomerResponse">
+        <wsdl:part name="parameters" element="tns:updateCustomerResponse"></wsdl:part>
+    </wsdl:message>
+    
     <wsdl:message name="NoSuchCustomerException">
         <wsdl:part name="NoSuchCustomerException" element="tns:NoSuchCustomer">
     </wsdl:part>
     </wsdl:message>
     <wsdl:portType name="CustomerService">
         <wsdl:operation name="updateCustomer">
-            <wsdl:input name="updateCustomer" message="tns:updateCustomer">
-    </wsdl:input>
+            <wsdl:input name="updateCustomer" message="tns:updateCustomer"></wsdl:input>
+            <wsdl:output name="updateCustomerResponse" message="tns:updateCustomerResponse"> </wsdl:output>
         </wsdl:operation>
-        <wsdl:operation name="getCustomersByName">
-            <wsdl:input name="getCustomersByName" message="tns:getCustomersByName">
-    </wsdl:input>
-            <wsdl:output name="getCustomersByNameResponse" message="tns:getCustomersByNameResponse">
-    </wsdl:output>
-            <wsdl:fault name="NoSuchCustomerException" message="tns:NoSuchCustomerException">
-    </wsdl:fault>
+     <wsdl:operation name="getCustomersByName">
+            <wsdl:input name="getCustomersByName" message="tns:getCustomersByName"></wsdl:input>
+            <wsdl:output name="getCustomersByNameResponse" message="tns:getCustomersByNameResponse"> </wsdl:output>
+		    <wsdl:fault name="NoSuchCustomerException" message="tns:NoSuchCustomerException"> </wsdl:fault>
         </wsdl:operation>
     </wsdl:portType>
     <wsdl:binding name="CustomerServiceServiceSoapBinding" type="tns:CustomerService">

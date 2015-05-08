@@ -1,0 +1,17 @@
+JAX-WS Dispatch/Provider 
+
+Fornisce una api di basso livello per accedere all xml di req/resp senza avere il marshalling/unmarshalling fatto da JAXB.
+
+wsdl2java [vedi pom.xml] genera artifacts a partire dal wsdl in /src/maim/generated
+
+SOAPService1,SOAPService2,SOAPService3 espongono le stesse operazioni solo su differenti urls.
+
+SOAPService1 => GreeterSoapMessageProvider       Provider<SOAPMessage>  @ServiceMode(value = Service.Mode.MESSAGE)
+
+SOAPService2 => GreeterDOMSourceMessageProvider  Provider<DOMSource>    @ServiceMode(value = Service.Mode.MESSAGE)
+
+SOAPService3 => GreeterDOMSourcePayloadProvider  Provider<DOMSource>    @ServiceMode(value = Service.Mode.PAYLOAD)      
+
+
+
+

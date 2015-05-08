@@ -34,7 +34,8 @@ import org.apache.hello_world_async_soap_http.SOAPService;
 import org.apache.hello_world_async_soap_http.types.GreetMeSometimeResponse;
 
 public final class Client {
-
+static String TOMCAT_URL="http://127.0.0.1:8080/jaxws_async/services/CustomerServicePort?wsdl";
+    
     private static final QName SERVICE_NAME 
         = new QName("http://apache.org/hello_world_async_soap_http", "SOAPService");
 

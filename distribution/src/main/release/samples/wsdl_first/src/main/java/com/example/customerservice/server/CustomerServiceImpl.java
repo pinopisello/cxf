@@ -24,28 +24,51 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.jws.WebMethod;
+import javax.xml.namespace.QName;
 import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 
 import com.example.customerservice.Customer;
 import com.example.customerservice.CustomerService;
 import com.example.customerservice.CustomerType;
 import com.example.customerservice.NoSuchCustomer;
 import com.example.customerservice.NoSuchCustomerException;
+import com.example.customerservice.vari.pippo;
 
+import org.apache.cxf.message.Message;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.WebApplicationContext;
+
+@Component("CustomerServiceImplementor")
+@Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode= ScopedProxyMode.TARGET_CLASS)
 public class CustomerServiceImpl implements CustomerService {
+    
     
     /**
      * The WebServiceContext can be used to retrieve special attributes like the 
      * user principal. Normally it is not needed
      */
-    @Resource
+    @Inject
     WebServiceContext wsContext;
 
+     
+    @Inject
+    pippo pippo;
     
+
+    public CustomerServiceImpl(){
+        System.out.println("CustomerServiceImpl creato!!!");
+    }
+
+    
+
     @WebMethod(exclude=false)
     public List<Customer> getCustomersByName(String name) throws NoSuchCustomerException {
+        if(pippo!=null)pippo.chiamapippo();
         if ("None".equals(name)) {
             NoSuchCustomer noSuchCustomer = new NoSuchCustomer();
             noSuchCustomer.setCustomerName(name);
@@ -70,14 +93,23 @@ public class CustomerServiceImpl implements CustomerService {
         return customers;
     }
 
-    public void updateCustomer(Customer customer) {
-        System.out.println("update request was received");
+    
+    @WebMethod(exclude=false)
+    public String  updateCustomer(Customer customer) {
+        
+        MessageContext ctx = wsContext.getMessageContext();
+        QName operation = (QName) ctx.get(Message.WSDL_OPERATION);
+        System.out.println("The operation name is " + operation);
+        
+        if(pippo!=null)pippo.chiamapippo();
+        //System.out.println("update request was received");
         try {
-            Thread.sleep(10000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             // Nothing to do here
         }
-        System.out.println("Customer was updated");
+        //System.out.println("Customer was updated");
+        return "fatto!";
     }
 
 }

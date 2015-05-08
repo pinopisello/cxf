@@ -28,6 +28,7 @@ import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.ws.Dispatch;
+import javax.xml.ws.WebServiceClient;
 import javax.xml.ws.Service.Mode;
 
 import org.w3c.dom.Element;
@@ -59,10 +60,12 @@ public final class Client {
 
         MessageFactory factory = MessageFactory.newInstance();
         System.out.println(wsdlURL + "\n\n");
-
+        
+//##############  Invoco GreeterSoapMessageProvider       Provider<SOAPMessage>  @ServiceMode(value = Service.Mode.MESSAGE)
         QName serviceName1 = new QName("http://apache.org/hello_world_soap_http", "SOAPService1");
         QName portName1 = new QName("http://apache.org/hello_world_soap_http", "SoapPort1");
 
+        //Ottengo @WebServiceClient per SOAPService1 [http://localhost:9000/SoapContext/SoapPort1"]
         SOAPService1 service1 = new SOAPService1(wsdlURL, serviceName1);
         InputStream is1 =  Client.class.getResourceAsStream("/GreetMeDocLiteralReq1.xml");
         if (is1 == null) {
@@ -79,6 +82,8 @@ public final class Client {
         SOAPMessage soapResp = dispSOAPMsg.invoke(soapReq1);
         System.out.println("Response from server: " + soapResp.getSOAPBody().getTextContent());
 
+        
+      //##############  Invoco GreeterDOMSourceMessageProvider  Provider<DOMSource>    @ServiceMode(value = Service.Mode.MESSAGE)
         QName serviceName2 = new QName("http://apache.org/hello_world_soap_http", "SOAPService2");
         QName portName2 = new QName("http://apache.org/hello_world_soap_http", "SoapPort2");
 
@@ -99,7 +104,7 @@ public final class Client {
         System.out.println("Response from server: "
                            + domRespMessage.getNode().getLastChild().getTextContent());
 
-
+        //##############  Invoco GreeterDOMSourcePayloadProvider  Provider<DOMSource>    @ServiceMode(value = Service.Mode.PAYLOAD) 
         QName serviceName3 = new QName("http://apache.org/hello_world_soap_http", "SOAPService3");
         QName portName3 = new QName("http://apache.org/hello_world_soap_http", "SoapPort3");
 

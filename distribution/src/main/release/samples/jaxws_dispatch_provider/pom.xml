@@ -42,6 +42,7 @@
                         <id>generate-SOAPService1</id>
                         <phase>generate-sources</phase>
                         <configuration>
+                        <sourceRoot>src/main/generated</sourceRoot> 
                             <wsdlOptions>
                                 <wsdlOption>
                                     <wsdl>${wsdl.file}</wsdl>

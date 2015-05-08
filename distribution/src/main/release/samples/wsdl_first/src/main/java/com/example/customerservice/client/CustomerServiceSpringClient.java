@@ -33,6 +33,7 @@ public final class CustomerServiceSpringClient {
             = new ClassPathXmlApplicationContext(new String[] {"classpath:client-applicationContext.xml"});
         CustomerServiceTester client = (CustomerServiceTester)context.getBean("tester");
         
+     
         client.testCustomerService();
         System.exit(0);
     }

@@ -7,20 +7,98 @@ In particolare : bindingFactory.addListener(destination, endpoint);
 
 =============    com.example.customerservice.server.CustomerServiceSpringServer + cxf-rt-transports-http-jetty  ====================
 
+Inizializzazione:
+
 org.apache.cxf.transport.http.HTTPTransportFactory.getDestination(EndpointInfo endpointInfo, Bus bus)
 
 
 HttpDestinationFactory jettyFactory = bus.getExtension(HttpDestinationFactory.class); ritorna org.apache.cxf.transport.http_jetty.JettyDestinationFactory
 Questa e' storata in ServerImpl ed usata in ServerImpl.start().
 
+Processamento request:
+
+cxf-rt-transports-http-jetty  
+
+JettyHTTPHandler.handle(String target, Request baseRequest, HttpServletRequest request,HttpServletResponse response)
+jettyHTTPDestination.doService(servletContext, request, response);
+
+
+cxf-rt-transports-http-jetty  
+
+AbstractHTTPDestination.invoke(final ServletConfig config,   final ServletContext context,   final HttpServletRequest req,  final HttpServletResponse resp)
+ incomingObserver.onMessage(inMessage);
+ 
+ 
+cxf-core
+
+ ChainInitiationObserver.onMessage(Message m)
+InterceptorProvider  dbp = (InterceptorProvider)endpoint.getService().getDataBinding();
+InterceptorChain phaseChain = bus.getExtension(PhaseManager.class).getInPhases()
+phaseChain.doIntercept(message);
+
+InterceptorChain itera tutti gli interceptors: 
+
+Ogni interceptor e' associato ad una fase.Vedi  org.apache.cxf.phase.Phase
+  receive [PolicyInInterceptor, LoggingInInterceptor, AttachmentInInterceptor]
+  pre-stream [CertConstraintsInterceptor]
+  post-stream [StaxInInterceptor]
+  read [WSDLGetInterceptor, ReadHeadersInterceptor, SoapActionInInterceptor, StartBodyInterceptor]
+  pre-protocol [MustUnderstandInterceptor]
+  post-protocol [CheckFaultInterceptor, JAXBAttachmentSchemaValidationHack]
+  unmarshal [DocLiteralInInterceptor, SoapHeaderInterceptor]
+  pre-logical [OneWayProcessorInterceptor]
+  post-logical [WrapperClassInInterceptor]
+  pre-invoke [StaxInEndingInterceptor, SwAInInterceptor, HolderInInterceptor]
+  invoke [ServiceInvokerInterceptor]
+  post-invoke [OutgoingChainInterceptor]
+
+OutgoingChainInterceptor e' un interceptor che al suo interno 
+
+  setup [PolicyOutInterceptor]
+  pre-logical [HolderOutInterceptor, SwAOutInterceptor, WrapperClassOutInterceptor, SoapHeaderOutFilterInterceptor]
+  post-logical [SoapPreProtocolOutInterceptor]
+  prepare-send [MessageSenderInterceptor]
+  pre-stream [LoggingOutInterceptor, AttachmentOutInterceptor, StaxOutInterceptor]
+  write [SoapOutInterceptor]
+  marshal [WrappedOutInterceptor, BareOutInterceptor]
+  write-ending [SoapOutEndingInterceptor]
+  pre-stream-ending [StaxOutEndingInterceptor]
+  prepare-send-ending [MessageSenderEndingInterceptor]
+
+
+
+Fine!
+
+Il payload e' inviato in MessageSenderEndingInterceptor.handleMessage(Message message)
 
 
 ====================   Tomcat  ====================
 
+Inizializzazione:
+
+CXFNonSpringServlet.init()=> CXFNonSpringServlet.loadBus(ServletConfig servletConfig).createSpringContext() =>EndpointImpl.publish()+> JaxWsServerFactoryBean.create()=>
+
+org.apache.cxf.transport.http.HTTPTransportFactory.getDestination(EndpointInfo endpointInfo, Bus bus)
+
+HttpDestinationFactory jettyFactory = bus.getExtension(HttpDestinationFactory.class); ritorna null
+
+Allora :
+ factory = new ServletDestinationFactory();
+ 
+ ServletDestinationFactory e' deinita in cxf-rt-transports-http 
+ 
+Processamento request:
 
 
+cxf-rt-transports-http
 
-
-
+ AbstractHTTPServlet.doPost() =>AbstractHTTPServlet.handleReques() => ServletController.invoke(request, res, true) => 
+ ServletController.invokeDestination(request, res, d) => AbstractHTTPDestination.invoke(final ServletConfig config, ServletContext context,  HttpServletRequest req,   HttpServletResponse resp) =>
+ 
+cxf-core
+ 
+ ChainInitiationObserver.onMessage() =>phaseChain.doIntercept(message);
+ 
+ A questo punto tutti gli interceptors vengono chiamati in sequenza come caso sopra...
 
 

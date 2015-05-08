@@ -25,6 +25,7 @@ import com.example.customerservice.CustomerService;
 import com.example.customerservice.CustomerServiceService;
 
 public class CustomerServiceClient {
+    static String TOMCAT_URL="http://127.0.0.1:8080/wsdl_first/services/CustomerServicePort?wsdl";
     protected CustomerServiceClient() {
     }
     
@@ -42,7 +43,8 @@ public class CustomerServiceClient {
             customerServiceService = new CustomerServiceService(wsdlURL);
         } else {
             // Create the service client with its default wsdlurl
-            customerServiceService = new CustomerServiceService();
+            //customerServiceService = new CustomerServiceService();//per jetty
+            customerServiceService = new CustomerServiceService(new URL(TOMCAT_URL));//per tomcat
         }
 
         CustomerService customerService = customerServiceService.getCustomerServicePort();
