@@ -21,7 +21,7 @@ Un folder "workspace" viene creato nel root folder inseme a cxf.
 
 8)Dalla shell vai in cxf/distribution/src/main/release/samples e lancia 
 
-mvn eclipse:eclipse -Declipse.workspace=path_to_workspace_folder
+mvn eclipse:eclipse -Declipse.workspace=/Users/glocon/Miei/local_git/nike_repo/CXF_forked/workspace
 
 9)In eclipse Import ->existing projects -> ... samples
 
