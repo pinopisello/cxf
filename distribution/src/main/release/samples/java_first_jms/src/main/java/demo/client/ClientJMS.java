@@ -22,6 +22,8 @@ package demo.client;
 import javax.xml.namespace.QName;
 import javax.xml.ws.Service;
 
+import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.jms.spec.JMSSpecConstants;
 
@@ -69,6 +71,8 @@ public final class ClientJMS {
 
     private static HelloWorld createClientCxf() {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+        factory.getInInterceptors().add(new LoggingInInterceptor());
+        factory.getOutInterceptors().add(new LoggingOutInterceptor());
         factory.setTransportId(JMSSpecConstants.SOAP_JMS_SPECIFICATION_TRANSPORTID);
         factory.setAddress(JMS_ENDPOINT_URI);
         HelloWorld client = factory.create(HelloWorld.class);

@@ -1,0 +1,21 @@
+SOAP over JMS usando ActiveMQ
+
+pom.xml espone 3 profiles:
+
+========  server [pubblica il ws definito in HelloWorldImpl ]
+lancia ServerJMS
+
+JaxWsServerFactoryBean e' usato per pubblicare l endpoint
+
+
+========  client
+
+JaxWsProxyFactoryBean e' usato per creare il client
+Il client e' un proxy per inviare il lessagio jms al server.
+
+========  java2ws 
+Genera il wsdl a partire da SEI
+
+
+
+
