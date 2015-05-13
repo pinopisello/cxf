@@ -18,3 +18,5 @@ velocity.log
 bin/
 maven-eclipse.xml
 *.launch
+generated/
+*.MF
