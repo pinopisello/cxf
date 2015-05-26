@@ -208,8 +208,8 @@ public abstract class HTTPConduit
      * This field holds the "default" URI for this particular conduit, which
      * is created on demand.
      */
-    protected URI defaultEndpointURI;
-    protected String defaultEndpointURIString;
+    protected volatile Address defaultAddress;
+    
     protected boolean fromEndpointReferenceType;
     
     protected ProxyFactory proxyFactory;
@@ -674,14 +674,13 @@ public abstract class HTTPConduit
         String result = (String)message.get(Message.ENDPOINT_ADDRESS);
         String pathInfo = (String)message.get(Message.PATH_INFO);
         String queryString = (String)message.get(Message.QUERY_STRING);
+        setAndGetDefaultAddress();
         if (result == null) {
             if (pathInfo == null && queryString == null) {
-                URI uri = getURI();
-                message.put(Message.ENDPOINT_ADDRESS, defaultEndpointURIString);
-                return new Address(uri);
+                message.put(Message.ENDPOINT_ADDRESS, defaultAddress.getString());
+                return defaultAddress;
             }
-            result = getURI().toString();
-            message.put(Message.ENDPOINT_ADDRESS, result);
+            message.put(Message.ENDPOINT_ADDRESS, defaultAddress.getString());
         }
         
         // REVISIT: is this really correct?
@@ -691,9 +690,8 @@ public abstract class HTTPConduit
         if (queryString != null) {
             result = result + "?" + queryString;
         }        
-        return new Address(new URI(result));
+        return result.equals(defaultAddress.getString()) ? defaultAddress : new Address(result);
     }
-
 
     /**
      * Close the conduit
@@ -708,8 +706,8 @@ public abstract class HTTPConduit
      * @return the default target address
      */
     public String getAddress() {
-        if (defaultEndpointURI != null) {
-            return defaultEndpointURIString;
+        if (defaultAddress != null) {
+            return defaultAddress.getString();
         } else if (fromEndpointReferenceType) {
             return getTarget().getAddress().getValue();
         }
@@ -720,31 +718,27 @@ public abstract class HTTPConduit
      * @return the default target URL
      */
     protected URI getURI() throws URISyntaxException {
-        return getURI(true);
+        return setAndGetDefaultAddress().getURI();
     }
 
-    /**
-     * @param createOnDemand create URL on-demand if null
-     * @return the default target URL
-     * @throws URISyntaxException 
-     */
-    protected synchronized URI getURI(boolean createOnDemand)
-        throws URISyntaxException {
-        if (defaultEndpointURI == null && createOnDemand) {
-            if (fromEndpointReferenceType && getTarget().getAddress().getValue() != null) {
-                defaultEndpointURI = new URI(this.getTarget().getAddress().getValue());
-                defaultEndpointURIString = defaultEndpointURI.toString();
-                return defaultEndpointURI;
+    private Address setAndGetDefaultAddress() throws URISyntaxException {
+        if (defaultAddress == null) {
+            synchronized (this) {
+                if (defaultAddress == null) {
+                    if (fromEndpointReferenceType && getTarget().getAddress().getValue() != null) {
+                        defaultAddress = new Address(this.getTarget().getAddress().getValue());
+                    } else {
+                        if (endpointInfo.getAddress() == null) {
+                            throw new URISyntaxException("<null>", 
+                                                         "Invalid address. Endpoint address cannot be null.",
+                                                         0);
+                        }
+                        defaultAddress = new Address(endpointInfo.getAddress());
+                    }
+                }
             }
-            if (endpointInfo.getAddress() == null) {
-                throw new URISyntaxException("<null>", 
-                                             "Invalid address. Endpoint address cannot be null.",
-                                             0);
-            }
-            defaultEndpointURI = new URI(endpointInfo.getAddress());
-            defaultEndpointURIString = defaultEndpointURI.toString();
         }
-        return defaultEndpointURI;
+        return defaultAddress;
     }
 
     /**
@@ -1483,7 +1477,12 @@ public abstract class HTTPConduit
         protected boolean authorizationRetransmit() throws IOException {
             Message m = new MessageImpl();
             updateResponseHeaders(m);
-            HttpAuthHeader authHeader = new HttpAuthHeader(Headers.getSetProtocolHeaders(m).get("WWW-Authenticate"));
+            List<String> authHeaderValues = Headers.getSetProtocolHeaders(m).get("WWW-Authenticate");
+            if (authHeaderValues == null) {
+                LOG.warning("WWW-Authenticate response header is not set");
+                return false;
+            }
+            HttpAuthHeader authHeader = new HttpAuthHeader(authHeaderValues);
             URI currentURI = url;
             String realm = authHeader.getRealm();
             detectAuthorizationLoop(getConduitName(), outMessage, currentURI, realm);

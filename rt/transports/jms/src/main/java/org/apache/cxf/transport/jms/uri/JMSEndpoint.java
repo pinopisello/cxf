@@ -51,6 +51,8 @@ public class JMSEndpoint {
      */
     public static final String JNDI_PARAMETER_NAME_PREFIX = "jndi-";
 
+    public static final String JAXWS_PROPERTY_PREFIX = "jms.";
+
     private Map<String, String> jndiParameters = new HashMap<String, String>();
     private Map<String, String> parameters = new HashMap<String, String>();
     
@@ -119,9 +121,25 @@ public class JMSEndpoint {
             Map<String, Object> query = parsed.parseQuery();
             configureProperties(query);
             
-            // Use the properties like e.g. from JAXWS properties
-            if (ei != null && ei.getBinding() != null && ei.getBinding().getProperties() != null) {
-                configureProperties(ei.getBinding().getProperties());
+            // Use the properties like e.g. from JAXWS properties with "jms." prefix
+            Map<String, Object> jmsProps = new HashMap<String, Object>();
+            if (ei != null) {
+                getJaxWsJmsProps(ei.getProperties(), jmsProps);
+            }
+            if (ei != null && ei.getBinding() != null) {
+                getJaxWsJmsProps(ei.getBinding().getProperties(), jmsProps);
+            }
+            configureProperties(jmsProps);
+        }
+    }
+
+    private void getJaxWsJmsProps(Map<String, Object> jaxwsProps, Map<String, Object> jmsProps) {
+        if (jaxwsProps == null) {
+            return;
+        }
+        for (String key : jaxwsProps.keySet()) {
+            if (key.startsWith(JAXWS_PROPERTY_PREFIX)) {
+                jmsProps.put(key.substring(JAXWS_PROPERTY_PREFIX.length()), jaxwsProps.get(key));
             }
         }
     }
@@ -155,11 +173,12 @@ public class JMSEndpoint {
      * @param params
      */
     private void configureProperties(Map<String, Object> params) {
-        for (String key : params.keySet()) {
-            Object value = params.get(key);
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            Object value = entry.getValue();
             if (value == null || value.equals("")) {
                 continue;
             }
+            String key = entry.getKey();
             if (trySetProperty(key, value)) {
                 continue;
             }
@@ -190,13 +209,13 @@ public class JMSEndpoint {
         }
         requestUri.append(":" + destinationName);
         boolean first = true;
-        for (String key : parameters.keySet()) {
-            String value = parameters.get(key);
+        for (Map.Entry<String, String> entry : parameters.entrySet()) {
+            String value = entry.getValue();
             if (first) {
-                requestUri.append("?" + key + "=" + value);
+                requestUri.append("?" + entry.getKey() + "=" + value);
                 first = false;
             } else {
-                requestUri.append("&" + key + "=" + value);
+                requestUri.append("&" + entry.getKey() + "=" + value);
             }
         }
         return requestUri.toString();

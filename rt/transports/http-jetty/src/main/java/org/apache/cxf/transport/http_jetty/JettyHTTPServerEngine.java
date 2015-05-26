@@ -385,6 +385,7 @@ public class JettyHTTPServerEngine implements ServerEngine {
         if (shouldCheckUrl(handler.getBus())) {
             checkRegistedContext(url);
         }
+        initializeContexts();
         
         SecurityHandler securityHandler = null;
         if (server == null) {
@@ -454,7 +455,6 @@ public class JettyHTTPServerEngine implements ServerEngine {
                     }
                 }
             }
-            contexts = new ContextHandlerCollection();
             /*
              * handlerCollection may be null here if is only one handler to deal with.
              * Which in turn implies that there can't be a 'defaultHander' to deal with.
@@ -532,6 +532,19 @@ public class JettyHTTPServerEngine implements ServerEngine {
         ++servantCount;
     }
     
+    private void initializeContexts() {
+        if (contexts == null) {
+            contexts = new ContextHandlerCollection();
+            if (server != null) {
+                if (server.getHandler() instanceof ContextHandlerCollection) {
+                    contexts = (ContextHandlerCollection) server.getHandler();
+                } else {
+                    server.setHandler(contexts);
+                }
+            }
+        }
+    }
+
     private void addServerMBean() {
         if (mBeanContainer == null) {
             return;
@@ -679,20 +692,19 @@ public class JettyHTTPServerEngine implements ServerEngine {
         
         // Jetty 9 excludes SSLv3 by default. So if we want it then we need to 
         // remove it from the default excluded protocols
-        if ("SSLv3".equals(proto)) {
+        boolean allowSSLv3 = "SSLv3".equals(proto);
+        if (allowSSLv3 || !tlsServerParameters.getIncludeProtocols().isEmpty()) {
             List<String> excludedProtocols = new ArrayList<String>();
             for (String excludedProtocol : scf.getExcludeProtocols()) {
-                if (!("SSLv3".equals(excludedProtocol) || "SSLv2Hello".equals(excludedProtocol))) {
+                if (!(tlsServerParameters.getIncludeProtocols().contains(excludedProtocol)
+                    || (allowSSLv3 && ("SSLv3".equals(excludedProtocol) 
+                        || "SSLv2Hello".equals(excludedProtocol))))) {
                     excludedProtocols.add(excludedProtocol);
                 }
             }
             String[] revisedProtocols = new String[excludedProtocols.size()];
             excludedProtocols.toArray(revisedProtocols);
             scf.setExcludeProtocols(revisedProtocols);
-        } else if (tlsServerParameters.getExcludeProtocols().isEmpty()) {
-            // Exclude SSLv3 + SSLv2Hello by default unless the protocol is given as SSLv3
-            scf.addExcludeProtocols("SSLv3");
-            scf.addExcludeProtocols("SSLv2Hello");
         }
         
         for (String p : tlsServerParameters.getExcludeProtocols()) {
@@ -715,20 +727,22 @@ public class JettyHTTPServerEngine implements ServerEngine {
         final String[] supportedCipherSuites = 
             SSLUtils.getServerSupportedCipherSuites(context);
 
-        String[] excludedCipherSuites = 
-            SSLUtils.getCiphersuites(
-                    tlsServerParameters.getCipherSuites(),
-                    supportedCipherSuites,
-                    tlsServerParameters.getCipherSuitesFilter(),
-                    LOG, true);
-        scf.setExcludeCipherSuites(excludedCipherSuites);
+        if (tlsServerParameters.getCipherSuitesFilter() != null
+            && tlsServerParameters.getCipherSuitesFilter().isSetExclude()) {
+            String[] excludedCipherSuites = 
+                SSLUtils.getFilteredCiphersuites(tlsServerParameters.getCipherSuitesFilter(),
+                                                 supportedCipherSuites,
+                                                 LOG, 
+                                                 true);
+            scf.setExcludeCipherSuites(excludedCipherSuites);
+        }
         
         String[] includedCipherSuites = 
-            SSLUtils.getCiphersuites(
-                    tlsServerParameters.getCipherSuites(),
-                    supportedCipherSuites,
-                    tlsServerParameters.getCipherSuitesFilter(),
-                    LOG, false);
+            SSLUtils.getCiphersuitesToInclude(tlsServerParameters.getCipherSuites(), 
+                                              tlsServerParameters.getCipherSuitesFilter(), 
+                                              context.getServerSocketFactory().getDefaultCipherSuites(),
+                                              supportedCipherSuites, 
+                                              LOG);
         scf.setIncludeCipherSuites(includedCipherSuites);
         
         return context;
