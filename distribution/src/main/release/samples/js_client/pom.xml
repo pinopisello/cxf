@@ -71,7 +71,7 @@
                                     <goal>java</goal>
                                 </goals>
                                 <configuration>
-                                    <mainClass>demo.hw.server.Server</mainClass>
+                                    <mainClass>demo.hw.server.js_client_Server</mainClass>
                                     <arguments>
                                         <argument>${basedir}/wsdl/hello_world.wsdl</argument>
                                     </arguments>

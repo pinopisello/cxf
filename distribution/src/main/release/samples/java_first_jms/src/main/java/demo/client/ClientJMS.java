@@ -30,7 +30,7 @@ import org.apache.cxf.transport.jms.spec.JMSSpecConstants;
 import demo.service.HelloWorld;
 
 public final class ClientJMS {
-    private static final String JMS_ENDPOINT_URI = "jms:queue:test.cxf.jmstransport.queue?timeToLive=1000"
+    private static final String JMS_ENDPOINT_URI = "jms:queue:test.cxf.jmstransport.queue?timeToLive=100000"
                                + "&jndiConnectionFactoryName=ConnectionFactory" + "&jndiInitialContextFactory"
                                + "=org.apache.activemq.jndi.ActiveMQInitialContextFactory"
                                + "&jndiURL=tcp://localhost:61616";

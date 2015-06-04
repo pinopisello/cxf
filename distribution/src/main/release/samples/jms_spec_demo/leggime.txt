@@ -1,0 +1,62 @@
+Esempio di SOAPoverJMS client e server usando la JMS queue definita nel wsdl , senza usare Spring <jaxws:client> o <jaxws:endpoint>
+La configurazione jms e' definita nel wsdl Vedi :
+
+   <soap:binding style="document" transport="http://www.w3.org/2010/soapjms/"/>
+        <soapjms:jndiConnectionFactoryName>ConnectionFactory
+        </soapjms:jndiConnectionFactoryName>
+        <soapjms:jndiInitialContextFactory>
+            org.apache.activemq.jndi.ActiveMQInitialContextFactory
+        </soapjms:jndiInitialContextFactory>
+        <soapjms:jndiURL>tcp://localhost:61616</soapjms:jndiURL>
+        <soapjms:deliveryMode>PERSISTENT</soapjms:deliveryMode>
+        <soapjms:priority>5</soapjms:priority>
+        <soapjms:timeToLive>300000</soapjms:timeToLive>
+        
+        
+Il namespace xmlns:soapjms="http://www.w3.org/2010/soapjms/    e' uno standard :http://www.w3.org/TR/soapjms/
+
+
+Il ws e' definito in /jms_spec_demo/src/main/config/jms_greeter.wsdl
+cxf-codegen-plugin e' usato per generare jaxb e SEI interface in target/generated-sources
+
+In pom.xml 3 profili disponibili:
+
+jms.broker => lancia ActiveMQ
+
+server => esegue polling dei messaggi sulla queue test.cxf.jmstransport.queue
+
+client =>  invia SOAP over JMS messages verso la queue test.cxf.jmstransport.queue
+
+
+====================  Client  =========================
+
+Usando il codice generato da cxf-codegen-plugin, si istanzia il client JMSGreeterService passando la locazione del wsdl:
+
+JMSGreeterService service = new JMSGreeterService(wsdl.toURI().toURL(), SERVICE_NAME);
+
+Avendo il client si estrae il proxy.
+
+JMSGreeterPortType greeter = (JMSGreeterPortType)service.getPort(PORT_NAME, JMSGreeterPortType.class);
+
+greeter e' instanza JaxWsClientProxy  [cxf-rt-frontend-jaxws]
+
+L'invio del messaggio avviene in 
+
+La configurazione JMS e' storata in JMSConduit.jmsconfig[cxf-rt-transports-jms] ed e' creata 
+ in JMSTransportFactory.getConduit(EndpointInfo endpointInfo, EndpointReferenceType target, Bus bus)[cxf-rt-transports-jms]
+L'estrazione da  EndpointInfo e  avviene in JMSEndpointWSDLUtil.retrieveWSDLInformation().
+ 
+ 
+Le info riguardo jms sono lette dal wsdl e storate in  EndpointInfo.binding.extensoors [deliverymode,destinationname,replytoname,priority,receivetimeout,etc]
+Cio' avviene in WSDLServiceBuilder.buildServices()
+Il parsing del wsdl e' in StaxUtils.readDocElements(Document doc, Node parent,XMLStreamReader reader, boolean repairing, boolean recordLoc,  boolean isThreshold) [cxf-rt-wsdl]
+
+I possibili parametri sono definiti in http://cxf.apache.org/docs/soap-over-jms-10-support.html
+
+
+
+
+
+
+
+

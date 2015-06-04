@@ -1,0 +1,117 @@
+Il ws e' definito in jms_spring_config/src/main/config/CustomerService.wsdl
+cxf-codegen-plugin e' usato per generare jaxb e SEI interface in target/generated-sources
+
+jms.broker => lancia ActiveMQ
+
+server => esegue polling dei messaggi sulla queue jms:queue:test.queue
+
+client =>  invia SOAP over JMS messages verso la queue 
+
+
+3 profili in pom.xml
+
+
+===============   jms.broker
+
+Usa il plugin org.apache.activemq.tooling:activemq-maven-plugin registrato nella fase test.
+
+
+
+
+
+
+===============   server
+
+Esegue CustomerServiceSpringServer il quale apre un SpringContext usando server-applicationContext.xml.
+
+L'endpoint e' definito <jaxws:endpoint xmlns:customer .
+
+Tale bean e' assegnato due <jaxws:features>:
+
+1) <bean class="org.apache.cxf.feature.LoggingFeature"/>
+
+
+2)<bean class="org.apache.cxf.transport.jms.ConnectionFactoryFeature">
+      <constructor-arg ref="jmsConnectionFactory"/>
+</bean>
+
+
+
+CustomerServiceImpl implementa CustomerService generato da cxf-codegen-plugin a partire dal wsdl.
+cxf-codegen-plugin e' eseguito nella generate-source phase ad ogni build
+
+RICEZIONE MESSAGGI:
+PollingMessageListenerContainer [cxf-rt-transports-jms]  nel run() metodo crea una session ed un consumer.
+Invoca il consumer.receive(1000) ossia attende un messaggio per 1 sec .
+Se un messaggio e' ricevuto invoca  listenerHandler.onMessage(message);
+listenerHandler e' istanza JMSDestination [cxf-rt-transports-jms]
+listenerHandler ha definito un MessageObserver:istanza ChainInitiationObserver
+ChainInitiationObserver.onMessage() viene invocato.phaseChain
+Una InterceptorChain viene creata e InterceptorChain.doIntercept(message) invocato.
+
+Tutti gli Interceptor definiti in InterceptorChain vengono eseguti :  ServiceInvokerInterceptor e' il listener che invoca l implementazione SEI [CustomerServiceImpl].
+
+Dopo OutgoingChainInterceptor viene invocato.Qui message.getExchange().getOutMessage() e' il messaggio di ritorno.
+Una nuova phasechain viene creata outChain = OutgoingChainInterceptor.getChain(ex, chainCache) ed eseguita:   outChain.doIntercept(out);
+MessageSenderInterceptor ottiene la Conduit del messaggio [getConduit(message)] e poi prepara il messaggio jms di ritorno [BackChannelConduit.prepare()].
+MessageSenderEndingInterceptor e' l interceptor che viene eseguito e lo stream del messaggio avviene in AbstractConduit.close(Message msg)
+
+
+===============   client
+
+Esegue CustomerServiceSpringClient il quale apre un SpringContext usando client-applicationContext.xml.
+
+L'endpoint e' definito <jaxws:client id="customerService"  .
+
+Tale bean e' assegnato due <jaxws:features>:
+
+1) <bean class="org.apache.cxf.feature.LoggingFeature"/>
+
+
+2)<bean class="org.apache.cxf.transport.jms.ConnectionFactoryFeature">
+	<constructor-arg ref="jmsConnectionFactory"/>
+</bean>
+
+INVIO-RICEZIONE MESSAGGI:
+
+MessageSenderEndingInterceptor e' l interceptor che viene eseguito e lo stream del messaggio avviene in AbstractConduit.close(Message msg)
+Da qui :CachedOutputStream.postClose()=>MessageStreamUtil.doClose() => JMSConduit.sendExchange() =>JMSConduit.sendAndReceiveMessage()
+
+Qui il messaggio in uscita vieie assegnata unq "ReplyDestinatiuon"
+JMSConduit ha un field Destination staticReplyDestination.
+Il valore e' settato in JMSConduit.setupReplyDestination():     staticReplyDestination = jmsConfig.getReplyDestination(session);
+
+Un message selector viene creato a partire da tale staticReplyDestination [ex:JMSCorrelationID LIKE '5f4b8e5d39a34621bbb6e4fd6d1ff9dd%']
+Un MessageListenerContainer viene creato con tale selector, un executor associato ad esso e lanciato in attesa del messaggio di risposta.
+
+Il messaggio e' inviato in JMSConduit.sendMessage()
+
+Insomma la queue dove il client ascolta per la risposta e' definita in JMSConfiguration.replyDestinationDest
+Se replyDestinationDest non e' settata,  replyDestination == null  ? session.createTemporaryQueue().[ex temp-queue://ID:gloconm2-64301-1431645313915-1:1:1]
+Come settare JMSConfiguration.replyDestinationDest?Semplice: definire una  JMSConfigFeature in client-applicationContext.xml
+Vedi: http://cxf.apache.org/docs/using-the-jmsconfigfeature.html
+
+	<bean id="jmsConfig" class="org.apache.cxf.transport.jms.JMSConfiguration" p:connectionFactory-ref="jmsConnectionFactory"
+		p:replyDestination="endpoint-in-queue" p:targetDestination="endpoint-in-queue"/>
+	
+I jms inviati avranno un JMS Header: Reply To = queue://endpoint-out-queue e tale queue verra' creata in automatico.
+
+Altri parametri settabili in jmsConfig vedi http://cxf.apache.org/docs/using-the-jmsconfigfeature.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

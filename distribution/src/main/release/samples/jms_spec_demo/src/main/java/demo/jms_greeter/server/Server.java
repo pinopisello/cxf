@@ -26,7 +26,7 @@ public class Server {
     protected Server() throws Exception {
         System.out.println("Starting Server");
         Object implementor = new GreeterJMSImpl();
-        String address = "jms:jndi:dynamicQueues/test.cxf.jmstransport.queue?jndiInitialContextFactory="
+        String address = "jms:queue:jms_spec_demo_input?jndiInitialContextFactory="
             + "org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiConnectionFactoryName="
             + "ConnectionFactory&jndiURL=tcp://localhost:61616";
         Endpoint.publish(address, implementor);

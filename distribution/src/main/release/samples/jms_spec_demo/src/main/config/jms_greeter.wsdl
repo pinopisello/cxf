@@ -81,15 +81,17 @@
     </wsdl:portType>
     <wsdl:binding name="JMSGreeterPortBinding" type="tns:JMSGreeterPortType">
         <soap:binding style="document" transport="http://www.w3.org/2010/soapjms/"/>
-        <soapjms:jndiConnectionFactoryName>ConnectionFactory
-        </soapjms:jndiConnectionFactoryName>
+        <soapjms:jndiConnectionFactoryName>ConnectionFactory </soapjms:jndiConnectionFactoryName>
         <soapjms:jndiInitialContextFactory>
             org.apache.activemq.jndi.ActiveMQInitialContextFactory
         </soapjms:jndiInitialContextFactory>
         <soapjms:jndiURL>tcp://localhost:61616</soapjms:jndiURL>
         <soapjms:deliveryMode>PERSISTENT</soapjms:deliveryMode>
-        <soapjms:priority>5</soapjms:priority>
-        <soapjms:timeToLive>3000</soapjms:timeToLive>
+        <soapjms:priority>1</soapjms:priority>
+        <soapjms:timeToLive>300000</soapjms:timeToLive>
+        <soapjms:replyToName>jms_spec_demo_output</soapjms:replyToName>
+        <soapjms:receiveTimeout>300000</soapjms:receiveTimeout>
+        
         <wsdl:operation name="greetMe">
             <soap:operation soapAction="test" style="document"/>
             <wsdl:input name="greetMeRequest">
@@ -117,7 +119,9 @@
     </wsdl:binding>
     <wsdl:service name="JMSGreeterService">
         <wsdl:port binding="tns:JMSGreeterPortBinding" name="GreeterPort">
-            <soap:address location="jms:jndi:dynamicQueues/test.cxf.jmstransport.queue?jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&amp;jndiConnectionFactoryName=ConnectionFactory&amp;jndiURL=tcp://localhost:61616"/>
+            <soap:address location="jms:queue:jms_spec_demo_input"/>
+            <!--<soap:address location="jms:queue:jms_spec_demo_input?jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&amp;jndiConnectionFactoryName=ConnectionFactory&amp;jndiURL=tcp://localhost:61616"/>  -->
+       
         </wsdl:port>
     </wsdl:service>
 </wsdl:definitions>

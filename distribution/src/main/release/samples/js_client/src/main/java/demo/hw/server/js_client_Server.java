@@ -21,17 +21,17 @@ package demo.hw.server;
 
 import javax.xml.ws.Endpoint;
 
-public class Server {
+public class js_client_Server {
 
-    protected Server() throws Exception {
+    protected js_client_Server() throws Exception {
         System.out.println("Starting Server");
-        JavascriptExampleImpl implementor = new JavascriptExampleImpl();
-        String address = "http://localhost:9000/beverages";
+        Object implementor = new GreeterImpl();
+        String address = "http://localhost:9000/SoapContext/SoapPort";
         Endpoint.publish(address, implementor);
     }
 
     public static void main(String args[]) throws Exception {
-        new Server();
+        new js_client_Server();
         System.out.println("Server ready...");
 
         Thread.sleep(5 * 60 * 1000);

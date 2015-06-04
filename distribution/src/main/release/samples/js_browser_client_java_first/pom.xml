@@ -46,7 +46,7 @@
                                     <goal>java</goal>
                                 </goals>
                                 <configuration>
-                                    <mainClass>demo.hw.server.Server</mainClass>
+                                    <mainClass>demo.hw.server.js_browser_client_java_Server</mainClass>
                                 </configuration>
                             </execution>
                         </executions>

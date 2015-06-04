@@ -1,0 +1,26 @@
+js_client: invocare cxf soap service usando javascript in mozilla interpreter.
+
+Vedi js_browser_client_java per stesso esempio ma usando browser.
+
+=================  profile=server   ===============
+
+Lancia js_client_Server  usando javax.xml.ws.Endpoint.
+
+Nulla di nuovo rispetto a java_first_jaxws   
+
+
+
+=================  profile=client   ===============
+
+Lancia org.mozilla.javascript.tools.shell.Main  passando ${basedir}/src/helloworld.js come input.
+
+helloworld.js sempliecemente lancia client [generato da cxf-codegen-plugin] java org.apache.hello_world_soap_http.SOAPService   in javascript  .
+
+In pratica stesse chiamate fatte da java_first_jaxws Client.java   in javascript.
+
+
+
+
+
+
+
