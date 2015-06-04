@@ -32,6 +32,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 import javax.jms.Topic;
+import javax.transaction.Status;
+import javax.transaction.Transaction;
 
 import org.apache.cxf.common.logging.LogUtils;
 
@@ -104,6 +106,11 @@ public class PollingMessageListenerContainer extends AbstractMessageListenerCont
                 MessageConsumer consumer = null;
                 Session session = null;
                 try {
+                    final Transaction externalTransaction = transactionManager.getTransaction();
+                    if ((externalTransaction != null) && (externalTransaction.getStatus() == Status.STATUS_ACTIVE)) {
+                        LOG.log(Level.SEVERE, "External transactions are not supported in XAPoller");
+                        throw new IllegalStateException("External transactions are not supported in XAPoller");
+                    }
                     transactionManager.begin();
                     /*
                      * Create session inside transaction to give it the 
@@ -117,7 +124,7 @@ public class PollingMessageListenerContainer extends AbstractMessageListenerCont
                             listenerHandler.onMessage(message);
                         }
                         transactionManager.commit();
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         LOG.log(Level.WARNING, "Exception while processing jms message in cxf. Rolling back", e);
                         safeRollBack(session);
                     } finally {

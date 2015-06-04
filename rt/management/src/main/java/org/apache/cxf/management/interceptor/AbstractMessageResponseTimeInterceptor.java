@@ -37,6 +37,7 @@ import org.apache.cxf.message.FaultMode;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.service.Service;
+import org.apache.cxf.service.model.BindingOperationInfo;
 import org.apache.cxf.service.model.OperationInfo;
 
 public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPhaseInterceptor<Message> {
@@ -90,7 +91,7 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
     }
 
     private void increaseCounter(Exchange ex, MessageHandlingTimeRecorder mhtr) {
-        Bus bus = ex.get(Bus.class);
+        Bus bus = ex.getBus();
         if (null == bus) {
             LOG.log(Level.INFO, "CAN_NOT_GET_BUS_FROM_EXCHANGE");
             bus = BusFactory.getThreadDefaultBus();
@@ -110,13 +111,13 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
     }
     
     protected ObjectName getServiceCounterName(Exchange ex) {
-        Bus bus = ex.get(Bus.class);
+        Bus bus = ex.getBus();
         StringBuilder buffer = new StringBuilder();
         if (ex.get("org.apache.cxf.management.service.counter.name") != null) {
             buffer.append((String)ex.get("org.apache.cxf.management.service.counter.name"));
         } else {
-            Service service = ex.get(Service.class);
-            Endpoint endpoint = ex.get(Endpoint.class);
+            Service service = ex.getService();
+            Endpoint endpoint = ex.getEndpoint();
 
             String serviceName = "\"" + escapePatternChars(service.getName().toString()) + "\"";
             String portName = "\"" + endpoint.getEndpointInfo().getName().getLocalPart() + "\"";
@@ -146,7 +147,7 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
     }
   
     protected boolean isServiceCounterEnabled(Exchange ex) {
-        Bus bus = ex.get(Bus.class);
+        Bus bus = ex.getBus();
         CounterRepository counterRepo = bus.getExtension(CounterRepository.class);
         if (counterRepo == null) {
             return false;
@@ -158,7 +159,8 @@ public abstract class AbstractMessageResponseTimeInterceptor extends AbstractPha
     }
     
     protected ObjectName getOperationCounterName(Exchange ex, ObjectName sericeCounterName) {
-        OperationInfo opInfo = ex.get(OperationInfo.class);
+        BindingOperationInfo bop = ex.getBindingOperationInfo();
+        OperationInfo opInfo = bop == null ? null : bop.getOperationInfo();
         String operationName = opInfo == null ? null : "\"" + opInfo.getName().getLocalPart() + "\"";
 
         if (operationName == null) {

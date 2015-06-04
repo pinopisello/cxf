@@ -28,7 +28,11 @@ import org.apache.cxf.endpoint.ConduitSelector;
 import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.endpoint.PreexistingConduitSelector;
 import org.apache.cxf.service.Service;
+import org.apache.cxf.service.model.BindingInfo;
 import org.apache.cxf.service.model.BindingOperationInfo;
+import org.apache.cxf.service.model.InterfaceInfo;
+import org.apache.cxf.service.model.OperationInfo;
+import org.apache.cxf.service.model.ServiceInfo;
 import org.apache.cxf.transport.Conduit;
 import org.apache.cxf.transport.Destination;
 import org.apache.cxf.transport.Session;
@@ -88,7 +92,30 @@ public class ExchangeImpl extends ConcurrentHashMap<String, Object>  implements 
     }
     
     public <T> T get(Class<T> key) {
-        return key.cast(get(key.getName()));
+        T t = key.cast(get(key.getName()));
+        
+        if (t == null) {
+            if (key == Bus.class) {
+                t = key.cast(bus);
+            } else if (key == OperationInfo.class && bindingOp != null) {
+                t = key.cast(bindingOp.getOperationInfo());
+            } else if (key == BindingOperationInfo.class) {
+                t = key.cast(bindingOp);
+            } else if (key == Endpoint.class) {
+                t = key.cast(endpoint);
+            } else if (key == Service.class) {
+                t = key.cast(service);
+            } else if (key == Binding.class) {
+                t = key.cast(binding);
+            } else if (key == BindingInfo.class && binding != null) {
+                t = key.cast(binding.getBindingInfo());
+            } else if (key == InterfaceInfo.class && endpoint != null) {
+                t = key.cast(endpoint.getEndpointInfo().getService().getInterface());
+            } else if (key == ServiceInfo.class && endpoint != null) {
+                t = key.cast(endpoint.getEndpointInfo().getService());
+            }
+        }
+        return t;
     }
 
     public void putAll(Map<? extends String, ?> m) {
@@ -103,10 +130,7 @@ public class ExchangeImpl extends ConcurrentHashMap<String, Object>  implements 
     public <T> void put(Class<T> key, T value) {
         if (value == null) {
             super.remove(key);
-        } else {
-            super.put(key.getName(), value);
-        }
-        if (key == Bus.class) {
+        } else if (key == Bus.class) {
             resetContextCaches();
             bus = (Bus)value;
         } else if (key == Endpoint.class) {
@@ -119,6 +143,8 @@ public class ExchangeImpl extends ConcurrentHashMap<String, Object>  implements 
             bindingOp = (BindingOperationInfo)value;
         } else if (key == Binding.class) {
             binding = (Binding)value;
+        } else {
+            super.put(key.getName(), value);
         }
     }
     
@@ -200,7 +226,7 @@ public class ExchangeImpl extends ConcurrentHashMap<String, Object>  implements 
 
     public void setConduit(Conduit c) {
         put(ConduitSelector.class,
-            new PreexistingConduitSelector(c, get(Endpoint.class)));
+            new PreexistingConduitSelector(c, getEndpoint()));
     }
 
     public void setOutMessage(Message m) {
