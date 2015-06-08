@@ -1,0 +1,16 @@
+Come js_client, ma con codice javascript che invoca SOAP service che gira sul browser.
+
+ WSDL =>  http://localhost:9000/beverages?wsdl
+
+Testare servizio => http://localhost:9000/Beverages.html
+
+Beverages.html include beverages?js  il quale e' esattamente  cxf-utils.js [cxf-rt-javascript] ed e' 
+processato da JavascriptGetInterceptor.java
+
+
+
+
+
+
+
+

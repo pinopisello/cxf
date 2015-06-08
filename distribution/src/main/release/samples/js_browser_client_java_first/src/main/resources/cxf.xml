@@ -17,7 +17,15 @@
         specific language governing permissions and limitations
         under the License.
 -->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:cxf="http://cxf.apache.org/core" xmlns:httpj="http://cxf.apache.org/transports/http-jetty/configuration" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd http://cxf.apache.org/transports/http-jetty/configuration http://cxf.apache.org/schemas/configuration/http-jetty.xsd ">
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:jaxws="http://cxf.apache.org/jaxws" 
+	xmlns:cxf="http://cxf.apache.org/core" 
+	xmlns:httpj="http://cxf.apache.org/transports/http-jetty/configuration" 
+	xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd 
+	                     http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd
+	                     http://cxf.apache.org/jaxws  http://cxf.apache.org/schemas/jaxws.xsd
+	                     http://cxf.apache.org/transports/http-jetty/configuration http://cxf.apache.org/schemas/configuration/http-jetty.xsd">
     <httpj:engine-factory bus="cxf">
         <!-- The server runs on port 9000 -->
         <httpj:engine port="9000">
@@ -28,7 +36,7 @@
                         <bean class="org.eclipse.jetty.server.handler.ResourceHandler">
                             <property name="baseResource">
                                 <bean class="org.eclipse.jetty.util.resource.FileResource">
-                                    <constructor-arg value="file:src/main/resources/staticContent"/>
+                                    <constructor-arg value="file:/Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/js_browser_client_java_first/src/main/resources/staticContent"/>
                                 </bean>
                             </property>
                         </bean>
