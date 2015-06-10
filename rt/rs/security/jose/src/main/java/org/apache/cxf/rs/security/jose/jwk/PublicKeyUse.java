@@ -16,25 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.systest.jaxrs;
+package org.apache.cxf.rs.security.jose.jwk;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.ExceptionMapper;
 
-public class RuntimeExceptionMapper implements ExceptionMapper<WebApplicationException> {
-
-    @Context 
-    private UriInfo ui;
+public enum PublicKeyUse {
+    SIGN(JsonWebKey.PUBLIC_KEY_USE_SIGN),
+    ENCRYPT(JsonWebKey.PUBLIC_KEY_USE_ENCRYPT);
     
-    public Response toResponse(WebApplicationException exception) {
-        String path = ui.getPath();
-        if (path.endsWith("nonexistent")) {
-            return Response.status(405).type("text/plain").entity("Nonexistent method").build();
-        }
-        return null;
+    private final String use;
+    private PublicKeyUse(String use) {
+        this.use = use;
     }
-
+    public static PublicKeyUse getPublicKeyUse(String use) {
+        if (use == null) {
+            return null;
+        }
+        if (JsonWebKey.PUBLIC_KEY_USE_SIGN.equals(use)) {
+            return SIGN; 
+        } else if (JsonWebKey.PUBLIC_KEY_USE_ENCRYPT.equals(use)) {
+            return ENCRYPT; 
+        } else {
+            return valueOf(use);
+        }
+    }
+    public String toString() {
+        return use;
+    }
+    
 }

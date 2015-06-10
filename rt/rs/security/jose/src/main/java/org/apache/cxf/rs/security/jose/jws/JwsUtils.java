@@ -47,6 +47,8 @@ import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JwkUtils;
+import org.apache.cxf.rs.security.jose.jwk.KeyOperation;
+import org.apache.cxf.rs.security.jose.jwk.KeyType;
 
 public final class JwsUtils {
     private static final Logger LOG = LogUtils.getL7dLogger(JwsUtils.class);
@@ -54,7 +56,8 @@ public final class JwsUtils {
     private static final String RSSEC_SIGNATURE_OUT_PROPS = "rs.security.signature.out.properties";
     private static final String RSSEC_SIGNATURE_IN_PROPS = "rs.security.signature.in.properties";
     private static final String RSSEC_SIGNATURE_PROPS = "rs.security.signature.properties";
-    private static final String JSON_WEB_SIGNATURE_REPORT_KEY_PROP = "rs.security.jws.report.public.key";
+    private static final String RSSEC_REPORT_KEY_PROP = "rs.security.jws.report.public.key";
+    private static final String RSSEC_REPORT_KEY_ID_PROP = "rs.security.jws.report.public.key.id";
     private JwsUtils() {
         
     }
@@ -86,15 +89,14 @@ public final class JwsUtils {
     public static JwsSignatureProvider getSignatureProvider(JsonWebKey jwk, String defaultAlgorithm) {
         String signatureAlgo = jwk.getAlgorithm() == null ? defaultAlgorithm : jwk.getAlgorithm();
         JwsSignatureProvider theSigProvider = null;
-        if (JsonWebKey.KEY_TYPE_RSA.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.RSA == keyType) {
             theSigProvider = getPrivateKeySignatureProvider(JwkUtils.toRSAPrivateKey(jwk),
                                                             signatureAlgo);
-            
-            
-        } else if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) { 
+        } else if (KeyType.OCTET == keyType) { 
             byte[] key = JoseUtils.decode((String)jwk.getProperty(JsonWebKey.OCTET_KEY_VALUE));
             theSigProvider = getHmacSignatureProvider(key, signatureAlgo);
-        } else if (JsonWebKey.KEY_TYPE_ELLIPTIC.equals(jwk.getKeyType())) {
+        } else if (KeyType.EC == jwk.getKeyType()) {
             theSigProvider = getPrivateKeySignatureProvider(JwkUtils.toECPrivateKey(jwk),
                                                             signatureAlgo);
         }
@@ -129,12 +131,13 @@ public final class JwsUtils {
     public static JwsSignatureVerifier getSignatureVerifier(JsonWebKey jwk, String defaultAlgorithm) {
         String signatureAlgo = jwk.getAlgorithm() == null ? defaultAlgorithm : jwk.getAlgorithm();
         JwsSignatureVerifier theVerifier = null;
-        if (JsonWebKey.KEY_TYPE_RSA.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.RSA == keyType) {
             theVerifier = getPublicKeySignatureVerifier(JwkUtils.toRSAPublicKey(jwk, true), signatureAlgo);
-        } else if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) { 
+        } else if (KeyType.OCTET == keyType) { 
             byte[] key = JoseUtils.decode((String)jwk.getProperty(JsonWebKey.OCTET_KEY_VALUE));
             theVerifier = getHmacSignatureVerifier(key, signatureAlgo);
-        } else if (JsonWebKey.KEY_TYPE_ELLIPTIC.equals(jwk.getKeyType())) {
+        } else if (KeyType.EC == keyType) {
             theVerifier = getPublicKeySignatureVerifier(JwkUtils.toECPublicKey(jwk), signatureAlgo);
         }
         return theVerifier;
@@ -211,7 +214,7 @@ public final class JwsUtils {
         }
         List<JwsSignatureProvider> theSigProviders = null; 
         if (JwkUtils.JWK_KEY_STORE_TYPE.equals(props.get(KeyManagementUtils.RSSEC_KEY_STORE_TYPE))) {
-            List<JsonWebKey> jwks = JwkUtils.loadJsonWebKeys(m, props, JsonWebKey.KEY_OPER_SIGN);
+            List<JsonWebKey> jwks = JwkUtils.loadJsonWebKeys(m, props, KeyOperation.SIGN);
             if (jwks != null) {
                 theSigProviders = new ArrayList<JwsSignatureProvider>(jwks.size());
                 for (JsonWebKey jwk : jwks) {
@@ -234,7 +237,7 @@ public final class JwsUtils {
         }
         List<JwsSignatureVerifier> theVerifiers = null; 
         if (JwkUtils.JWK_KEY_STORE_TYPE.equals(props.get(KeyManagementUtils.RSSEC_KEY_STORE_TYPE))) {
-            List<JsonWebKey> jwks = JwkUtils.loadJsonWebKeys(m, props, JsonWebKey.KEY_OPER_VERIFY);
+            List<JsonWebKey> jwks = JwkUtils.loadJsonWebKeys(m, props, KeyOperation.VERIFY);
             if (jwks != null) {
                 theVerifiers = new ArrayList<JwsSignatureVerifier>(jwks.size());
                 for (JsonWebKey jwk : jwks) {
@@ -256,23 +259,27 @@ public final class JwsUtils {
                                                               Properties props,
                                                               JoseHeaders headers,
                                                               boolean ignoreNullProvider) {
-        JwsSignatureProvider theSigProvider = null; 
-        boolean reportPublicKey = 
+        JwsSignatureProvider theSigProvider = null;
+        
+        boolean reportPublicKey = headers != null && MessageUtils.isTrue(
+                MessageUtils.getContextualProperty(m, RSSEC_REPORT_KEY_PROP, 
+                                                   KeyManagementUtils.RSSEC_REPORT_KEY_PROP));
+        boolean reportPublicKeyId = 
             headers != null && MessageUtils.isTrue(
-                MessageUtils.getContextualProperty(m, JSON_WEB_SIGNATURE_REPORT_KEY_PROP,
-                                                   KeyManagementUtils.RSSEC_REPORT_KEY_PROP)); 
+                MessageUtils.getContextualProperty(m, RSSEC_REPORT_KEY_ID_PROP,
+                                                   KeyManagementUtils.RSSEC_REPORT_KEY_ID_PROP));
         if (JwkUtils.JWK_KEY_STORE_TYPE.equals(props.get(KeyManagementUtils.RSSEC_KEY_STORE_TYPE))) {
-            JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, JsonWebKey.KEY_OPER_SIGN);
+            JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, KeyOperation.SIGN);
             if (jwk != null) {
                 String signatureAlgo = getSignatureAlgo(m, props, jwk.getAlgorithm(), getDefaultKeyAlgo(jwk));
                 theSigProvider = JwsUtils.getSignatureProvider(jwk, signatureAlgo);
-                if (reportPublicKey) {
-                    JwkUtils.setPublicKeyInfo(jwk, headers, signatureAlgo);
+                if (reportPublicKey || reportPublicKeyId) {
+                    JwkUtils.setPublicKeyInfo(jwk, headers, signatureAlgo, reportPublicKey, reportPublicKeyId);
                 }
             }
         } else {
             String signatureAlgo = getSignatureAlgo(m, props, null, null);
-            PrivateKey pk = KeyManagementUtils.loadPrivateKey(m, props, JsonWebKey.KEY_OPER_SIGN);
+            PrivateKey pk = KeyManagementUtils.loadPrivateKey(m, props, KeyOperation.SIGN);
             theSigProvider = getPrivateKeySignatureProvider(pk, signatureAlgo);
             if (reportPublicKey) {
                 headers.setX509Chain(KeyManagementUtils.loadAndEncodeX509CertificateOrChain(m, props));
@@ -289,11 +296,16 @@ public final class JwsUtils {
                                                               JoseHeaders inHeaders, 
                                                               boolean ignoreNullVerifier) {
         JwsSignatureVerifier theVerifier = null;
+        String inHeaderKid = null;
         if (inHeaders != null) {
-            //TODO: validate incoming public keys or certificates  
+            inHeaderKid = inHeaders.getKeyId();
             //TODO: optionally validate inHeaders.getAlgorithm against a property in props
             if (inHeaders.getHeader(JoseConstants.HEADER_JSON_WEB_KEY) != null) {
                 JsonWebKey publicJwk = inHeaders.getJsonWebKey();
+                if (inHeaderKid != null && !inHeaderKid.equals(publicJwk.getKeyId())
+                    || !MessageUtils.getContextualBoolean(m, KeyManagementUtils.RSSEC_ACCEPT_PUBLIC_KEY_PROP, true)) {
+                    throw new JwsException(JwsException.Error.INVALID_KEY);
+                }
                 return getSignatureVerifier(publicJwk, inHeaders.getAlgorithm());
             } else if (inHeaders.getHeader(JoseConstants.HEADER_X509_CHAIN) != null) {
                 List<X509Certificate> chain = KeyManagementUtils.toX509CertificateChain(inHeaders.getX509Chain());
@@ -303,10 +315,10 @@ public final class JwsUtils {
         }
         
         if (JwkUtils.JWK_KEY_STORE_TYPE.equals(props.get(KeyManagementUtils.RSSEC_KEY_STORE_TYPE))) {
-            JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, JsonWebKey.KEY_OPER_VERIFY);
+            JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, KeyOperation.VERIFY, inHeaderKid);
             if (jwk != null) {
                 String signatureAlgo = getSignatureAlgo(m, props, jwk.getAlgorithm(), getDefaultKeyAlgo(jwk));
-                theVerifier = JwsUtils.getSignatureVerifier(jwk, signatureAlgo);
+                theVerifier = getSignatureVerifier(jwk, signatureAlgo);
             }
             
         } else {
@@ -338,9 +350,10 @@ public final class JwsUtils {
         return algo;
     }
     private static String getDefaultKeyAlgo(JsonWebKey jwk) {
-        if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.OCTET == keyType) {
             return AlgorithmUtils.HMAC_SHA_256_ALGO;
-        } else if (JsonWebKey.KEY_TYPE_ELLIPTIC.equals(jwk.getKeyType())) {
+        } else if (KeyType.EC == keyType) {
             return AlgorithmUtils.ES_SHA_256_ALGO;
         } else {
             return AlgorithmUtils.RS_SHA_256_ALGO;

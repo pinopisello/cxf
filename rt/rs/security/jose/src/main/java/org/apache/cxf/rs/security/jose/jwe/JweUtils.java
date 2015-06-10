@@ -48,6 +48,8 @@ import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
 import org.apache.cxf.rs.security.jose.jwa.KeyAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JwkUtils;
+import org.apache.cxf.rs.security.jose.jwk.KeyOperation;
+import org.apache.cxf.rs.security.jose.jwk.KeyType;
 import org.apache.cxf.rt.security.crypto.MessageDigestUtils;
 
 public final class JweUtils {
@@ -59,6 +61,7 @@ public final class JweUtils {
     private static final String RSSEC_ENCRYPTION_IN_PROPS = "rs.security.encryption.in.properties";
     private static final String RSSEC_ENCRYPTION_PROPS = "rs.security.encryption.properties";
     private static final String RSSEC_ENCRYPTION_REPORT_KEY_PROP = "rs.security.jwe.report.public.key";
+    private static final String RSSEC_ENCRYPTION_REPORT_KEY_ID_PROP = "rs.security.jwe.report.public.key.id";
     
     private JweUtils() {
         
@@ -126,10 +129,11 @@ public final class JweUtils {
     public static KeyEncryptionProvider getKeyEncryptionProvider(JsonWebKey jwk, String defaultAlgorithm) {
         String keyEncryptionAlgo = jwk.getAlgorithm() == null ? defaultAlgorithm : jwk.getAlgorithm();
         KeyEncryptionProvider keyEncryptionProvider = null;
-        if (JsonWebKey.KEY_TYPE_RSA.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.RSA == keyType) {
             keyEncryptionProvider = getRSAKeyEncryptionProvider(JwkUtils.toRSAPublicKey(jwk, true), 
                                                                  keyEncryptionAlgo);
-        } else if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) {
+        } else if (KeyType.OCTET == keyType) {
             keyEncryptionProvider = getSecretKeyEncryptionAlgorithm(JwkUtils.toSecretKey(jwk), 
                                                                     keyEncryptionAlgo);
         } else {
@@ -157,10 +161,11 @@ public final class JweUtils {
     public static KeyDecryptionAlgorithm getKeyDecryptionAlgorithm(JsonWebKey jwk, String defaultAlgorithm) {
         String keyEncryptionAlgo = jwk.getAlgorithm() == null ? defaultAlgorithm : jwk.getAlgorithm();
         KeyDecryptionAlgorithm keyDecryptionProvider = null;
-        if (JsonWebKey.KEY_TYPE_RSA.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.RSA == keyType) {
             keyDecryptionProvider = getPrivateKeyDecryptionAlgorithm(JwkUtils.toRSAPrivateKey(jwk), 
                                                                  keyEncryptionAlgo);
-        } else if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) {
+        } else if (KeyType.OCTET == keyType) {
             keyDecryptionProvider = getSecretKeyDecryptionAlgorithm(JwkUtils.toSecretKey(jwk),
                                             keyEncryptionAlgo);
         } else {
@@ -190,7 +195,8 @@ public final class JweUtils {
     public static ContentEncryptionProvider getContentEncryptionAlgorithm(JsonWebKey jwk, String defaultAlgorithm) {
         String ctEncryptionAlgo = jwk.getAlgorithm() == null ? defaultAlgorithm : jwk.getAlgorithm();
         ContentEncryptionProvider contentEncryptionProvider = null;
-        if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.OCTET == keyType) {
             return getContentEncryptionAlgorithm(JwkUtils.toSecretKey(jwk),
                                                  ctEncryptionAlgo);
         }
@@ -219,7 +225,8 @@ public final class JweUtils {
     }
     public static SecretKey getContentDecryptionSecretKey(JsonWebKey jwk, String defaultAlgorithm) {
         String ctEncryptionAlgo = jwk.getAlgorithm() == null ? defaultAlgorithm : jwk.getAlgorithm();
-        if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType()) && AlgorithmUtils.isAesGcm(ctEncryptionAlgo)) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.RSA == keyType && AlgorithmUtils.isAesGcm(ctEncryptionAlgo)) {
             return JwkUtils.toSecretKey(jwk);
         }
         return null;
@@ -265,13 +272,17 @@ public final class JweUtils {
             headers != null && MessageUtils.isTrue(
                 MessageUtils.getContextualProperty(m, RSSEC_ENCRYPTION_REPORT_KEY_PROP, 
                                                    KeyManagementUtils.RSSEC_REPORT_KEY_PROP));
+        boolean reportPublicKeyId = 
+            headers != null && MessageUtils.isTrue(
+                MessageUtils.getContextualProperty(m, RSSEC_ENCRYPTION_REPORT_KEY_ID_PROP, 
+                                                   KeyManagementUtils.RSSEC_REPORT_KEY_ID_PROP));
         
         KeyEncryptionProvider keyEncryptionProvider = null;
         String keyEncryptionAlgo = getKeyEncryptionAlgo(m, props, null, null);
         String contentEncryptionAlgo = getContentEncryptionAlgo(m, props, null);
         ContentEncryptionProvider ctEncryptionProvider = null;
         if (JwkUtils.JWK_KEY_STORE_TYPE.equals(props.get(KeyManagementUtils.RSSEC_KEY_STORE_TYPE))) {
-            JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, JsonWebKey.KEY_OPER_ENCRYPT);
+            JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, KeyOperation.ENCRYPT);
             keyEncryptionAlgo = getKeyEncryptionAlgo(m, props, jwk.getAlgorithm(), 
                                                      getDefaultKeyAlgo(jwk));
             if ("direct".equals(keyEncryptionAlgo)) {
@@ -279,8 +290,9 @@ public final class JweUtils {
                 ctEncryptionProvider = getContentEncryptionAlgorithm(jwk, contentEncryptionAlgo);
             } else {
                 keyEncryptionProvider = getKeyEncryptionProvider(jwk, keyEncryptionAlgo);
-                if (reportPublicKey) {
-                    JwkUtils.setPublicKeyInfo(jwk, headers, keyEncryptionAlgo);
+                if (reportPublicKey || reportPublicKeyId) {
+                    JwkUtils.setPublicKeyInfo(jwk, headers, keyEncryptionAlgo, 
+                                              reportPublicKey, reportPublicKeyId);
                 }
             }
         } else {
@@ -319,13 +331,13 @@ public final class JweUtils {
             List<X509Certificate> chain = KeyManagementUtils.toX509CertificateChain(inHeaders.getX509Chain());
             KeyManagementUtils.validateCertificateChain(props, chain);
             PrivateKey privateKey = 
-                KeyManagementUtils.loadPrivateKey(m, props, chain, JsonWebKey.KEY_OPER_DECRYPT);
+                KeyManagementUtils.loadPrivateKey(m, props, chain, KeyOperation.DECRYPT);
             contentEncryptionAlgo = inHeaders.getContentEncryptionAlgorithm();
             keyDecryptionProvider = getPrivateKeyDecryptionAlgorithm(privateKey, 
                                                                  inHeaders.getKeyEncryptionAlgorithm());
         } else {
             if (JwkUtils.JWK_KEY_STORE_TYPE.equals(props.get(KeyManagementUtils.RSSEC_KEY_STORE_TYPE))) {
-                JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, JsonWebKey.KEY_OPER_DECRYPT);
+                JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, KeyOperation.DECRYPT);
                 keyEncryptionAlgo = getKeyEncryptionAlgo(m, props, jwk.getAlgorithm(),
                                                          getDefaultKeyAlgo(jwk));
                 if ("direct".equals(keyEncryptionAlgo)) {
@@ -336,7 +348,7 @@ public final class JweUtils {
                 }
             } else {
                 keyDecryptionProvider = getPrivateKeyDecryptionAlgorithm(
-                    KeyManagementUtils.loadPrivateKey(m, props, JsonWebKey.KEY_OPER_DECRYPT), keyEncryptionAlgo);
+                    KeyManagementUtils.loadPrivateKey(m, props, KeyOperation.DECRYPT), keyEncryptionAlgo);
             }
         }
         return createJweDecryptionProvider(keyDecryptionProvider, ctDecryptionKey, contentEncryptionAlgo);
@@ -567,7 +579,8 @@ public final class JweUtils {
         return algo;
     }
     private static String getDefaultKeyAlgo(JsonWebKey jwk) {
-        if (JsonWebKey.KEY_TYPE_OCTET.equals(jwk.getKeyType())) {
+        KeyType keyType = jwk.getKeyType();
+        if (KeyType.OCTET == keyType) {
             return AlgorithmUtils.A128GCMKW_ALGO;
         } else {
             return AlgorithmUtils.RSA_OAEP_ALGO;

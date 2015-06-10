@@ -16,25 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.systest.jaxrs;
+package org.apache.cxf.rs.security.jose.jwk;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.ExceptionMapper;
 
-public class RuntimeExceptionMapper implements ExceptionMapper<WebApplicationException> {
-
-    @Context 
-    private UriInfo ui;
+public enum KeyType {
+    RSA(JsonWebKey.KEY_TYPE_RSA),
+    EC(JsonWebKey.KEY_TYPE_ELLIPTIC),
+    OCTET(JsonWebKey.KEY_TYPE_OCTET);
     
-    public Response toResponse(WebApplicationException exception) {
-        String path = ui.getPath();
-        if (path.endsWith("nonexistent")) {
-            return Response.status(405).type("text/plain").entity("Nonexistent method").build();
-        }
-        return null;
+    private final String type;
+    private KeyType(String type) {
+        this.type = type;
     }
-
+    public static KeyType getKeyType(String type) {
+        if (type == null) {
+            return null;
+        } else if (JsonWebKey.KEY_TYPE_OCTET.equals(type)) {
+            return OCTET;    
+        } else {
+            return valueOf(type);
+        }
+    }
+    public String toString() {
+        return type;
+    }
+    
 }

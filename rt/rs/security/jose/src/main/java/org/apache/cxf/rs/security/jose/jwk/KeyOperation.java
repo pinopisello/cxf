@@ -16,25 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.systest.jaxrs;
+package org.apache.cxf.rs.security.jose.jwk;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.ExceptionMapper;
 
-public class RuntimeExceptionMapper implements ExceptionMapper<WebApplicationException> {
-
-    @Context 
-    private UriInfo ui;
+public enum KeyOperation {
+    SIGN(JsonWebKey.KEY_OPER_SIGN),
+    VERIFY(JsonWebKey.KEY_OPER_VERIFY),
+    ENCRYPT(JsonWebKey.KEY_OPER_ENCRYPT),
+    DECRYPT(JsonWebKey.KEY_OPER_DECRYPT),
+    WRAPKEY(JsonWebKey.KEY_OPER_WRAP_KEY),
+    UNWRAPKEY(JsonWebKey.KEY_OPER_UNWRAP_KEY),
+    DERIVEKEY(JsonWebKey.KEY_OPER_DERIVE_KEY),
+    DERIVEBITS(JsonWebKey.KEY_OPER_DERIVE_BITS);
     
-    public Response toResponse(WebApplicationException exception) {
-        String path = ui.getPath();
-        if (path.endsWith("nonexistent")) {
-            return Response.status(405).type("text/plain").entity("Nonexistent method").build();
-        }
-        return null;
+    private final String oper;
+    private KeyOperation(String oper) {
+        this.oper = oper;
     }
-
+    public static KeyOperation getKeyOperation(String oper) {
+        if (oper == null) {
+            return null;
+        }
+        return valueOf(oper.toUpperCase());
+    }
+    public String toString() {
+        return oper;
+    }
+    
 }
