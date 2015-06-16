@@ -34,7 +34,7 @@ public class js_browser_client_java_Server {
         new js_browser_client_java_Server();
         System.out.println("Server ready...");
 
-        Thread.sleep(5 * 60 * 1000);
+        Thread.sleep(5 * 60 * 100000);
         System.out.println("Server exiting");
         System.exit(0);
     }

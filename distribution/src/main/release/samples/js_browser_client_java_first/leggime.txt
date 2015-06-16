@@ -7,6 +7,78 @@ Testare servizio => http://localhost:9000/Beverages.html
 Beverages.html include beverages?js  il quale e' esattamente  cxf-utils.js [cxf-rt-javascript] ed e' 
 processato da JavascriptGetInterceptor.java
 
+Il js che permette al browser di invocare il ws e' generato in JavascriptGetInterceptor.
+Attenzione ad un bug:la url che ritorna il js deve avere ?js&nojsutils altrimenti si va in eccezzione perche si tenta di scrivere due volte sull outputstream.
+Ho modificato Beverages.html per far funzionare l impiccio. [sti cazzoni!!!]
+
+
+
+=====================    Server Side inizializzione  ===================
+
+
+In cxf.xml c'e' la configurazione di httpj:engine e httpj:engine-factory  [http://cxf.apache.org/docs/jetty-configuration.html]
+
+AbstractXmlApplicationContext.getConfigResources() trova i files di configurazione Spring: META-INF/cxf/cxf.xml e cxf.xml
+
+
+La lettura di tale file e la configurazione Spring avviene in XmlBeanDefinitionReader.loadBeanDefinitions(EncodedResource encodedResource).
+Per ogni elemento viene cercato il parser per il namespace associato.
+
+I parsers per <httpj:engine-factory>  e <httpj:engine >  sono JettyHTTPServerEngineFactoryBeanDefinitionParser e JettyHTTPServerEngineBeanDefinitionParser [spring.handlers in cxf-rt-transports-http-jetty]
+
+Una volta che il parsing e' fatto, i beans Singleton vengono istanziati in DefaultListableBeanFactory.preInstantiateSingletons() 
+
+Il server http e' lanciato in EndpointImpl.doPublish(String addr) / JettyHTTPDestination.activate()
+
+JettyHTTPDestination.engine mappa  <httpj:engine > ed ha configurati i due handlers:
+
+ <bean class="org.eclipse.jetty.server.handler.ContextHandler">
+ <bean class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+ 
+ 
+
+=====================    Server Side processamento requests  ===================
+
+org.eclipse.jetty.server.Server.handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)  riceve richieste.
+
+Il suo _handler.handle() viene invocato e di qui  HandlerCollection.handle()
+Qui  _handlers[i] vengono iterati ed ognuno esegue handle(target,baseRequest, request, response);
+
+
+1)org.eclipse.jetty.server.handler.ContextHandler: come configuato in cfx.xml  ContextHandler definisce un handler = org.eclipse.jetty.server.handler.ResourceHandler.
+Per ogni request ResourceHandler.getResource(String path)  e' invocato e il file baseResource+path viene cercato nel filesystem e se esistente  streammato nella response.
+La request viene flaggata come "handled" e gli altri due handlers verificano prima di invocare il rispettivo handle().
+http://localhost:9000/Beverages.html e'intercettata da questo handler.
+
+
+2)org.eclipse.jetty.server.handler.ContextHandlerCollection  
+Questa classe definisce una map _pathBranches .Un entry e' istanza ContextHandler con _handler = JettyHTTPHandler con urlName = /beverages e jettyHTTPDestination con incomingObserver = ChainInitiationObserver.
+Questo ha endpoint che punta a JavascriptExampleImplServiceSoapBinding.
+Una phaseChanin e' creata ed invocata ed eventualmente JavascriptGetInterceptor.
+
+
+
+
+http://localhost:9000/beverages?js&nojsutils
+
+
+3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

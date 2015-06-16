@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+ 
 package org.apache.cxf.binding.soap.interceptor;
 
 import java.util.logging.Logger;
@@ -38,7 +38,7 @@ public class StartBodyInterceptor extends AbstractSoapInterceptor {
     private static final Logger LOG = LogUtils.getL7dLogger(StartBodyInterceptor.class);
     
     public StartBodyInterceptor() {
-        super(Phase.READ);
+        super(Phase.READ); 
     }
     
     public StartBodyInterceptor(String phase) {
