@@ -39,12 +39,13 @@ public class JoseSessionTokenProvider implements SessionAuthenticityTokenProvide
     private JweEncryptionProvider jweEncryptor;
     private JweDecryptionProvider jweDecryptor;
     private boolean jwsRequired;
+    private boolean jweRequired;
     private int maxDefaultSessionInterval;
     @Override
     public String createSessionToken(MessageContext mc, MultivaluedMap<String, String> params,
                                      UserSubject subject, OAuthRedirectionState secData) {
         String stateString = convertStateToString(secData);
-        String sessionToken = encryptStateString(stateString);
+        String sessionToken = protectStateString(stateString);
         return OAuthUtils.setDefaultSessionToken(mc, sessionToken, maxDefaultSessionInterval);
     }
 
@@ -95,18 +96,21 @@ public class JoseSessionTokenProvider implements SessionAuthenticityTokenProvide
         if (jweEncryptor != null) {
             return jweEncryptor;    
         }
-        return JweUtils.loadEncryptionProvider(true);
+        return JweUtils.loadEncryptionProvider(jweRequired);
     }
 
     public void setJwsRequired(boolean jwsRequired) {
         this.jwsRequired = jwsRequired;
+    }
+    public void setJweRequired(boolean jweRequired) {
+        this.jweRequired = jweRequired;
     }
 
     protected JweDecryptionProvider getInitializedDecryptionProvider() {
         if (jweDecryptor != null) {
             return jweDecryptor;    
         } 
-        return JweUtils.loadDecryptionProvider(true);
+        return JweUtils.loadDecryptionProvider(jweRequired);
     }
     protected JwsSignatureVerifier getInitializedSigVerifier() {
         if (jwsVerifier != null) {
@@ -125,25 +129,40 @@ public class JoseSessionTokenProvider implements SessionAuthenticityTokenProvide
         return stateString;
     }
 
-    private String encryptStateString(String stateString) {
+    private String protectStateString(String stateString) {
         JwsSignatureProvider jws = getInitializedSigProvider();
+        JweEncryptionProvider jwe = getInitializedEncryptionProvider();
+        if (jws == null && jwe == null) {
+            throw new OAuthServiceException("Session token can not be created");
+        }
         if (jws != null) {
             stateString = JwsUtils.sign(jws, stateString, null);
         } 
-        
-        JweEncryptionProvider jwe = getInitializedEncryptionProvider();
-        return jwe.encrypt(StringUtils.toBytesUTF8(stateString), null);
+        if (jwe != null) {
+            stateString = jwe.encrypt(StringUtils.toBytesUTF8(stateString), null);
+        }
+        return stateString;
     }
     
     private OAuthRedirectionState convertStateStringToState(String stateString) {
         String[] parts = ModelEncryptionSupport.getParts(stateString);
         OAuthRedirectionState state = new OAuthRedirectionState();
         state.setClientId(parts[0]);
-        state.setAudience(parts[1]);
-        state.setClientCodeChallenge(parts[2]);
-        state.setState(parts[3]);
-        state.setProposedScope(parts[4]);
-        state.setRedirectUri(parts[5]);
+        if (!StringUtils.isEmpty(parts[1])) {
+            state.setAudience(parts[1]);
+        }
+        if (!StringUtils.isEmpty(parts[2])) {
+            state.setClientCodeChallenge(parts[2]);
+        }
+        if (!StringUtils.isEmpty(parts[3])) {
+            state.setState(parts[3]);
+        }
+        if (!StringUtils.isEmpty(parts[4])) {
+            state.setProposedScope(parts[4]);
+        }
+        if (!StringUtils.isEmpty(parts[5])) {
+            state.setRedirectUri(parts[5]);
+        }
         return state;
     }
     protected String convertStateToString(OAuthRedirectionState secData) {

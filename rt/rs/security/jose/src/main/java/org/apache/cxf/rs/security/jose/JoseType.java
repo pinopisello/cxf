@@ -16,44 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.common.security;
+package org.apache.cxf.rs.security.jose;
 
-import java.io.Serializable;
-import java.security.Principal;
 
-/**
- * Simple Principal implementation
- *
- */
-public class SimplePrincipal implements Principal, Serializable {
-    private static final long serialVersionUID = -5171549568204891853L;
+public enum JoseType {
+    JOSE(JoseConstants.TYPE_JOSE),
+    JOSE_JSON(JoseConstants.TYPE_JOSE_JSON),
+    JWT(JoseConstants.TYPE_JWT);
     
-    private String name;
-    
-    public SimplePrincipal(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("Principal name can not be null");
+    private final String type;
+    private JoseType(String type) {
+        this.type = type;
+    }
+    public static JoseType getType(String type) {
+        if (type == null) {
+            return null;
+        } else if (JoseConstants.TYPE_JOSE_JSON.equals(type)) {
+            return JOSE_JSON;    
+        } else {
+            return valueOf(type);
         }
-        this.name = name;
     }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public boolean equals(Object obj) {
-        if (!(obj instanceof SimplePrincipal)) {
-            return false;
-        }
-        
-        return name.equals(((SimplePrincipal)obj).name);
-    }
-    
-    public int hashCode() {
-        return name.hashCode();
-    }
-    
     public String toString() {
-        return name;
+        return type;
     }
 }

@@ -403,6 +403,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             WSSecDKEncrypt dkEncr = new WSSecDKEncrypt();
             dkEncr.setIdAllocator(wssConfig.getIdAllocator());
             dkEncr.setCallbackLookup(callbackLookup);
+            dkEncr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
             if (recToken.getToken().getVersion() == SPConstants.SPVersion.SP11) {
                 dkEncr.setWscVersion(ConversationConstants.VERSION_05_02);
             }
@@ -485,12 +486,11 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             Element encrDKTokenElem = null;
             encrDKTokenElem = dkEncr.getdktElement();
             addDerivedKeyElement(encrDKTokenElem);
+            
             Element refList = dkEncr.encryptForExternalRef(null, encrParts);
-            if (atEnd) {
-                this.insertBeforeBottomUp(refList);
-            } else {
-                this.addDerivedKeyElement(refList);                        
-            }
+            List<Element> attachments = dkEncr.getAttachmentEncryptedDataElements();
+            addAttachmentsForEncryption(atEnd, refList, attachments);
+
             return dkEncr;
         } catch (Exception e) {
             LOG.log(Level.FINE, e.getMessage(), e);
@@ -596,21 +596,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                    
                     Element refList = encr.encryptForRef(null, encrParts);
                     List<Element> attachments = encr.getAttachmentEncryptedDataElements();
-                    if (atEnd) {
-                        this.insertBeforeBottomUp(refList);
-                        if (attachments != null) {
-                            for (Element attachment : attachments) {
-                                this.insertBeforeBottomUp(attachment);
-                            }
-                        }
-                    } else {
-                        this.addDerivedKeyElement(refList);
-                        if (attachments != null) {
-                            for (Element attachment : attachments) {
-                                this.addDerivedKeyElement(attachment);
-                            }
-                        }
-                    }
+                    addAttachmentsForEncryption(atEnd, refList, attachments);
                     
                     return encr;
                 } catch (WSSecurityException e) {
@@ -620,7 +606,25 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             }
         }
         return null;
-    }    
+    }
+    
+    private void addAttachmentsForEncryption(boolean atEnd, Element refList, List<Element> attachments) {
+        if (atEnd) {
+            this.insertBeforeBottomUp(refList);
+            if (attachments != null) {
+                for (Element attachment : attachments) {
+                    this.insertBeforeBottomUp(attachment);
+                }
+            }
+        } else {
+            this.addDerivedKeyElement(refList);
+            if (attachments != null) {
+                for (Element attachment : attachments) {
+                    this.addDerivedKeyElement(attachment);
+                }
+            }
+        }
+    }
     
     private byte[] doSignatureDK(List<WSEncryptionPart> sigs,
                                AbstractTokenWrapper policyAbstractTokenWrapper, 
@@ -631,6 +635,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
         WSSecDKSign dkSign = new WSSecDKSign();
         dkSign.setIdAllocator(wssConfig.getIdAllocator());
         dkSign.setCallbackLookup(callbackLookup);
+        dkSign.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
         if (policyAbstractTokenWrapper.getToken().getVersion() == SPConstants.SPVersion.SP11) {
             dkSign.setWscVersion(ConversationConstants.VERSION_05_02);
         }

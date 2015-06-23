@@ -53,6 +53,13 @@
         </jaxws:properties>
     </jaxws:client>
     
+    <jaxws:client name="{http://www.example.org/contract/DoubleIt}DoubleItSWACombinedDerivedPolicyPort" createdFromAPI="true">
+         <jaxws:properties>
+            <entry key="security.encryption.properties" value="bob.properties"/>
+            <entry key="security.encryption.username" value="bob"/>
+        </jaxws:properties>
+    </jaxws:client>
+    
     <jaxws:client name="{http://www.example.org/contract/DoubleIt}DoubleItSWACombinedAsymmetricPolicyPort" createdFromAPI="true">
          <jaxws:properties>
             <entry key="security.encryption.properties" value="bob.properties"/>
