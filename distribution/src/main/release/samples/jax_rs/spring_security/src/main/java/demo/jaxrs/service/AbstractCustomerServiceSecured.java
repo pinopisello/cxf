@@ -29,7 +29,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
-@Path("/customerservice/")
+@Path("/customerservice-secured/")
 public abstract class AbstractCustomerServiceSecured implements CustomerServiceSecured {
     
     protected long currentId = 123;

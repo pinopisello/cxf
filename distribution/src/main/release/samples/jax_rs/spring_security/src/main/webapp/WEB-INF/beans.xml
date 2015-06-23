@@ -17,37 +17,64 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jaxrs="http://cxf.apache.org/jaxrs" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:security="http://www.springframework.org/schema/security" xsi:schemaLocation=" http://www.springframework.org/schema/beans  http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/aop  http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/security  http://www.springframework.org/schema/security/spring-security-3.2.xsd http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd">
-    <import resource="classpath:META-INF/cxf/cxf.xml"/>
-    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
-    <jaxrs:server id="bookservice" address="/">
-        <jaxrs:serviceBeans>
-            <ref bean="customerservice"/>
-        </jaxrs:serviceBeans>
-        <jaxrs:providers>
-            <bean class="demo.jaxrs.service.SecurityExceptionMapper"/>
-        </jaxrs:providers>
-    </jaxrs:server>
-    <bean id="customerservice" class="demo.jaxrs.service.CustomerServiceImpl"/>
-<!--
-    <bean id="customerservice" class="demo.jaxrs.service.CustomerServiceSecuredImpl"/>
--->
-    <security:global-method-security secured-annotations="enabled">
-        <security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getCustomer(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>
-        <security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.addCustomer(*))" access="ROLE_ADMIN"/>
-        <security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.updateCustomer(Long,demo.jaxrs.service.Customer))" access="ROLE_ADMIN"/>
-        <security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.deleteCustomer(*))" access="ROLE_ADMIN"/>
-        <security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getOrder(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>
-    </security:global-method-security>
-    <security:http auto-config="true">
-        <security:http-basic/>
-    </security:http>
-    <security:authentication-manager>
-      <security:authentication-provider>
-        <security:user-service>
-            <security:user name="bob" password="bobspassword" authorities="ROLE_CUSTOMER"/>
-            <security:user name="fred" password="fredspassword" authorities="ROLE_CUSTOMER, ROLE_ADMIN"/>
-        </security:user-service>
-      </security:authentication-provider>
-    </security:authentication-manager>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:cxf="http://cxf.apache.org/core" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
+		http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd  http://cxf.apache.org http://cxf.apache.org/schemas/core.xsd
+	    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+	<import resource="classpath:META-INF/cxf/cxf.xml"/>
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+	
+	<!--  ============   Definizione server jaxrs  =========== -->
+
+	<jaxrs:server id="bookservice" address="/">
+		<jaxrs:serviceBeans>
+			<ref bean="customerservice"/>
+			<ref bean="customerservice-secured"/>
+		</jaxrs:serviceBeans>
+		<jaxrs:providers>
+		<bean class="demo.jaxrs.service.SecurityExceptionMapper"/>
+		<!--<ref bean="jsonProvider"/>	-->	
+	</jaxrs:providers>
+		<jaxrs:features>
+			<cxf:logging/>
+		</jaxrs:features>
+	</jaxrs:server>
+	<bean id="customerservice" class="demo.jaxrs.service.CustomerServiceImpl"/>                <!-- La gestione authorizzazioni con <security:global-method-security-->
+	<bean id="customerservice-secured" class="demo.jaxrs.service.CustomerServiceSecuredImpl"/> <!-- La gestione authorizzazioni con @Secured in CustomerServiceSecured.java -->
+	
+
+	<!-- ============ Definizione Spring security ===========-->
+	<security:global-method-security
+		secured-annotations="enabled">
+		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getCustomer(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>
+		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.addCustomer(*))" access="ROLE_ADMIN"/>
+		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.updateCustomer(Long,demo.jaxrs.service.Customer))" access="ROLE_ADMIN"/>
+		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.deleteCustomer(*))" access="ROLE_ADMIN"/>
+		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getOrder(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>
+	</security:global-method-security>
+	
+	<!-- abilita security per tutte le urls della web-app proteggendo con basic auth-->
+	 <security:http auto-config="true">
+	 	 <security:http-basic/> 
+	 </security:http>
+	
+	<!--definisce users/passwords rispettivi roles -->
+	<security:authentication-manager>
+		<security:authentication-provider>
+			<security:user-service>
+				<security:user name="bob" password="bobspassword" authorities="ROLE_CUSTOMER"/>
+				<security:user name="fred" password="fredspassword" authorities="ROLE_CUSTOMER, ROLE_ADMIN"/>
+			</security:user-service>
+		</security:authentication-provider>
+	</security:authentication-manager>
+		
+	
 </beans>

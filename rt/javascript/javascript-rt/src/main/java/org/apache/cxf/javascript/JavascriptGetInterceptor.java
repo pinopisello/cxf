@@ -26,6 +26,7 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.cxf.binding.soap.interceptor.EndpointSelectionInterceptor;
@@ -36,6 +37,9 @@ import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.interceptor.Interceptor;
+import org.apache.cxf.interceptor.MessageSenderInterceptor;
+import org.apache.cxf.interceptor.OutgoingChainInterceptor;
+import org.apache.cxf.interceptor.StaxOutInterceptor;
 import org.apache.cxf.javascript.service.ServiceJavascriptBuilder;
 import org.apache.cxf.javascript.types.SchemaJavascriptBuilder;
 import org.apache.cxf.message.Message;
@@ -46,6 +50,7 @@ import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.service.model.SchemaInfo;
 import org.apache.cxf.service.model.ServiceInfo;
 import org.apache.cxf.transport.Conduit;
+import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 
 public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> {
     public static final Interceptor<? extends Message> INSTANCE = new JavascriptGetInterceptor();
@@ -54,7 +59,10 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
     private static final Charset UTF8 = Charset.forName("utf-8");
     private static final String NO_UTILS_QUERY_KEY = "nojsutils";
     private static final String CODE_QUERY_KEY = "js";
-
+    private static final String TRANSFORM_SKIP = "transform.skip";
+  //  private Interceptor<Message> wsdlGetOutInterceptor = new WSDLGetOutInterceptor();
+    
+    
     public JavascriptGetInterceptor() {
         super(Phase.READ);
         getAfter().add(EndpointSelectionInterceptor.class.getName());
@@ -91,7 +99,26 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
                 throw new Fault(ioe);
             }
         }
+        message.getExchange().setOutMessage(null);
+       /* Message out =  message.getExchange().getOutMessage();
+        Iterator<Interceptor<? extends Message>> iterator =out.getInterceptorChain().iterator();
+        while (iterator.hasNext()) {
+            Interceptor<? extends Message> inInterceptor = iterator.next();
+            if (!inInterceptor.getClass().equals(StaxOutInterceptor.class)
+                    && !inInterceptor.getClass().equals(GZIPOutInterceptor.class)
+                    && !inInterceptor.getClass().equals(MessageSenderInterceptor.class)) {
+                out.getInterceptorChain().remove(inInterceptor);
+            }
+        }*/
+        //Non occorre continuare con gli altri rimanenti.Altrimenti ServiceInvokerInterceptor cerca un endpoint per il js e fallisce.
+        message.getInterceptorChain().doInterceptStartingAt(
+                message,
+                OutgoingChainInterceptor.class.getName());
+        
+        
     }
+    
+    
     
     private boolean isRecognizedQuery(Map<String, String> map, URI uri, EndpointInfo endpointInfo) {
         if (uri == null) {
@@ -115,10 +142,9 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
 
     private void writeResponse(URI uri, Map<String, String> map, OutputStream os, Endpoint serverEndpoint) {
         OutputStreamWriter writer = new OutputStreamWriter(os, UTF8);
-        if (!map.containsKey(NO_UTILS_QUERY_KEY)) {
+        if (map.containsKey(NO_UTILS_QUERY_KEY)) {
             writeUtilsToResponseStream(JavascriptGetInterceptor.class, os);
-        } 
-        if (map.containsKey(CODE_QUERY_KEY)) {
+        }   else if (map.containsKey(CODE_QUERY_KEY)) {
             ServiceInfo serviceInfo = serverEndpoint.getService().getServiceInfos().get(0);
             Collection<SchemaInfo> schemata = serviceInfo.getSchemas();
             // we need to move this to the bus.
@@ -138,7 +164,7 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
                                                    serverEndpoint.getEndpointInfo().getAddress(),
                                                    prefixManager,
                                                    nameManager);
-                serviceBuilder.walk();
+                serviceBuilder.walk(); 
                 String serviceJavascript = serviceBuilder.getCode();
                 writer.append(serviceJavascript);
                 writer.flush();
@@ -148,6 +174,7 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
         } else {
             throw new RuntimeException("Invalid query " + uri.toString());
         }
+        
     }
 
 }

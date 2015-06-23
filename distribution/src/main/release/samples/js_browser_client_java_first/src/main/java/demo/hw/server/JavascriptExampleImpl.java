@@ -21,6 +21,7 @@ package demo.hw.server;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jws.WebParam;
 import javax.jws.WebService;
 
 import demo.hw.server.data.Beverage;
@@ -79,6 +80,11 @@ public class JavascriptExampleImpl implements JavascriptExample {
 
     }
 
+    
+    public String pippo(@WebParam(name = "pippo") String c){
+        return "pippo" + c;
+    }
+    
     public Beverage[] getBeverageWithIngredientCategories(List<Category> c) {
         List<Beverage> matches = new ArrayList<Beverage>();
         for (Beverage b : beverages) {

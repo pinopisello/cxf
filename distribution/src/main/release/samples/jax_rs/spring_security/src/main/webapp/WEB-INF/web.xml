@@ -23,10 +23,10 @@
         <param-value>WEB-INF/beans.xml</param-value>
     </context-param>
     <listener>
-        <listener-class>
-                        org.springframework.web.context.ContextLoaderListener
-                </listener-class>
+        <listener-class> org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
+    
+      
     <filter>
         <filter-name>springSecurityFilterChain</filter-name>
         <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
@@ -35,13 +35,13 @@
         <filter-name>springSecurityFilterChain</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
+    
+    
     <servlet>
         <description>Apache CXF Endpoint</description>
         <display-name>cxf</display-name>
         <servlet-name>CXFServlet</servlet-name>
-        <servlet-class>
-                        org.apache.cxf.transport.servlet.CXFServlet
-                </servlet-class>
+        <servlet-class> org.apache.cxf.transport.servlet.CXFServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>

@@ -76,7 +76,7 @@
                                     <goal>java</goal>
                                 </goals>
                                 <configuration>
-                                    <mainClass>demo.jaxrs.client.Client</mainClass>
+                                    <mainClass>demo.jaxrs.client.jax_rs_spring_securityClient</mainClass>
                                 </configuration>
                             </execution>
                         </executions>
@@ -154,5 +154,20 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
         </dependency>
+        
+        <!--
+         <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-rs-extension-providers</artifactId>
+            <version>3.1.2-SNAPSHOT</version>
+        </dependency>
+       
+       
+        <dependency>
+			<groupId>org.codehaus.jettison</groupId>
+			<artifactId>jettison</artifactId>
+			<version>1.3.7</version>
+		</dependency>
+          -->
     </dependencies>
 </project>

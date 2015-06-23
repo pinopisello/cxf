@@ -39,7 +39,7 @@ JettyHTTPDestination.engine mappa  <httpj:engine > ed ha configurati i due handl
 
 =====================    Server Side processamento requests  ===================
 
-org.eclipse.jetty.server.Server.handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)  riceve richieste.
+ org.eclipse.jetty.server.handler.HandlerWrapper.handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)  riceve richieste.
 
 Il suo _handler.handle() viene invocato e di qui  HandlerCollection.handle()
 Qui  _handlers[i] vengono iterati ed ognuno esegue handle(target,baseRequest, request, response);
@@ -52,20 +52,36 @@ http://localhost:9000/Beverages.html e'intercettata da questo handler.
 
 
 2)org.eclipse.jetty.server.handler.ContextHandlerCollection  
-Questa classe definisce una map _pathBranches .Un entry e' istanza ContextHandler con _handler = JettyHTTPHandler con urlName = /beverages e jettyHTTPDestination con incomingObserver = ChainInitiationObserver.
+Questa classe definisce una map _pathBranches .
+Un entry e' istanza ContextHandler con _handler = JettyHTTPHandler con :
+              urlName = /beverages 
+              jettyHTTPDestination con incomingObserver = ChainInitiationObserver.
+              
+In JettyHTTPHandler.handle(),se  urlName matcha la request target, viene invocato jettyHTTPDestination.doService(servletContext, request, response)  ed eventualmente jettyHTTPDestination.incomingObserver.onMessage(inMessage);
 Questo ha endpoint che punta a JavascriptExampleImplServiceSoapBinding.
 Una phaseChanin e' creata ed invocata ed eventualmente JavascriptGetInterceptor.
 
-
+JettyHTTPHandler,jettyHTTPDestination vengono definiti a bootstrap in org.apache.cxf.endpoint.ServerImpl.initDestination().
 
 
 http://localhost:9000/beverages?js&nojsutils
-
-
-3)
+http://localhost:9000/beverages?js
 
 
 
+3)non importa ...
+
+=====================    Client Side processamento requests  ===================
+
+
+var server = new urn_cxf_apache_org_jsjaxws_JavascriptExample();
+
+
+urn_cxf_apache_org_jsjaxws_JavascriptExample e' il javascript object che rappresenta il proxy dell endpoint lato client.
+
+E' definito in http://localhost:9000/beverages?js e definisce tutti i metodi dichiarati in JavascriptExample.java.
+
+Ognuno di questi metodi accetta 3 parametri: (successCallback, errorCallback, pippo)
 
 
 

@@ -1,0 +1,99 @@
+
+=========================  Server Jaxrx( server profile pom.xml)   ==============================
+
+
+demo.jaxrs.servlet.Server.java Istanzia un jetty server programmaticamente sulla port a 9002 e vi installa il war
+che viene prodotto in target/JAXRSSpringSecurity.war  lanciando mvn install
+
+web.xml definisce   <listener-class> org.springframework.web.context.ContextLoaderListener</listener-class> e  contextConfigLocation=WEB-INF/beans.xml
+Quinde a bootstrap tale lister viene lanciato e va a configurare spring leggendo WEB-INF/beans.xml.
+
+DefaultBeanDefinitionDocumentReader.parseBeanDefinitions() e' dove per ogni elemento definito in  beans.xml viene cercato l handler e il beandefinition registrata in Spring.
+
+http://cxf.apache.org/docs/jaxrs-services-configuration.html  dettagli configurazione jaxrs
+
+<jaxrs:server id="bookservice" address="/">         ==>  Definisce il server e lo configura per risponder a tutte le requests
+
+<jaxrs:serviceBeans> <ref bean="customerservice"/>  ==>  registra 
+
+
+
+
+
+Tutte le requests passano per CXFServlet.
+
+
+JAXRSServerFactoryBeanDefinitionParser
+
+
+========================  Server Security configuration   ==============================================
+
+http://docs.spring.io/spring-security/site/docs/3.0.x/reference/ns-config.html
+
+web.xml definisce org.springframework.web.filter.DelegatingFilterProxy [spring-web] il quale delega a ServletHandler$CachedChain.doFilter() la validazione.
+Qui tutti i filtri definiti in ServletHandler$CachedChain._next sono eseguiti.
+
+FilterChainProxy$VirtualFilterChain.additionalFilters e' una  List<Filter> che ne contiene 12. [spring-web-security]
+
+VirtualFilterChain.doFilter(0 itera uno a uno :
+
+
+SecurityContextPersistenceFilter 
+WebAsyncManagerIntegrationFilter
+LogoutFilter
+UsernamePasswordAuthenticationFilter
+DefaultLoginPageGeneratingFilter
+BasicAuthenticationFilter.doFilter()        ==> Invocato perche' in beans.exml  <security:http-basic/>!!
+								
+												1/2Request NON ha header  Authorization [ex get da browser http://127.0.0.1:9002/customerservice/customers/123 senza Authorization headers]
+								                PhaseInterceptorChain viene invocata e   ServiceInvokerInterceptor ad un certo punto invoca JAXRSInvoker.invoke().
+								                Di qui RoleVoter.vote(Authentication authentication, Object object, Collection<ConfigAttribute> attributes) 
+								                -- object e' ReflectiveMethodInvocation che contiene target = demo.jaxrs.service.CustomerServiceImpl
+								                -- attributes contieve un array di SecurityConfig: ROLE_CUSTOMER , ROLE_ADMIN, quelle definite in beans.xml per il metodo jaxrs [in questo caso <security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getCustomer(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>]
+								                -- authentication e' AnonymousAuthenticationToken e contiene una list di GrantedAuthority.In questo caso solo la  ROLE_ANONYMOUS
+								                
+								                attributes vengono iterate e confrontate con le  in authentication.authorities.Se non c'e' un match vote() ritorna ACCESS_DENIED
+								                AccessDeniedException e' thrown in AffirmativeBased.decide() e propagata fino a JAXRSInvoker.handleFault().
+								                
+								                ResponseImpl e' generata con code 403 in JAXRSUtils.convertFaultToResponse(ex.getCause(), inMessage)  e streammata in MessageSenderEndingInterceptor.handleMessage
+								                Fine, access denied back al client.
+								                 
+								
+								
+												2/2Request ha header  Authorization 
+
+                                                Cerca header Authorization nella request.Se presente estrae user/pwd dal base64 encoded value.
+												UsernamePasswordAuthenticationToken con usr/pwd viene creato ed inviato a ProviderManager.authenticate() [spring-security-core]
+												DaoAuthenticationProvider.authenticate() => InMemoryUserDetailsManager ha Map<String, MutableUserDetails> users.In questa Map viene cercato matching user.
+												Questo user viene poi: 
+												                       1)DefaultPreAuthenticationChecks.check()  [nonlocked,enabled,not expired]
+																	   2)additionalAuthenticationChecks()  verifica  passwd inviata request == pasword matching user
+												   
+														                       2a)Le 2 authenticazioni hanno successo:
+														                       ServiceInvokerInterceptor va ad invocare CustomerServiceImpl.getCustomer() e ritorna il Customer object x la response.
+														                       JAXRSOutInterceptor.processResponse() costruisce un ResponseImpl con entity = Customer 
+														                       JAXRSOutInterceptor.serializeMessage() trova gli headers,  mediatype,writer per la response finalmente invoca JAXRSUtils.writeMessageBody() per scrivere nello stream.
+														                       Nel caso esempio, writer = JAXBElementProvider .Un jaxb marshaller e' creato [JAXBElementProvider.createMarshaller()] e il marshalled e' streammto in JAXBElementProvider.marshalToOutputStream()
+														                       nel message.contents[outputstream].
+														                       Tale stream e' poi inviato al client in AbstractConduit.close().
+														                       
+														                       
+														                       
+														                       2b)1 o ambo authenticazioni falliscono :
+														                          AuthenticationException e' thrown , acchiappata in BasicAuthenticationEntryPoint.commence() dove una response con http 401 e' inviata al client [WWW-Authenticate: Basic realm="Spring Security Application"]
+														                          Fine!
+														                          
+														
+												
+												
+												
+												
+
+ 
+
+
+
+
+
+
+

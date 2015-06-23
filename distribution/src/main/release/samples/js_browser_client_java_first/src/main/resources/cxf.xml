@@ -28,7 +28,7 @@
 	                     http://cxf.apache.org/transports/http-jetty/configuration http://cxf.apache.org/schemas/configuration/http-jetty.xsd">
     <httpj:engine-factory bus="cxf" >
     	<httpj:identifiedThreadingParameters id="identifiedThreadingParameters">
-    		<httpj:threadingParameters maxThreads="20"  minThreads="5" threadNamePrefix="pippo"/>
+    		<httpj:threadingParameters maxThreads="20"  minThreads="15" threadNamePrefix="pippo"/>
     	</httpj:identifiedThreadingParameters>
 
         <!-- The server runs on port 9000 -->

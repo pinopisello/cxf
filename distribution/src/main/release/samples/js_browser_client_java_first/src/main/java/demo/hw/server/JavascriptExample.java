@@ -40,5 +40,6 @@ public interface JavascriptExample {
     Beverage[] getBeverageWithIngredientCategory(@WebParam(name = "category") Category c);
     @WebMethod
     Beverage[] getBeverageWithIngredientCategories(@WebParam(name = "categories") List<Category> c);
-
+    @WebMethod
+    String pippo(@WebParam(name = "pippo") String c);
 }
