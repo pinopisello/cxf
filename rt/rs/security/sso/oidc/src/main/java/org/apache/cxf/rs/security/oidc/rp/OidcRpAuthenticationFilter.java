@@ -18,62 +18,67 @@
  */
 package org.apache.cxf.rs.security.oidc.rp;
 
-import java.util.Map;
+import java.net.URI;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.PreMatching;
-import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.utils.FormUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
-import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
+import org.apache.cxf.rs.security.oauth2.client.ClientTokenContext;
+import org.apache.cxf.rs.security.oauth2.client.ClientTokenContextManager;
 
 @PreMatching
 @Priority(Priorities.AUTHENTICATION)
 public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
-    
-    private OidcRpStateManager stateManager;
-    private String rpServiceAddress;
+    @Context
+    private MessageContext mc;
+    private ClientTokenContextManager stateManager;
+    private String redirectUri;
     
     public void filter(ContainerRequestContext rc) {
         if (checkSecurityContext(rc)) {
             return;
         } else {
-            String token = OAuthUtils.generateRandomTokenKey();
-            MultivaluedMap<String, String> state = toRequestState(rc);
-            stateManager.setRequestState(token, state);
-            UriBuilder ub = rc.getUriInfo().getBaseUriBuilder().path(rpServiceAddress);
-            ub.queryParam("state", token);
-            rc.abortWith(Response.seeOther(ub.build())
+            URI redirectAddress = null;
+            if (redirectUri.startsWith("/")) {
+                String basePath = (String)mc.get("http.base.path");
+                redirectAddress = UriBuilder.fromUri(basePath).path(redirectUri).build();
+            } else if (redirectUri.startsWith("http")) {
+                redirectAddress = URI.create(redirectUri);
+            } else {
+                UriBuilder ub = rc.getUriInfo().getBaseUriBuilder().path(redirectUri);
+                redirectAddress = ub.build();
+            }
+            rc.abortWith(Response.seeOther(redirectAddress)
                            .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store")
                            .header("Pragma", "no-cache") 
                            .build());
         }
     }
     protected boolean checkSecurityContext(ContainerRequestContext rc) {
-        Map<String, Cookie> cookies = rc.getCookies();
-        
-        Cookie securityContextCookie = cookies.get("org.apache.cxf.websso.context");
-        if (securityContextCookie == null) {
-            return false;
-        }
-        String contextKey = securityContextCookie.getValue();
-        
-        OidcClientTokenContext tokenContext = stateManager.getTokenContext(contextKey);
-        
+        OidcClientTokenContext tokenContext = (OidcClientTokenContext)stateManager.getClientTokenContext(mc);
         if (tokenContext == null) {
             return false;
         }
-        rc.setSecurityContext(new OidcSecurityContext(tokenContext));
+        OidcClientTokenContextImpl newTokenContext = new OidcClientTokenContextImpl();
+        newTokenContext.setToken(tokenContext.getToken());
+        newTokenContext.setIdToken(tokenContext.getIdToken());
+        newTokenContext.setUserInfo(tokenContext.getUserInfo());
+        newTokenContext.setState(toRequestState(rc));
+        JAXRSUtils.getCurrentMessage().setContent(ClientTokenContext.class, newTokenContext);
+        rc.setSecurityContext(new OidcSecurityContext(newTokenContext));
         return true;
     }
     private MultivaluedMap<String, String> toRequestState(ContainerRequestContext rc) {
@@ -84,13 +89,12 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
             FormUtils.populateMapFromString(requestState, JAXRSUtils.getCurrentMessage(), body, 
                                             "UTF-8", true);
         }
-        requestState.putSingle("location", rc.getUriInfo().getRequestUri().toString());
         return requestState;
     }
-    public void setRpServiceAddress(String rpServiceAddress) {
-        this.rpServiceAddress = rpServiceAddress;
+    public void setRedirectUri(String redirectUri) {
+        this.redirectUri = redirectUri;
     }
-    public void setStateManager(OidcRpStateManager stateManager) {
+    public void setStateManager(ClientTokenContextManager stateManager) {
         this.stateManager = stateManager;
     }
 }

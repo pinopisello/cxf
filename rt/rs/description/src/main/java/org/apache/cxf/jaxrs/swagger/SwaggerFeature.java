@@ -36,31 +36,15 @@ import com.wordnik.swagger.jaxrs.listing.ApiDeclarationProvider;
 import com.wordnik.swagger.jaxrs.listing.ApiListingResourceJSON;
 import com.wordnik.swagger.jaxrs.listing.ResourceListingProvider;
 
-import org.apache.cxf.Bus;
 import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.feature.AbstractFeature;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.ext.MessageContext;
-import org.apache.cxf.jaxrs.model.AbstractResourceInfo;
 import org.apache.cxf.jaxrs.provider.ServerProviderFactory;
 
-public class SwaggerFeature extends AbstractFeature {
-    
-    private String resourcePackage;
-    private String version = "1.0.0";
-    private String basePath;
-    private String title = "Sample REST Application";
-    private String description = "The Application";
-    private String contact = "committer@apache.org";
-    private String license = "Apache 2.0 License";
-    private String licenseUrl = "http://www.apache.org/licenses/LICENSE-2.0.html";
-    private boolean scan = true;
-    private boolean runAsFilter;
-    
+public class SwaggerFeature extends AbstractSwaggerFeature {
+
     @Override
-    public void initialize(Server server, Bus bus) {
-        calculateDefaultResourcePackage(server);
-        calculateDefaultBasePath(server);
+    protected void addSwaggerResource(Server server) {
         ApiListingResourceJSON apiListingResource = new ApiListingResourceJSON();
         if (!runAsFilter) {
             List<Object> serviceBeans = new ArrayList<Object>();
@@ -87,85 +71,11 @@ public class SwaggerFeature extends AbstractFeature {
         beanConfig.setLicense(getLicense());
         beanConfig.setLicenseUrl(getLicenseUrl());
         beanConfig.setScan(isScan());
-        initializeProvider(server.getEndpoint(), bus);
-    }
-    private void calculateDefaultResourcePackage(Server server) {
-        JAXRSServiceFactoryBean serviceFactoryBean = 
-            (JAXRSServiceFactoryBean)server.getEndpoint().get(JAXRSServiceFactoryBean.class.getName());
-        AbstractResourceInfo resourceInfo = serviceFactoryBean.getClassResourceInfo().get(0);
-        
-        if ((resourceInfo != null) 
-            && (getResourcePackage() == null || getResourcePackage().length() == 0)) {
-            setResourcePackage(resourceInfo.getServiceClass().getPackage().getName());
-        }
-    }
-    
-    private void calculateDefaultBasePath(Server server) {
-        if (getBasePath() == null || getBasePath().length() == 0) {
-            String address = server.getEndpoint().getEndpointInfo().getAddress();
-            setBasePath(address);
-        }
-    }
-    public String getResourcePackage() {
-        return resourcePackage;
-    }
-    public void setResourcePackage(String resourcePackage) {
-        this.resourcePackage = resourcePackage;
-    }
-    public String getVersion() {
-        return version;
-    }
-    public void setVersion(String version) {
-        this.version = version;
-    }
-    public String getBasePath() {
-        return basePath;
-    }
-    public void setBasePath(String basePath) {
-        this.basePath = basePath;
-    }
-    public String getTitle() {
-        return title;
-    }
-    public void setTitle(String title) {
-        this.title = title;
-    }
-    public String getDescription() {
-        return description;
-    }
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    public String getContact() {
-        return contact;
-    }
-    public void setContact(String contact) {
-        this.contact = contact;
-    }
-    public String getLicense() {
-        return license;
-    }
-    public void setLicense(String license) {
-        this.license = license;
-    }
-    public String getLicenseUrl() {
-        return licenseUrl;
-    }
-    public void setLicenseUrl(String licenseUrl) {
-        this.licenseUrl = licenseUrl;
-    }
-    public boolean isScan() {
-        return scan;
-    }
-    public void setScan(boolean scan) {
-        this.scan = scan;
-    }
+    }    
 
-    public boolean isRunAsFilter() {
-        return runAsFilter;
-    }
-    public void setRunAsFilter(boolean runAsFilter) {
-        this.runAsFilter = runAsFilter;
+    @Override
+    protected void setBasePathByAddress(String address) {
+        setBasePath(address);
     }
 
     @PreMatching

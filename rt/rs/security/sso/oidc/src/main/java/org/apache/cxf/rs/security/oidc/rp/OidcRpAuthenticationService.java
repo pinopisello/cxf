@@ -20,44 +20,63 @@ package org.apache.cxf.rs.security.oidc.rp;
 
 import java.net.URI;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.cxf.jaxrs.ext.MessageContext;
-import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
+import org.apache.cxf.rs.security.oauth2.client.ClientTokenContextManager;
+import org.apache.cxf.rs.security.oidc.common.IdToken;
 
 @Path("rp")
 public class OidcRpAuthenticationService {
-    private OidcRpStateManager stateManager;
+    private ClientTokenContextManager stateManager;
     private String defaultLocation;
+    @Context
+    private MessageContext mc; 
     
+    @POST
+    @Path("signin")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response completeScriptAuthentication(@Context IdToken idToken) {
+        OidcClientTokenContextImpl ctx = new OidcClientTokenContextImpl();
+        ctx.setIdToken(idToken);
+        return completeAuthentication(ctx);   
+    }
     
     @GET
     @Path("complete")
-    public Response completeAuthentication(@Context OidcClientTokenContext context,
-                                           @Context MessageContext mc) {
-        String key = OAuthUtils.generateRandomTokenKey();
-        stateManager.setTokenContext(key, context);
+    public Response completeAuthentication(@Context OidcClientTokenContext oidcContext) {
+        stateManager.setClientTokenContext(mc, oidcContext);
+        
         URI redirectUri = null;
-        String location = context.getState().getFirst("location");
-        if (location == null) {
+        MultivaluedMap<String, String> state = oidcContext.getState();
+        String location = state != null ? state.getFirst("state") : null;
+        if (location == null && defaultLocation != null) {
             String basePath = (String)mc.get("http.base.path");
             redirectUri = UriBuilder.fromUri(basePath).path(defaultLocation).build();
-        } else {
+        } else if (location != null) {
             redirectUri = URI.create(location);
         }
-        return Response.seeOther(redirectUri).header("Set-Cookie", 
-                                                     "org.apache.cxf.websso.context=" + key + ";Path=/").build();
+        if (redirectUri != null) {
+            return Response.seeOther(redirectUri).build();
+        } else {
+            return Response.ok(oidcContext).build();
+        }
     }
 
     public void setDefaultLocation(String defaultLocation) {
         this.defaultLocation = defaultLocation;
     }
 
-    public void setStateManager(OidcRpStateManager stateManager) {
+    public void setStateManager(ClientTokenContextManager stateManager) {
         this.stateManager = stateManager;
     }
+
 }

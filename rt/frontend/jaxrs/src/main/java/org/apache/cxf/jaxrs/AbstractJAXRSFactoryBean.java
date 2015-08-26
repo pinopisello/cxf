@@ -431,7 +431,6 @@ public class AbstractJAXRSFactoryBean extends AbstractEndpointFactory {
             serviceFactory.setUserResourcesWithServiceClass(resources, sClasses);
         }
     }
-
     public void setProviderComparator(Comparator<?> providerComparator) {
         this.providerComparator = providerComparator;
     }

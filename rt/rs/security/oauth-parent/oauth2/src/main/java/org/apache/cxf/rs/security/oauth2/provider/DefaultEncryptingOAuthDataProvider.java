@@ -30,6 +30,7 @@ import javax.crypto.SecretKey;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.ServerAccessToken;
 import org.apache.cxf.rs.security.oauth2.tokens.refresh.RefreshToken;
+import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oauth2.utils.crypto.ModelEncryptionSupport;
 import org.apache.cxf.rt.security.crypto.CryptoUtils;
 import org.apache.cxf.rt.security.crypto.KeyProperties;
@@ -77,7 +78,11 @@ public class DefaultEncryptingOAuthDataProvider extends AbstractOAuthDataProvide
     
     @Override
     public ServerAccessToken getAccessToken(String accessToken) throws OAuthServiceException {
-        return ModelEncryptionSupport.decryptAccessToken(this, accessToken, key);
+        try {
+            return ModelEncryptionSupport.decryptAccessToken(this, accessToken, key);
+        } catch (SecurityException ex) {
+            throw new OAuthServiceException(OAuthConstants.ACCESS_DENIED, ex);
+        }
     }
 
     @Override
@@ -104,7 +109,11 @@ public class DefaultEncryptingOAuthDataProvider extends AbstractOAuthDataProvide
     @Override
     protected RefreshToken revokeRefreshToken(Client client, String refreshTokenKey) {
         refreshTokens.remove(refreshTokenKey);
-        return ModelEncryptionSupport.decryptRefreshToken(this, refreshTokenKey, key);
+        try {
+            return ModelEncryptionSupport.decryptRefreshToken(this, refreshTokenKey, key);
+        } catch (SecurityException ex) {
+            throw new OAuthServiceException(OAuthConstants.ACCESS_DENIED, ex);
+        }
     }
 
     private void encryptAccessToken(ServerAccessToken token) {

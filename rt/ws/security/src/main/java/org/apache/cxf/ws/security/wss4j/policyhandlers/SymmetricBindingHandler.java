@@ -250,10 +250,11 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                         && !secondEncrParts.isEmpty()) {
                         secondRefList = ((WSSecDKEncrypt)encr).encryptForExternalRef(null, 
                                 secondEncrParts);
-                        this.addDerivedKeyElement(secondRefList);
                     } else if (!secondEncrParts.isEmpty()) {
                         //Encrypt, get hold of the ref list and add it
                         secondRefList = ((WSSecEncrypt)encr).encryptForRef(null, secondEncrParts);
+                    }
+                    if (secondRefList != null) {
                         this.addDerivedKeyElement(secondRefList);
                     }
                 }
@@ -404,6 +405,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             dkEncr.setIdAllocator(wssConfig.getIdAllocator());
             dkEncr.setCallbackLookup(callbackLookup);
             dkEncr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+            dkEncr.setStoreBytesInAttachment(storeBytesInAttachment);
             if (recToken.getToken().getVersion() == SPConstants.SPVersion.SP11) {
                 dkEncr.setWscVersion(ConversationConstants.VERSION_05_02);
             }
@@ -519,6 +521,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                     encr.setIdAllocator(wssConfig.getIdAllocator());
                     encr.setCallbackLookup(callbackLookup);
                     encr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+                    encr.setStoreBytesInAttachment(storeBytesInAttachment);
                     String encrTokId = encrTok.getId();
                     if (attached) {
                         encrTokId = encrTok.getWsuId();
@@ -550,6 +553,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                     encr.setDocument(saaj.getSOAPPart());
                     encr.setEncryptSymmKey(false);
                     encr.setSymmetricEncAlgorithm(algorithmSuite.getAlgorithmSuiteType().getEncryption());
+                    encr.setMGFAlgorithm(algorithmSuite.getAlgorithmSuiteType().getMGFAlgo());
                     
                     if (encrToken instanceof IssuedToken || encrToken instanceof SpnegoContextToken
                         || encrToken instanceof SecureConversationToken) {
@@ -610,14 +614,18 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
     
     private void addAttachmentsForEncryption(boolean atEnd, Element refList, List<Element> attachments) {
         if (atEnd) {
-            this.insertBeforeBottomUp(refList);
+            if (refList != null) {
+                this.insertBeforeBottomUp(refList);
+            }
             if (attachments != null) {
                 for (Element attachment : attachments) {
                     this.insertBeforeBottomUp(attachment);
                 }
             }
         } else {
-            this.addDerivedKeyElement(refList);
+            if (refList != null) {
+                this.addDerivedKeyElement(refList);
+            }
             if (attachments != null) {
                 for (Element attachment : attachments) {
                     this.addDerivedKeyElement(attachment);
@@ -636,6 +644,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
         dkSign.setIdAllocator(wssConfig.getIdAllocator());
         dkSign.setCallbackLookup(callbackLookup);
         dkSign.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+        dkSign.setStoreBytesInAttachment(storeBytesInAttachment);
         if (policyAbstractTokenWrapper.getToken().getVersion() == SPConstants.SPVersion.SP11) {
             dkSign.setWscVersion(ConversationConstants.VERSION_05_02);
         }
@@ -765,6 +774,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             sig.setIdAllocator(wssConfig.getIdAllocator());
             sig.setCallbackLookup(callbackLookup);
             sig.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+            sig.setStoreBytesInAttachment(storeBytesInAttachment);
             // If a EncryptedKeyToken is used, set the correct value type to
             // be used in the wsse:Reference in ds:KeyInfo
             int type = included ? WSConstants.CUSTOM_SYMM_SIGNING 

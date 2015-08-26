@@ -52,6 +52,8 @@ public class ClientImpl implements Client {
     private static final String HTTP_RECEIVE_TIMEOUT_PROP = "http.receive.timeout";
     private static final String HTTP_PROXY_SERVER_PROP = "http.proxy.server.uri";
     private static final String HTTP_PROXY_SERVER_PORT_PROP = "http.proxy.server.port";
+    private static final String HTTP_AUTOREDIRECT_PROP = "http.autoredirect";
+    private static final String HTTP_RESPONSE_AUTOCLOSE_PROP = "http.response.stream.auto.close";
     
     private Configurable<Client> configImpl;
     private TLSConfiguration secConfig;
@@ -246,9 +248,13 @@ public class ClientImpl implements Client {
             ClientProviderFactory pf = 
                 ClientProviderFactory.getInstance(WebClient.getConfig(targetClient).getEndpoint());
             List<Object> providers = new LinkedList<Object>();
+            List<org.apache.cxf.feature.Feature> cxfFeatures = 
+                new LinkedList<org.apache.cxf.feature.Feature>();
             Configuration cfg = configImpl.getConfiguration();
             for (Object p : cfg.getInstances()) {
-                if (!(p instanceof Feature)) {
+                if (p instanceof org.apache.cxf.feature.Feature) {
+                    cxfFeatures.add((org.apache.cxf.feature.Feature)p);
+                } else if (!(p instanceof Feature)) {
                     Map<Class<?>, Integer> contracts = cfg.getContracts(p.getClass());
                     if (contracts == null || contracts.isEmpty()) {
                         providers.add(p);
@@ -267,6 +273,12 @@ public class ClientImpl implements Client {
             clientCfg.getRequestContext().put(Client.class.getName(), ClientImpl.this);
             clientCfg.getRequestContext().put(Configuration.class.getName(), 
                                                                       getConfiguration());
+            
+            // Response auto-close
+            Boolean responseAutoClose = getBooleanValue(configProps.get(HTTP_RESPONSE_AUTOCLOSE_PROP));
+            if (responseAutoClose != null) {
+                clientCfg.getResponseContext().put("response.stream.auto.close", responseAutoClose);
+            }
             // TLS
             TLSClientParameters tlsParams = secConfig.getTlsClientParams();
             if (tlsParams.getSSLSocketFactory() != null 
@@ -275,8 +287,11 @@ public class ClientImpl implements Client {
             }
             
             setConnectionProperties(configProps, clientCfg);
-            
-            // start building the invocation
+            // CXF Features
+            for (org.apache.cxf.feature.Feature cxfFeature : cxfFeatures) {
+                cxfFeature.initialize(clientCfg, clientCfg.getBus());
+            }
+            // Start building the invocation
             return new InvocationBuilderImpl(WebClient.fromClient(targetClient));
         }
         private void setConnectionProperties(Map<String, Object> configProps, ClientConfiguration clientCfg) {
@@ -295,6 +310,10 @@ public class ClientImpl implements Client {
             Integer proxyServerPortValue = getIntValue(configProps.get(HTTP_PROXY_SERVER_PORT_PROP));
             if (proxyServerPortValue != null) {
                 clientCfg.getHttpConduit().getClient().setProxyServerPort(proxyServerPortValue);
+            }
+            Boolean autoRedirectValue = getBooleanValue(configProps.get(HTTP_AUTOREDIRECT_PROP));
+            if (autoRedirectValue != null) {
+                clientCfg.getHttpConduit().getClient().setAutoRedirect(autoRedirectValue);
             }
         }
 
@@ -373,7 +392,7 @@ public class ClientImpl implements Client {
             checkNull(name, value);
             return newWebTarget(getUriBuilder().resolveTemplate(name, value, encodeSlash));
         }
-
+        
         @Override
         public WebTarget resolveTemplateFromEncoded(String name, Object value) {
             checkNull(name, value);
@@ -500,5 +519,8 @@ public class ClientImpl implements Client {
     }
     private static Integer getIntValue(Object o) {
         return o instanceof Integer ? (Integer)o : o instanceof String ? Integer.valueOf(o.toString()) : null;
+    }
+    private static Boolean getBooleanValue(Object o) {
+        return o instanceof Boolean ? (Boolean)o : o instanceof Boolean ? Boolean.valueOf(o.toString()) : null;
     }
 }

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
 import java.net.Proxy;
 import java.net.SocketException;
 import java.net.URI;
@@ -32,10 +33,13 @@ import java.net.URLConnection;
 import java.util.logging.Level;
 
 import org.apache.cxf.Bus;
+import org.apache.cxf.common.util.ReflectionUtil;
+import org.apache.cxf.common.util.SystemPropertyAction;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.io.CacheAndWriteOutputStream;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.transport.https.HttpsURLConnectionFactory;
 import org.apache.cxf.transport.https.HttpsURLConnectionInfo;
@@ -46,7 +50,14 @@ import org.apache.cxf.ws.addressing.EndpointReferenceType;
  * 
  */
 public class URLConnectionHTTPConduit extends HTTPConduit {
+    public static final String HTTPURL_CONNECTION_METHOD_REFLECTION = "use.httpurlconnection.method.reflection";
 
+    private static final boolean DEFAULT_USE_REFLECTION;
+    static {
+        DEFAULT_USE_REFLECTION = 
+            Boolean.valueOf(SystemPropertyAction.getProperty(HTTPURL_CONNECTION_METHOD_REFLECTION, "false"));
+    }
+    
     /**
      * This field holds the connection factory, which primarily is used to 
      * factor out SSL specific code from this implementation.
@@ -125,7 +136,27 @@ public class URLConnectionHTTPConduit extends HTTPConduit {
             httpRequestMethod = "POST";
             message.put(Message.HTTP_REQUEST_METHOD, "POST");
         }
-        connection.setRequestMethod(httpRequestMethod);
+        try {
+            connection.setRequestMethod(httpRequestMethod);
+        } catch (java.net.ProtocolException ex) {
+            Object o = message.getContextualProperty(HTTPURL_CONNECTION_METHOD_REFLECTION);
+            boolean b = DEFAULT_USE_REFLECTION;
+            if (o != null) {
+                b = MessageUtils.isTrue(o);
+            }
+            if (b) {
+                try {
+                    java.lang.reflect.Field f = ReflectionUtil.getDeclaredField(HttpURLConnection.class, "method");
+                    ReflectionUtil.setAccessible(f).set(connection, httpRequestMethod);
+                    message.put(HTTPURL_CONNECTION_METHOD_REFLECTION, true);
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
+        }
         
         // We place the connection on the message to pick it up
         // in the WrappedOutputStream.
@@ -176,16 +207,41 @@ public class URLConnectionHTTPConduit extends HTTPConduit {
             super(wos);
             this.connection = wos.connection;
         }
+        private OutputStream connectAndGetOutputStream(Boolean b) throws IOException {
+            OutputStream cout = null;
+
+            if (b != null && b) {
+                String method = connection.getRequestMethod();
+                connection.connect();
+                try {
+                    java.lang.reflect.Field f = ReflectionUtil.getDeclaredField(HttpURLConnection.class, "method");
+                    ReflectionUtil.setAccessible(f).set(connection, "POST");
+                    cout = connection.getOutputStream();
+                    ReflectionUtil.setAccessible(f).set(connection, method);                        
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+                
+            } else {
+                cout = connection.getOutputStream(); 
+            }
+            return cout;
+        }
         protected void setupWrappedStream() throws IOException {
             // If we need to cache for retransmission, store data in a
             // CacheAndWriteOutputStream. Otherwise write directly to the output stream.
             OutputStream cout = null;
             try {
-                cout = connection.getOutputStream();
+                try {
+                    cout = connection.getOutputStream();
+                } catch (ProtocolException pe) {
+                    Boolean b =  (Boolean)outMessage.get(HTTPURL_CONNECTION_METHOD_REFLECTION);
+                    cout = connectAndGetOutputStream(b); 
+                }
             } catch (SocketException e) {
                 if ("Socket Closed".equals(e.getMessage())) {
                     connection.connect();
-                    cout = connection.getOutputStream();
+                    cout = connectAndGetOutputStream((Boolean)outMessage.get(HTTPURL_CONNECTION_METHOD_REFLECTION)); 
                 } else {
                     throw e;
                 }
@@ -312,7 +368,8 @@ public class URLConnectionHTTPConduit extends HTTPConduit {
 
         @Override
         protected void retransmitStream() throws IOException {
-            OutputStream out = connection.getOutputStream();
+            Boolean b =  (Boolean)outMessage.get(HTTPURL_CONNECTION_METHOD_REFLECTION);
+            OutputStream out = connectAndGetOutputStream(b); 
             cachedStream.writeCacheTo(out);
         }
     }

@@ -24,14 +24,15 @@ import java.util.logging.Logger;
 
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.StringUtils;
-import org.apache.cxf.rs.security.jose.JoseHeaders;
-import org.apache.cxf.rs.security.jose.JoseHeadersReaderWriter;
+import org.apache.cxf.jaxrs.provider.json.JsonMapObject;
+import org.apache.cxf.jaxrs.provider.json.JsonMapObjectReaderWriter;
 import org.apache.cxf.rs.security.jose.JoseUtils;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 
 public class JwsCompactConsumer {
     protected static final Logger LOG = LogUtils.getL7dLogger(JwsCompactConsumer.class);
-    private JoseHeadersReaderWriter reader = new JoseHeadersReaderWriter();
+    private JsonMapObjectReaderWriter reader = new JsonMapObjectReaderWriter();
     private String encodedSequence;
     private String encodedSignature;
     private String headersJson;
@@ -42,14 +43,11 @@ public class JwsCompactConsumer {
     public JwsCompactConsumer(String encodedJws, String encodedDetachedPayload) {
         this(encodedJws, encodedDetachedPayload, null);
     }
-    protected JwsCompactConsumer(String encodedJws, String encodedDetachedPayload, JoseHeadersReaderWriter r) {
+    protected JwsCompactConsumer(String encodedJws, String encodedDetachedPayload, JsonMapObjectReaderWriter r) {
         if (r != null) {
             this.reader = r;
         }
-        if (encodedJws.startsWith("\"") && encodedJws.endsWith("\"")) {
-            encodedJws = encodedJws.substring(1, encodedJws.length() - 1);
-        }
-        String[] parts = encodedJws.split("\\.");
+        String[] parts = JoseUtils.getCompactParts(encodedJws);
         if (parts.length != 3) {
             if (parts.length == 2 && encodedJws.endsWith(".")) {
                 encodedSignature = "";
@@ -90,17 +88,17 @@ public class JwsCompactConsumer {
     public byte[] getDecodedSignature() {
         return encodedSignature.isEmpty() ? new byte[]{} : JoseUtils.decode(encodedSignature);
     }
-    public JwsHeaders getJoseHeaders() {
-        JoseHeaders joseHeaders = reader.fromJsonHeaders(headersJson);
+    public JwsHeaders getJwsHeaders() {
+        JsonMapObject joseHeaders = reader.fromJsonToJsonObject(headersJson);
         if (joseHeaders.getUpdateCount() != null) {
             LOG.warning("Duplicate headers have been detected");
             throw new JwsException(JwsException.Error.INVALID_COMPACT_JWS);
         }
-        return new JwsHeaders(joseHeaders);
+        return new JwsHeaders(joseHeaders.asMap());
     }
     public boolean verifySignatureWith(JwsSignatureVerifier validator) {
         try {
-            if (validator.verify(getJoseHeaders(), getUnsignedEncodedSequence(), getDecodedSignature())) {
+            if (validator.verify(getJwsHeaders(), getUnsignedEncodedSequence(), getDecodedSignature())) {
                 return true;
             }
         } catch (JwsException ex) {
@@ -112,22 +110,22 @@ public class JwsCompactConsumer {
     public boolean verifySignatureWith(JsonWebKey key) {
         return verifySignatureWith(JwsUtils.getSignatureVerifier(key));
     }
-    public boolean verifySignatureWith(JsonWebKey key, String algo) {
+    public boolean verifySignatureWith(JsonWebKey key, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getSignatureVerifier(key, algo));
     }
-    public boolean verifySignatureWith(X509Certificate cert, String algo) {
+    public boolean verifySignatureWith(X509Certificate cert, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getPublicKeySignatureVerifier(cert, algo));
     }
-    public boolean verifySignatureWith(PublicKey key, String algo) {
+    public boolean verifySignatureWith(PublicKey key, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getPublicKeySignatureVerifier(key, algo));
     }
-    public boolean verifySignatureWith(byte[] key, String algo) {
+    public boolean verifySignatureWith(byte[] key, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getHmacSignatureVerifier(key, algo));
     }
     public boolean validateCriticalHeaders() {
-        return JwsUtils.validateCriticalHeaders(getJoseHeaders());
+        return JwsUtils.validateCriticalHeaders(getJwsHeaders());
     }
-    protected JoseHeadersReaderWriter getReader() {
+    protected JsonMapObjectReaderWriter getReader() {
         return reader;
     }
     

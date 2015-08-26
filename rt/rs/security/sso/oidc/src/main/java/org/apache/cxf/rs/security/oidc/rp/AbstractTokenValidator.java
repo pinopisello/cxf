@@ -21,83 +21,52 @@ package org.apache.cxf.rs.security.oidc.rp;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.rs.security.jose.jwe.JweDecryptionProvider;
-import org.apache.cxf.rs.security.jose.jwe.JweJwtCompactConsumer;
-import org.apache.cxf.rs.security.jose.jwe.JweUtils;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
-import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactConsumer;
+import org.apache.cxf.rs.security.jose.jwk.JwkUtils;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
 import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.jose.jwt.JwtUtils;
+import org.apache.cxf.rs.security.oauth2.provider.AbstractOAuthJoseJwtConsumer;
 
-public abstract class AbstractTokenValidator {
-    private JweDecryptionProvider jweDecryptor;
-    private JwsSignatureVerifier jwsVerifier;
+public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsumer {
+    private static final String SELF_ISSUED_ISSUER = "https://self-issued.me";
     private String issuerId;
     private int issuedAtRange;
     private int clockOffset;
     private WebClient jwkSetClient;
+    private boolean supportSelfIssuedProvider;
     private ConcurrentHashMap<String, JsonWebKey> keyMap = new ConcurrentHashMap<String, JsonWebKey>(); 
-    
-    protected JwtToken getJwtToken(String wrappedJwtToken, 
-                                   String clientId,
-                                   String idTokenKid, 
-                                   boolean jweOnly) {
-        if (wrappedJwtToken == null) {
-            throw new SecurityException("ID Token is missing");
-        }
-        JweDecryptionProvider theJweDecryptor = getInitializedDecryptionProvider(jweOnly);
-        if (theJweDecryptor != null) {
-            if (jweOnly) {
-                return new JweJwtCompactConsumer(wrappedJwtToken).decryptWith(jweDecryptor);    
-            }
-            wrappedJwtToken = jweDecryptor.decrypt(wrappedJwtToken).getContentText();
-        }
-
-        JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(wrappedJwtToken);
-        JwtToken jwt = jwtConsumer.getJwtToken(); 
-        JwsSignatureVerifier theSigVerifier = getInitializedSigVerifier(jwt, idTokenKid);
-        return validateToken(jwtConsumer, jwt, theSigVerifier);
         
-    }
-    
     protected void validateJwtClaims(JwtClaims claims, String clientId, boolean validateClaimsAlways) {
-        // validate subject
-        if (claims.getSubject() == null) {
-            throw new SecurityException("Invalid subject");
-        }
-        // validate audience
-        String aud = claims.getAudience();
-        if (aud == null && validateClaimsAlways || aud != null && !clientId.equals(aud)) {
-            throw new SecurityException("Invalid audience");
-        }
-
-        // validate the provider
+        // validate the issuer
         String issuer = claims.getIssuer();
-        if (issuer == null && validateClaimsAlways || issuer != null && !issuer.equals(issuerId)) {
+        if (issuer == null && validateClaimsAlways) {
             throw new SecurityException("Invalid provider");
         }
-        JwtUtils.validateJwtTimeClaims(claims, clockOffset, issuedAtRange, validateClaimsAlways);
-    }
+        if (supportSelfIssuedProvider && issuerId == null 
+            && issuer != null && SELF_ISSUED_ISSUER.equals(issuer)) {
+            //TODO: self-issued provider token validation
+        } else {
+            if (issuer != null && !issuer.equals(issuerId)) {
+                throw new SecurityException("Invalid provider");
+            }
+            // validate subject
+            if (claims.getSubject() == null) {
+                throw new SecurityException("Invalid subject");
+            }
+            // validate audience
+            String aud = claims.getAudience();
+            if (aud == null && validateClaimsAlways || aud != null && !clientId.equals(aud)) {
+                throw new SecurityException("Invalid audience");
+            }
     
-    
-    protected JwtToken validateToken(JwsJwtCompactConsumer consumer, JwtToken jwt, JwsSignatureVerifier jws) {
-        if (!consumer.verifySignatureWith(jws)) {
-            throw new SecurityException("Invalid Signature");
+            JwtUtils.validateJwtTimeClaims(claims, clockOffset, issuedAtRange, validateClaimsAlways);
         }
-        return jwt;
     }
-    public void setJweDecryptor(JweDecryptionProvider jweDecryptor) {
-        this.jweDecryptor = jweDecryptor;
-    }
-
-    public void setJweVerifier(JwsSignatureVerifier theJwsVerifier) {
-        this.jwsVerifier = theJwsVerifier;
-    }
-
+    
     public void setIssuerId(String issuerId) {
         this.issuerId = issuerId;
     }
@@ -110,45 +79,54 @@ public abstract class AbstractTokenValidator {
         this.issuedAtRange = issuedAtRange;
     }
 
-    protected JweDecryptionProvider getInitializedDecryptionProvider(boolean jweOnly) {
-        if (jweDecryptor != null) {
-            return jweDecryptor;    
-        } 
-        return JweUtils.loadDecryptionProvider(jweOnly);
-    }
-    protected JwsSignatureVerifier getInitializedSigVerifier(JwtToken jwt, String idTokenKid) {
-        if (jwsVerifier != null) {
-            return jwsVerifier;    
-        } 
-        JwsSignatureVerifier theJwsVerifier = JwsUtils.loadSignatureVerifier(false);
-        if (theJwsVerifier != null) {
-            return theJwsVerifier;
-        }
-        if (jwkSetClient == null) {
-            throw new SecurityException("Provider Jwk Set Client is not available");
-        }
-        String keyId = idTokenKid != null ? idTokenKid : jwt.getHeaders().getKeyId();
-        JsonWebKey key = keyId != null ? keyMap.get(keyId) : null;
-        if (key == null) {
-            JsonWebKeys keys = jwkSetClient.get(JsonWebKeys.class);
-            if (keyId != null) {
-                key = keys.getKey(keyId);
-            } else if (keys.getKeys().size() == 1) {
-                key = keys.getKeys().get(0);
+    @Override
+    protected JwsSignatureVerifier getInitializedSignatureVerifier(JwtToken jwt) {
+        JsonWebKey key = null;
+        if (supportSelfIssuedProvider && SELF_ISSUED_ISSUER.equals(jwt.getClaim("issuer"))) {
+            String publicKeyJson = (String)jwt.getClaim("sub_jwk");
+            if (publicKeyJson != null) {
+                JsonWebKey publicKey = JwkUtils.readJwkKey(publicKeyJson);
+                String thumbprint = JwkUtils.getThumbprint(publicKey);
+                if (thumbprint.equals(jwt.getClaim("sub"))) {
+                    key = publicKey;
+                }
             }
-            keyMap.putAll(keys.getKeyIdMap());
+            if (key == null) {
+                throw new SecurityException("Self-issued JWK key is invalid or not available");
+            }
+        } else {
+            String keyId = jwt.getHeaders().getKeyId();
+            key = keyId != null ? keyMap.get(keyId) : null;
+            if (key == null && jwkSetClient != null) {
+                JsonWebKeys keys = jwkSetClient.get(JsonWebKeys.class);
+                if (keyId != null) {
+                    key = keys.getKey(keyId);
+                } else if (keys.getKeys().size() == 1) {
+                    key = keys.getKeys().get(0);
+                }
+                keyMap.putAll(keys.getKeyIdMap());
+            }
         }
-        if (key == null) {
-            throw new SecurityException("JWK key with the key id: \"" + keyId + "\" is not available");
+        JwsSignatureVerifier theJwsVerifier = null;
+        if (key != null) {
+            theJwsVerifier = JwsUtils.getSignatureVerifier(key);
+        } else {
+            theJwsVerifier = super.getInitializedSignatureVerifier(jwt);
         }
-        theJwsVerifier = JwsUtils.getSignatureVerifier(key);
-        if (jwkSetClient == null) {
-            throw new SecurityException();
+        if (theJwsVerifier == null) {
+            throw new SecurityException("JWS Verifier is not available");
         }
+        
         return theJwsVerifier;
     }
 
     public void setClockOffset(int clockOffset) {
         this.clockOffset = clockOffset;
     }
+
+    public void setSupportSelfIssuedProvider(boolean supportSelfIssuedProvider) {
+        this.supportSelfIssuedProvider = supportSelfIssuedProvider;
+    }
+
+    
 }

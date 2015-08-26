@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf</artifactId>
-        <version>3.1.2-SNAPSHOT</version>
+        <version>3.1.3-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cxf-parent</artifactId>
@@ -126,7 +126,7 @@
         <cxf.oauth.bundle.version>20100527_1</cxf.oauth.bundle.version>
         <cxf.oauth.version>20100527</cxf.oauth.version>
         <cxf.opensaml.version>3.1.1</cxf.opensaml.version>
-        <cxf.opensaml.osgi.version>3.1.0_1</cxf.opensaml.osgi.version>
+        <cxf.opensaml.osgi.version>3.1.1_3</cxf.opensaml.osgi.version>
         <cxf.opensaml.osgi.version.range>[3.1,4)</cxf.opensaml.osgi.version.range>
         <cxf.rhino.version>1.7R2</cxf.rhino.version>
         <cxf.servlet-api.group>org.apache.geronimo.specs</cxf.servlet-api.group>
@@ -142,11 +142,12 @@
         <cxf.spring.ldap.version>1.3.1.RELEASE</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>
         <cxf.swagger.version>1.3.12</cxf.swagger.version>
+        <cxf.swagger2.version>1.5.3</cxf.swagger2.version>
         <cxf.velocity.version>1.7</cxf.velocity.version>
         <cxf.woodstox.core.version>4.4.1</cxf.woodstox.core.version>
         <cxf.woodstox.stax2-api.version>3.1.4</cxf.woodstox.stax2-api.version>
         <cxf.wsdl4j.version>1.6.3</cxf.wsdl4j.version>
-        <cxf.wss4j.version>2.1.2-SNAPSHOT</cxf.wss4j.version>
+        <cxf.wss4j.version>2.1.3-SNAPSHOT</cxf.wss4j.version>
         <cxf.xerces.version>2.11.0</cxf.xerces.version>
         <cxf.xmlbeans.version>2.6.0</cxf.xmlbeans.version>
         <cxf.xmlschema.version>2.2.1</cxf.xmlschema.version>
@@ -162,7 +163,7 @@
         <cxf.hibernate-validator.bundle.version>5.0.2.Final_1</cxf.hibernate-validator.bundle.version>
         <!-- various OSGi related versions -->
         <cxf.aries.version>1.0.0</cxf.aries.version>
-        <cxf.aries.parser.version>1.3.1-SNAPSHOT</cxf.aries.parser.version> 
+        <cxf.aries.parser.version>1.3.1</cxf.aries.parser.version> 
         <cxf.aries.version.range>[1.0,2)</cxf.aries.version.range>
         <cxf.osgi.version>4.2.0</cxf.osgi.version>
         <cxf.karaf.version>3.0.2</cxf.karaf.version>
@@ -178,7 +179,7 @@
         <cxf.saaj-impl.bundle.version>1.3.23_2</cxf.saaj-impl.bundle.version>
         <cxf.stax-ex.version>1.7.6</cxf.stax-ex.version>
         <cxf.wsdl4j.bundle.version>1.6.3_1</cxf.wsdl4j.bundle.version>
-        <cxf.xmlsec.bundle.version>2.0.4</cxf.xmlsec.bundle.version>
+        <cxf.xmlsec.bundle.version>2.0.5</cxf.xmlsec.bundle.version>
         <cxf.rhino.bundle.version>1.7R2_3</cxf.rhino.bundle.version>
         <cxf.xmlresolver.bundle.version>1.2_5</cxf.xmlresolver.bundle.version>
         <cxf.xerces.bundle.version>2.11.0_1</cxf.xerces.bundle.version>
@@ -341,22 +342,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-pmd-plugin</artifactId>
-                    <version>3.4</version>
+                    <version>3.5</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.cxf.build-utils</groupId>
                             <artifactId>cxf-buildtools</artifactId>
                             <version>${cxf.build-utils.version}</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>net.sourceforge.pmd</groupId>
-                            <artifactId>pmd-core</artifactId>
-                            <version>5.3.0</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>net.sourceforge.pmd</groupId>
-                            <artifactId>pmd-java</artifactId>
-                            <version>5.3.0</version>
                         </dependency>
                     </dependencies>
                     <configuration>
@@ -579,7 +570,7 @@
                             ${cxf.osgi.dynamic.import}
                         </DynamicImport-Package>
                         <Export-Service>
-                           	${cxf.export.service}
+                            ${cxf.export.service}
                         </Export-Service>
                         <Bundle-Activator>${cxf.bundle.activator}</Bundle-Activator>
                     </instructions>
@@ -668,7 +659,7 @@
             <dependency>
                 <groupId>org.apache.hbase</groupId>
                 <artifactId>hbase-client</artifactId>
-                <version>0.99.0</version>
+                <version>1.1.1</version>
                 <exclusions>
                     <exclusion>
                         <groupId>io.netty</groupId>
@@ -1237,10 +1228,10 @@
                 <version>${cxf.spring.security.version}</version>
             </dependency>
             <dependency>
-			    <groupId>org.apache.olingo</groupId>
-			    <artifactId>olingo-odata2-core</artifactId>
-			    <version>${cxf.olingo.version}</version>
-			</dependency>
+                <groupId>org.apache.olingo</groupId>
+                <artifactId>olingo-odata2-core</artifactId>
+                <version>${cxf.olingo.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-core</artifactId>
@@ -1771,16 +1762,21 @@
                 <artifactId>swagger-jaxrs_2.10</artifactId>
                 <version>${cxf.swagger.version}</version>
             </dependency>
-			<dependency>
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-jaxrs</artifactId>
+                <version>${cxf.swagger2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
                 <version>${cxf.tika.version}</version>
-			</dependency>
-			<dependency>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-parsers</artifactId>
                 <version>${cxf.tika.version}</version>
-			</dependency>
+            </dependency>
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>

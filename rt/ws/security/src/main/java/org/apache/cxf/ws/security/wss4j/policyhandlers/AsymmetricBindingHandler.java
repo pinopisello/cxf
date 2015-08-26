@@ -172,6 +172,8 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             }
             addSupportingTokens(sigs);
             
+            sigs.addAll(this.getSignedParts(null));
+            
             if (isRequestor() && initiatorWrapper != null) {
                 doSignature(initiatorWrapper, sigs, attached);
                 doEndorse();
@@ -326,7 +328,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
         List<WSEncryptionPart> encrParts = null;
         try {
             encrParts = getEncryptedParts();
-            //Signed parts are determined before encryption because encrypted signed  headers
+            //Signed parts are determined before encryption because encrypted signed headers
             //will not be included otherwise
             sigParts.addAll(this.getSignedParts(null));
         } catch (SOAPException ex) {
@@ -414,7 +416,9 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             try {
                 Element secondRefList = 
                     ((WSSecDKEncrypt)encrBase).encryptForExternalRef(null, secondEncrParts);
-                ((WSSecDKEncrypt)encrBase).addExternalRefElement(secondRefList, secHeader);
+                if (secondRefList != null) {
+                    ((WSSecDKEncrypt)encrBase).addExternalRefElement(secondRefList, secHeader);
+                }
 
             } catch (WSSecurityException ex) {
                 LOG.log(Level.FINE, ex.getMessage(), ex);
@@ -450,41 +454,14 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             assertPolicy(encrToken);
             AlgorithmSuite algorithmSuite = abinding.getAlgorithmSuite();
             if (encrToken.getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
-                try {
-                    WSSecDKEncrypt dkEncr = new WSSecDKEncrypt();
-                    dkEncr.setIdAllocator(wssConfig.getIdAllocator());
-                    dkEncr.setCallbackLookup(callbackLookup);
-                    if (recToken.getToken().getVersion() == SPConstants.SPVersion.SP11) {
-                        dkEncr.setWscVersion(ConversationConstants.VERSION_05_02);
-                    }
-                    
-                    if (encrKey == null) {
-                        setupEncryptedKey(recToken, encrToken);
-                    }
-                    
-                    dkEncr.setExternalKey(this.encryptedKeyValue, this.encryptedKeyId);
-                    dkEncr.getParts().addAll(encrParts);
-                    dkEncr.setCustomValueType(WSConstants.SOAPMESSAGE_NS11 + "#"
-                            + WSConstants.ENC_KEY_VALUE_TYPE);
-                    AlgorithmSuiteType algType = algorithmSuite.getAlgorithmSuiteType();
-                    dkEncr.setSymmetricEncAlgorithm(algType.getEncryption());
-                    dkEncr.setDerivedKeyLength(algType.getEncryptionDerivedKeyLength() / 8);
-                    dkEncr.prepare(saaj.getSOAPPart());
-                    
-                    addDerivedKeyElement(dkEncr.getdktElement());
-                    Element refList = dkEncr.encryptForExternalRef(null, encrParts);
-                    insertBeforeBottomUp(refList);
-                    return dkEncr;
-                } catch (Exception e) {
-                    LOG.log(Level.FINE, e.getMessage(), e);
-                    unassertPolicy(recToken, e);
-                }
+                return doEncryptionDerived(recToken, encrToken, encrParts, algorithmSuite);
             } else {
                 try {
                     WSSecEncrypt encr = new WSSecEncrypt();
                     encr.setIdAllocator(wssConfig.getIdAllocator());
                     encr.setCallbackLookup(callbackLookup);
                     encr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+                    encr.setStoreBytesInAttachment(storeBytesInAttachment);
                     
                     encr.setDocument(saaj.getSOAPPart());
                     Crypto crypto = getEncryptionCrypto();
@@ -527,6 +504,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                     AlgorithmSuiteType algType = algorithmSuite.getAlgorithmSuiteType();
                     encr.setSymmetricEncAlgorithm(algType.getEncryption());
                     encr.setKeyEncAlgo(algType.getAsymmetricKeyWrap());
+                    encr.setMGFAlgorithm(algType.getMGFAlgo());
                     encr.prepare(saaj.getSOAPPart(), crypto);
                     
                     Element encryptedKeyElement = encr.getEncryptedKeyElement();
@@ -534,7 +512,9 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                     //Encrypt, get hold of the ref list and add it
                     if (externalRef) {
                         Element refList = encr.encryptForRef(null, encrParts);
-                        insertBeforeBottomUp(refList);
+                        if (refList != null) {
+                            insertBeforeBottomUp(refList);
+                        }
                         if (attachments != null) {
                             for (Element attachment : attachments) {
                                 this.insertBeforeBottomUp(attachment);
@@ -546,7 +526,9 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                         this.addEncryptedKeyElement(encryptedKeyElement);
                         
                         // Add internal refs
-                        encryptedKeyElement.appendChild(refList);
+                        if (refList != null) {
+                            encryptedKeyElement.appendChild(refList);
+                        }
                         if (attachments != null) {
                             for (Element attachment : attachments) {
                                 this.addEncryptedKeyElement(attachment);
@@ -567,7 +549,48 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             }
         }
         return null;
-    }    
+    }
+    
+    private WSSecBase doEncryptionDerived(AbstractTokenWrapper recToken,
+                                     AbstractToken encrToken,
+                                     List<WSEncryptionPart> encrParts,
+                                     AlgorithmSuite algorithmSuite) {
+        try {
+            WSSecDKEncrypt dkEncr = new WSSecDKEncrypt();
+            dkEncr.setIdAllocator(wssConfig.getIdAllocator());
+            dkEncr.setCallbackLookup(callbackLookup);
+            dkEncr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+            dkEncr.setStoreBytesInAttachment(storeBytesInAttachment);
+            if (recToken.getToken().getVersion() == SPConstants.SPVersion.SP11) {
+                dkEncr.setWscVersion(ConversationConstants.VERSION_05_02);
+            }
+
+            if (encrKey == null) {
+                setupEncryptedKey(recToken, encrToken);
+            }
+
+            dkEncr.setExternalKey(this.encryptedKeyValue, this.encryptedKeyId);
+            dkEncr.getParts().addAll(encrParts);
+            dkEncr.setCustomValueType(WSConstants.SOAPMESSAGE_NS11 + "#"
+                + WSConstants.ENC_KEY_VALUE_TYPE);
+            AlgorithmSuiteType algType = algorithmSuite.getAlgorithmSuiteType();
+            dkEncr.setSymmetricEncAlgorithm(algType.getEncryption());
+            dkEncr.setDerivedKeyLength(algType.getEncryptionDerivedKeyLength() / 8);
+            dkEncr.prepare(saaj.getSOAPPart());
+
+            addDerivedKeyElement(dkEncr.getdktElement());
+            Element refList = dkEncr.encryptForExternalRef(null, encrParts);
+            if (refList != null) {
+                insertBeforeBottomUp(refList);
+            }
+            return dkEncr;
+        } catch (Exception e) {
+            LOG.log(Level.FINE, e.getMessage(), e);
+            unassertPolicy(recToken, e);
+        }
+        
+        return null;
+    }
     
     private void assertUnusedTokens(AbstractTokenWrapper wrapper) {
         if (wrapper == null) {
@@ -605,7 +628,6 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
         }
         
         AbstractToken sigToken = wrapper.getToken();
-        sigParts.addAll(this.getSignedParts(null));
         if (sigParts.isEmpty()) {
             // Add the BST to the security header if required
             if (!attached && isTokenRequired(sigToken.getIncludeTokenType())) {
@@ -621,6 +643,8 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             WSSecDKSign dkSign = new WSSecDKSign();
             dkSign.setIdAllocator(wssConfig.getIdAllocator());
             dkSign.setCallbackLookup(callbackLookup);
+            dkSign.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+            dkSign.setStoreBytesInAttachment(storeBytesInAttachment);
             if (wrapper.getToken().getVersion() == SPConstants.SPVersion.SP11) {
                 dkSign.setWscVersion(ConversationConstants.VERSION_05_02);
             }

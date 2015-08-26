@@ -115,6 +115,23 @@ public final class SecurityConstants extends org.apache.cxf.rt.security.Security
      * else that a SAML action has been configured for the non-security-policy case.
      */
     public static final String ENABLE_SAML_ONE_TIME_USE_CACHE = "ws-security.enable.saml.cache";
+    
+    /**
+     * Whether to store bytes (CipherData or BinarySecurityToken) in an attachment. The default is 
+     * true if MTOM is enabled. Set it to false to BASE-64 encode the bytes and "inlined" them in 
+     * the message instead. Setting this to true is more efficient, as it means that the BASE-64 
+     * encoding step can be skipped. This only applies to the DOM WS-Security stack.
+     */
+    public static final String STORE_BYTES_IN_ATTACHMENT = "ws-security.store.bytes.in.attachment";
+    
+    /**
+     * This configuration flag allows the user to decide whether the default Attachment-Complete 
+     * transform or the Attachment-Content-Only transform should be used when an Attachment is encrypted 
+     * via a WS-SecurityPolicy expression. The default is "false", meaning that the "complete" 
+     * transformation is used.
+     */
+    public static final String USE_ATTACHMENT_ENCRYPTION_CONTENT_ONLY_TRANSFORM = 
+        "ws-security.swa.encryption.attachment.transform.content";
 
     //
     // Non-boolean WS-Security Configuration parameters
@@ -222,7 +239,7 @@ public final class SecurityConstants extends org.apache.cxf.rt.security.Security
      */
     public static final String ASYMMETRIC_SIGNATURE_ALGORITHM = 
         "ws-security.asymmetric.signature.algorithm";
-    
+
     /**
      * This holds a reference to a PasswordEncryptor instance, which is used to encrypt or 
      * decrypt passwords in the Merlin Crypto implementation (or any custom Crypto implementations).
@@ -488,6 +505,7 @@ public final class SecurityConstants extends org.apache.cxf.rt.security.Security
     
     public static final String TOKEN = "ws-security.token";
     public static final String TOKEN_ID = "ws-security.token.id";
+    public static final String TOKEN_ELEMENT = "ws-security.token.element";
     
     public static final Set<String> ALL_PROPERTIES;
     
@@ -509,7 +527,8 @@ public final class SecurityConstants extends org.apache.cxf.rt.security.Security
             CACHE_IDENTIFIER, CACHE_ISSUED_TOKEN_IN_ENDPOINT, PREFER_WSMEX_OVER_STS_CLIENT_CONFIG,
             DELEGATED_CREDENTIAL, KERBEROS_USE_CREDENTIAL_DELEGATION, 
             KERBEROS_IS_USERNAME_IN_SERVICENAME_FORM, STS_TOKEN_IMMINENT_EXPIRY_VALUE,
-            KERBEROS_REQUEST_CREDENTIAL_DELEGATION, POLICY_VALIDATOR_MAP
+            KERBEROS_REQUEST_CREDENTIAL_DELEGATION, POLICY_VALIDATOR_MAP,
+            STORE_BYTES_IN_ATTACHMENT, USE_ATTACHMENT_ENCRYPTION_CONTENT_ONLY_TRANSFORM
         }));
         for (String commonProperty : COMMON_PROPERTIES) {
             s.add(commonProperty);

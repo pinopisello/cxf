@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -126,6 +127,7 @@ public abstract class ProviderFactory {
     
     protected static void initFactory(ProviderFactory factory) {
         factory.setProviders(false,
+                             false,
                      new BinaryDataProvider<Object>(),
                      new SourceProvider<Object>(),
                      new DataSourceProvider<Object>(),
@@ -136,7 +138,7 @@ public abstract class ProviderFactory {
                      new MultipartProvider());
         Object prop = factory.getBus().getProperty("skip.default.json.provider.registration");
         if (!PropertyUtils.isTrue(prop)) {
-            factory.setProviders(false, createProvider(JSON_PROVIDER_NAME));
+            factory.setProviders(false, false, createProvider(JSON_PROVIDER_NAME));
         }
             
     }
@@ -441,7 +443,7 @@ public abstract class ProviderFactory {
                             MessageBodyWriter.class,
                             ExceptionMapper.class);
             if (!extensions.isEmpty()) {
-                setProviders(true, extensions.toArray());
+                setProviders(true, true, extensions.toArray());
                 bus.setProperty(alreadySetProp, "");
             }
         }
@@ -463,7 +465,7 @@ public abstract class ProviderFactory {
         }
     }
     
-    protected abstract void setProviders(boolean custom, Object... providers);
+    protected abstract void setProviders(boolean custom, boolean busGlobal, Object... providers);
     
     @SuppressWarnings("unchecked")
     protected void setCommonProviders(List<ProviderInfo<? extends Object>> theProviders) {
@@ -562,25 +564,53 @@ public abstract class ProviderFactory {
      * x/y;q=1.0 < x/y;q=0.7.
      */    
     private void sortReaders() {
-        if (providerComparator == null) {
+        if (!customComparatorAvailable(MessageBodyReader.class)) {
             Collections.sort(messageReaders, new MessageBodyReaderComparator());
         } else {
             doCustomSort(messageReaders);
         }
     }
     private <T> void sortWriters() {
-        if (providerComparator == null) {
+        if (!customComparatorAvailable(MessageBodyWriter.class)) {
             Collections.sort(messageWriters, new MessageBodyWriterComparator());
         } else {
             doCustomSort(messageWriters);
         }
     }
     
+    private boolean customComparatorAvailable(Class<?> providerClass) {
+        if (providerComparator != null) {
+            Type type = ((ParameterizedType)providerComparator.getClass()
+                .getGenericInterfaces()[0]).getActualTypeArguments()[0];
+            if (type instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType)type;
+                if (pt.getRawType() == ProviderInfo.class) {
+                    Type type2 = pt.getActualTypeArguments()[0];
+                    if (type2 == providerClass
+                        || type2 instanceof WildcardType
+                        || type2 instanceof ParameterizedType 
+                           && ((ParameterizedType)type2).getRawType() == providerClass) {
+                        return true;
+                    }
+                }
+            } else if (type == Object.class) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    @SuppressWarnings("unchecked")
     private <T> void doCustomSort(List<?> listOfProviders) {
-        @SuppressWarnings("unchecked")
-        List<T> theProviders = (List<T>)messageReaders;
-        @SuppressWarnings("unchecked")
-        Comparator<? super T> theComparator = (Comparator<? super T>)providerComparator;
+        Comparator<?> theProviderComparator = providerComparator;
+        Type type = ((ParameterizedType)providerComparator.getClass()
+            .getGenericInterfaces()[0]).getActualTypeArguments()[0];
+        if (type == Object.class) {
+            theProviderComparator = 
+                (Comparator<?>)(new ProviderInfoClassComparator((Comparator<Object>)theProviderComparator));
+        }
+        List<T> theProviders = (List<T>)listOfProviders;
+        Comparator<? super T> theComparator = (Comparator<? super T>)theProviderComparator;
         Collections.sort((List<T>)theProviders, theComparator);
     }
     
@@ -656,7 +686,7 @@ public abstract class ProviderFactory {
      * @param entityProviders the entityProviders to set
      */
     public void setUserProviders(List<?> userProviders) {
-        setProviders(true, userProviders.toArray());
+        setProviders(true, false, userProviders.toArray());
     }
 
     private static class MessageBodyReaderComparator 
@@ -712,7 +742,13 @@ public abstract class ProviderFactory {
     private static int compareCustomStatus(ProviderInfo<?> p1, ProviderInfo<?> p2) {
         Boolean custom1 = p1.isCustom();
         Boolean custom2 = p2.isCustom();
-        return custom1.compareTo(custom2) * -1;
+        int result = custom1.compareTo(custom2) * -1;
+        if (result == 0 && custom1) {
+            Boolean busGlobal1 = p1.isBusGlobal();
+            Boolean busGlobal2 = p2.isBusGlobal();
+            result = busGlobal1.compareTo(busGlobal2);
+        }
+        return result;
     }
     
     private static class ContextResolverComparator 
@@ -848,14 +884,20 @@ public abstract class ProviderFactory {
             return compareClasses(expectedCls, em1, em2);
         }
     }
+    
     public static class ProviderInfoClassComparator implements Comparator<ProviderInfo<?>> {
-        private ClassComparator comp;
+        private Comparator<Object> comp;
+        private boolean defaultComp;
         public ProviderInfoClassComparator(Class<?> expectedCls) {
             this.comp = new ClassComparator(expectedCls);
+            this.defaultComp = true;
+        }
+        public ProviderInfoClassComparator(Comparator<Object> comp) {
+            this.comp = comp;
         }
         public int compare(ProviderInfo<?> p1, ProviderInfo<?> p2) {
             int result = comp.compare(p1.getProvider(), p2.getProvider());
-            if (result == 0) {
+            if (result == 0 && defaultComp) {
                 result = compareCustomStatus(p1, p2);
             }
             return result;
@@ -1137,6 +1179,7 @@ public abstract class ProviderFactory {
     }
     
     protected List<ProviderInfo<? extends Object>> prepareProviders(boolean custom,
+                                                                    boolean busGlobal,
                                                                     Object[] providers,
                                                                     ProviderInfo<Application> application) {
         List<ProviderInfo<? extends Object>> theProviders = 
@@ -1157,7 +1200,9 @@ public abstract class ProviderFactory {
             } else if (provider instanceof ProviderInfo) {
                 theProviders.add((ProviderInfo<?>)provider);
             } else {    
-                theProviders.add(new ProviderInfo<Object>(provider, getBus(), custom));
+                ProviderInfo<Object> theProvider = new ProviderInfo<Object>(provider, getBus(), custom);
+                theProvider.setBusGlobal(busGlobal);
+                theProviders.add(theProvider);
             }
         }
         return theProviders;
@@ -1174,11 +1219,10 @@ public abstract class ProviderFactory {
         return null;
     }
 
-    public Comparator<?> getProviderComparator() {
-        return providerComparator;
-    }
-
     public void setProviderComparator(Comparator<?> providerComparator) {
         this.providerComparator = providerComparator;
+        sortReaders();
+        sortWriters();
     }
+    
 }

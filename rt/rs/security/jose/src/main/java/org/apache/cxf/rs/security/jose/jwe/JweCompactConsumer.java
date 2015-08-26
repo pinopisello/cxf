@@ -25,19 +25,17 @@ import java.util.logging.Logger;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.Base64Exception;
 import org.apache.cxf.common.util.Base64UrlUtility;
+import org.apache.cxf.jaxrs.provider.json.JsonMapObject;
+import org.apache.cxf.jaxrs.provider.json.JsonMapObjectReaderWriter;
 import org.apache.cxf.rs.security.jose.JoseException;
-import org.apache.cxf.rs.security.jose.JoseHeaders;
-import org.apache.cxf.rs.security.jose.JoseHeadersReaderWriter;
+import org.apache.cxf.rs.security.jose.JoseUtils;
 
 
 public class JweCompactConsumer {
     protected static final Logger LOG = LogUtils.getL7dLogger(JweCompactConsumer.class);
     private JweDecryptionInput jweDecryptionInput;
     public JweCompactConsumer(String jweContent) {
-        if (jweContent.startsWith("\"") && jweContent.endsWith("\"")) {
-            jweContent = jweContent.substring(1, jweContent.length() - 1);
-        }
-        String[] parts = jweContent.split("\\.");
+        String[] parts = JoseUtils.getCompactParts(jweContent);
         if (parts.length != 5) {
             LOG.warning("5 JWE parts are expected");
             throw new JweException(JweException.Error.INVALID_COMPACT_JWE);
@@ -48,13 +46,13 @@ public class JweCompactConsumer {
             byte[] initVector = Base64UrlUtility.decode(parts[2]);
             byte[] encryptedContent = Base64UrlUtility.decode(parts[3]);
             byte[] authTag = Base64UrlUtility.decode(parts[4]);
-            JoseHeadersReaderWriter reader = new JoseHeadersReaderWriter();
-            JoseHeaders joseHeaders = reader.fromJsonHeaders(headersJson);
+            JsonMapObjectReaderWriter reader = new JsonMapObjectReaderWriter();
+            JsonMapObject joseHeaders = reader.fromJsonToJsonObject(headersJson);
             if (joseHeaders.getUpdateCount() != null) { 
                 LOG.warning("Duplicate headers have been detected");
                 throw new JweException(JweException.Error.INVALID_COMPACT_JWE);
             }
-            JweHeaders jweHeaders = new JweHeaders(joseHeaders);
+            JweHeaders jweHeaders = new JweHeaders(joseHeaders.asMap());
             jweDecryptionInput = new JweDecryptionInput(encryptedCEK,
                                                         initVector, 
                                                         encryptedContent,

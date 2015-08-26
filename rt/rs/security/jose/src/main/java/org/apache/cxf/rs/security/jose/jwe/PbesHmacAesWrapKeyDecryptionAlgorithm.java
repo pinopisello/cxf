@@ -23,7 +23,7 @@ import org.apache.cxf.rs.security.jose.JoseException;
 import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
 import org.apache.cxf.rs.security.jose.jwa.KeyAlgorithm;
 
-public class PbesHmacAesWrapKeyDecryptionAlgorithm implements KeyDecryptionAlgorithm {
+public class PbesHmacAesWrapKeyDecryptionAlgorithm implements KeyDecryptionProvider {
     private byte[] password;
     private KeyAlgorithm algo;
     public PbesHmacAesWrapKeyDecryptionAlgorithm(String password) {    
@@ -51,11 +51,11 @@ public class PbesHmacAesWrapKeyDecryptionAlgorithm implements KeyDecryptionAlgor
         JweHeaders jweHeaders = jweDecryptionInput.getJweHeaders();
         byte[] saltInput = getDecodedBytes(jweHeaders.getHeader("p2s"));
         int pbesCount = jweHeaders.getIntegerHeader("p2c");
-        String keyAlgoJwt = jweHeaders.getAlgorithm();
+        String keyAlgoJwt = jweHeaders.getKeyEncryptionAlgorithm().getJwaName();
         int keySize = PbesHmacAesWrapKeyEncryptionAlgorithm.getKeySize(keyAlgoJwt);
         byte[] derivedKey = PbesHmacAesWrapKeyEncryptionAlgorithm
             .createDerivedKey(keyAlgoJwt, keySize, password, saltInput, pbesCount);
-        KeyDecryptionAlgorithm aesWrap = new AesWrapKeyDecryptionAlgorithm(derivedKey, algo) {
+        KeyDecryptionProvider aesWrap = new AesWrapKeyDecryptionAlgorithm(derivedKey, algo) {
             protected boolean isValidAlgorithmFamily(String wrapAlgo) {
                 return AlgorithmUtils.isPbesHsWrap(wrapAlgo);
             }    

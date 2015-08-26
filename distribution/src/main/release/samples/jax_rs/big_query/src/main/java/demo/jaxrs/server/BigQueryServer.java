@@ -28,6 +28,7 @@ import java.util.List;
 
 import javax.ws.rs.core.MediaType;
 
+import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.provider.json.JsonMapObjectProvider;
 import org.apache.cxf.rs.security.jose.JoseType;
@@ -43,7 +44,10 @@ import org.apache.cxf.rs.security.oauth2.provider.OAuthJSONProvider;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 
 
-public class BigQueryServer {
+public final class BigQueryServer {
+    private BigQueryServer() {
+    }
+    
     public static void main(String[] args) throws Exception {
         final String pc12File = args[0];
         final String keySecret = args[1];
@@ -86,7 +90,10 @@ public class BigQueryServer {
         JwtBearerGrant grant = new JwtBearerGrant(base64UrlAssertion);
         
         WebClient accessTokenService = WebClient.create("https://www.googleapis.com/oauth2/v3/token",
-                                                        Arrays.asList(new OAuthJSONProvider(), new AccessTokenGrantWriter()));
+                                                        Arrays.asList(new OAuthJSONProvider(),
+                                                                      new AccessTokenGrantWriter()));
+        WebClient.getConfig(accessTokenService).getInInterceptors().add(new LoggingInInterceptor());
+        
         accessTokenService.type(MediaType.APPLICATION_FORM_URLENCODED).accept(MediaType.APPLICATION_JSON);
         
         return accessTokenService.post(grant, ClientAccessToken.class);

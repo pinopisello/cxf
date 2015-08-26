@@ -157,7 +157,6 @@ public class STSTokenRetrieverTest extends AbstractBusClientServerTestBase {
         stsClient.setEnableLifetime(true);
 
         Map<String, Object> props = new HashMap<String, Object>();
-        props.put(SecurityConstants.USERNAME, "alice");
         props.put(SecurityConstants.CALLBACK_HANDLER, "org.apache.cxf.systest.sts.common.CommonCallbackHandler");
         props.put(SecurityConstants.ENCRYPT_USERNAME, "mystskey");
         props.put(SecurityConstants.ENCRYPT_PROPERTIES, "clientKeystore.properties");
@@ -165,7 +164,6 @@ public class STSTokenRetrieverTest extends AbstractBusClientServerTestBase {
         props.put(SecurityConstants.STS_TOKEN_USERNAME, "mystskey");
         props.put(SecurityConstants.STS_TOKEN_PROPERTIES, "clientKeystore.properties");
         props.put(SecurityConstants.STS_TOKEN_USE_CERT_FOR_KEYINFO, "true");
-        props.put(SecurityConstants.IS_BSP_COMPLIANT, "false");
         stsClient.setProperties(props);
         return stsClient;
     }
@@ -186,10 +184,6 @@ public class STSTokenRetrieverTest extends AbstractBusClientServerTestBase {
         Map<String, Object> props = new HashMap<String, Object>();
         props.put(SecurityConstants.USERNAME, "alice");
         props.put(SecurityConstants.CALLBACK_HANDLER, "org.apache.cxf.systest.sts.common.CommonCallbackHandler");
-        props.put(SecurityConstants.STS_TOKEN_USERNAME, "mystskey");
-        props.put(SecurityConstants.STS_TOKEN_PROPERTIES, "clientKeystore.properties");
-        props.put(SecurityConstants.STS_TOKEN_USE_CERT_FOR_KEYINFO, "true");
-        props.put(SecurityConstants.IS_BSP_COMPLIANT, "false");
         stsClient.setProperties(props);
         return stsClient;
     }

@@ -51,6 +51,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.binding.soap.SoapMessage;
 import org.apache.cxf.binding.soap.saaj.SAAJUtils;
 import org.apache.cxf.common.logging.LogUtils;
@@ -115,6 +116,7 @@ import org.apache.wss4j.policy.SPConstants.IncludeTokenType;
 import org.apache.wss4j.policy.model.AbstractBinding;
 import org.apache.wss4j.policy.model.AbstractSecurityAssertion;
 import org.apache.wss4j.policy.model.AbstractSymmetricAsymmetricBinding;
+import org.apache.wss4j.policy.model.AbstractSymmetricAsymmetricBinding.ProtectionOrder;
 import org.apache.wss4j.policy.model.AbstractToken;
 import org.apache.wss4j.policy.model.AbstractToken.DerivedKeys;
 import org.apache.wss4j.policy.model.AlgorithmSuite.AlgorithmSuiteType;
@@ -170,8 +172,9 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     protected Element topDownElement;
     protected Element bstElement;
     protected Element lastEncryptedKeyElement;
-    
+
     protected final CallbackLookup callbackLookup;
+    protected boolean storeBytesInAttachment;
     
     private Element lastSupportingTokenElement;
     private Element lastDerivedKeyElement;
@@ -194,6 +197,22 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         this.secHeader = secHeader;
         this.saaj = saaj;
         message.getExchange().put(WSHandlerConstants.SEND_SIGV, signatures);
+        
+        boolean storeBytes = 
+            MessageUtils.getContextualBoolean(
+                message, SecurityConstants.STORE_BYTES_IN_ATTACHMENT, true
+            );
+        if (storeBytes && AttachmentUtil.isMtomEnabled(message)) {
+            storeBytesInAttachment = true;
+            if (binding instanceof AbstractSymmetricAsymmetricBinding
+                && (ProtectionOrder.EncryptBeforeSigning 
+                    == ((AbstractSymmetricAsymmetricBinding)binding).getProtectionOrder())
+                    || ((AbstractSymmetricAsymmetricBinding)binding).isProtectTokens()) {
+                LOG.fine("Disabling SecurityConstants.STORE_BYTES_IN_ATTACHMENT due to "
+                         + "EncryptBeforeSigning or ProtectTokens policy.");
+                storeBytesInAttachment = false;
+            }
+        }
         
         Element soapBody = SAAJUtils.getBody(saaj);
         if (soapBody != null) {
@@ -876,7 +895,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                     crypto,
                     samlCallback.isSendKeyValue(),
                     samlCallback.getCanonicalizationAlgorithm(),
-                    samlCallback.getSignatureAlgorithm()
+                    samlCallback.getSignatureAlgorithm(),
+                    samlCallback.getSignatureDigestAlgorithm()
             );
         }
         
@@ -1063,10 +1083,15 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                                                             "Header");
                 securedParts.add(wep);
             }
-            
+
             Attachments attachments = parts.getAttachments();
             if (attachments != null) {
-                WSEncryptionPart wep = new WSEncryptionPart("cid:Attachments", "Element");
+                String encModifier = "Element";
+                if (MessageUtils.getContextualBoolean(
+                    message, SecurityConstants.USE_ATTACHMENT_ENCRYPTION_CONTENT_ONLY_TRANSFORM, false)) {
+                    encModifier = "Content";
+                }
+                WSEncryptionPart wep = new WSEncryptionPart("cid:Attachments", encModifier);
                 securedParts.add(wep);
             }
         }
@@ -1376,6 +1401,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         WSSecEncryptedKey encrKey = new WSSecEncryptedKey();
         encrKey.setIdAllocator(wssConfig.getIdAllocator());
         encrKey.setCallbackLookup(callbackLookup);
+        encrKey.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+        encrKey.setStoreBytesInAttachment(storeBytesInAttachment);
         Crypto crypto = getEncryptionCrypto();
         message.getExchange().put(SecurityConstants.ENCRYPT_CRYPTO, crypto);
         setKeyIdentifierType(encrKey, token);
@@ -1393,6 +1420,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         AlgorithmSuiteType algType = binding.getAlgorithmSuite().getAlgorithmSuiteType();
         encrKey.setSymmetricEncAlgorithm(algType.getEncryption());
         encrKey.setKeyEncAlgo(algType.getAsymmetricKeyWrap());
+        encrKey.setMGFAlgorithm(algType.getMGFAlgo());
         
         encrKey.prepare(saaj.getSOAPPart(), crypto);
         
@@ -1590,7 +1618,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                 CastUtils.cast((List<?>)
                     message.getExchange().getInMessage().get(WSHandlerConstants.RECV_RESULTS));
             if (results != null) {
-                encrKeyBuilder.setUseThisCert(getReqSigCert(results));
+                encrKeyBuilder.setUseThisCert(WSS4JUtils.getReqSigCert(results));
                  
                 //TODO This is a hack, this should not come under USE_REQ_SIG_CERT
                 if (encrKeyBuilder.isCertSet()) {
@@ -1604,32 +1632,6 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         }
         
         return encrUser;
-    }
-    
-    private static X509Certificate getReqSigCert(List<WSHandlerResult> results) {
-        /*
-        * Scan the results for a matching actor. Use results only if the
-        * receiving Actor and the sending Actor match.
-        */
-        for (WSHandlerResult rResult : results) {
-            List<WSSecurityEngineResult> signedResults = 
-                rResult.getActionResults().get(WSConstants.SIGN);
-            if (signedResults != null) {
-                /*
-                 * Scan the results for the first Signature action. Use the
-                 * certificate of this Signature to set the certificate for the
-                 * encryption action :-).
-                 */
-                for (WSSecurityEngineResult signedResult : signedResults) {
-                    if (signedResult.containsKey(WSSecurityEngineResult.TAG_X509_CERTIFICATE)) {
-                        return (X509Certificate)signedResult.get(
-                            WSSecurityEngineResult.TAG_X509_CERTIFICATE);
-                    }
-                }
-            }
-        }
-        
-        return null;
     }
     
     /**
@@ -1699,6 +1701,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         sig.setIdAllocator(wssConfig.getIdAllocator());
         sig.setCallbackLookup(callbackLookup);
         sig.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
+        sig.setStoreBytesInAttachment(storeBytesInAttachment);
         checkForX509PkiPath(sig, token);
         if (token instanceof IssuedToken || token instanceof SamlToken) {
             assertPolicy(token);

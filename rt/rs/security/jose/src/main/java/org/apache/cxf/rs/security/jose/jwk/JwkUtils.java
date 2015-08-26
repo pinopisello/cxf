@@ -29,8 +29,11 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.crypto.SecretKey;
@@ -40,6 +43,7 @@ import org.apache.cxf.common.util.Base64UrlUtility;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.helpers.IOUtils;
+import org.apache.cxf.jaxrs.provider.json.JsonMapObjectReaderWriter;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
@@ -51,25 +55,53 @@ import org.apache.cxf.rs.security.jose.jaxrs.PrivateKeyPasswordProvider;
 import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
 import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
 import org.apache.cxf.rs.security.jose.jwa.KeyAlgorithm;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwe.AesCbcHmacJweDecryption;
 import org.apache.cxf.rs.security.jose.jwe.AesCbcHmacJweEncryption;
 import org.apache.cxf.rs.security.jose.jwe.JweDecryptionProvider;
 import org.apache.cxf.rs.security.jose.jwe.JweEncryptionProvider;
 import org.apache.cxf.rs.security.jose.jwe.JweHeaders;
 import org.apache.cxf.rs.security.jose.jwe.JweUtils;
-import org.apache.cxf.rs.security.jose.jwe.KeyDecryptionAlgorithm;
+import org.apache.cxf.rs.security.jose.jwe.KeyDecryptionProvider;
 import org.apache.cxf.rs.security.jose.jwe.KeyEncryptionProvider;
 import org.apache.cxf.rs.security.jose.jwe.PbesHmacAesWrapKeyDecryptionAlgorithm;
 import org.apache.cxf.rs.security.jose.jwe.PbesHmacAesWrapKeyEncryptionAlgorithm;
 import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 import org.apache.cxf.rt.security.crypto.CryptoUtils;
+import org.apache.cxf.rt.security.crypto.MessageDigestUtils;
 
 public final class JwkUtils {
     public static final String JWK_KEY_STORE_TYPE = "jwk";
     public static final String RSSEC_KEY_STORE_JWKSET = "rs.security.keystore.jwkset";
     public static final String RSSEC_KEY_STORE_JWKKEY = "rs.security.keystore.jwkkey";
+    private static final Map<KeyType, List<String>> JWK_REQUIRED_FIELDS_MAP;
+    static {
+        JWK_REQUIRED_FIELDS_MAP = new HashMap<KeyType, List<String>>();
+        JWK_REQUIRED_FIELDS_MAP.put(KeyType.RSA, Arrays.asList(
+            JsonWebKey.RSA_PUBLIC_EXP, JsonWebKey.KEY_TYPE, JsonWebKey.RSA_MODULUS));
+        JWK_REQUIRED_FIELDS_MAP.put(KeyType.EC, Arrays.asList(
+            JsonWebKey.EC_CURVE, JsonWebKey.KEY_TYPE, JsonWebKey.EC_X_COORDINATE, JsonWebKey.EC_Y_COORDINATE));
+        JWK_REQUIRED_FIELDS_MAP.put(KeyType.OCTET, Arrays.asList(
+            JsonWebKey.OCTET_KEY_VALUE, JsonWebKey.KEY_TYPE));
+    }
     private JwkUtils() {
         
+    }
+    public static String getThumbprint(String keySequence) {
+        return getThumbprint(readJwkKey(keySequence));
+    }
+    public static String getThumbprint(JsonWebKey key) {
+        List<String> fields = getRequiredFields(key.getKeyType());
+        JsonWebKey thumbprintKey = new JsonWebKey();
+        for (String f : fields) {
+            thumbprintKey.setProperty(f, key.getProperty(f));
+        }
+        String json = new JsonMapObjectReaderWriter().toJson(thumbprintKey);
+        byte[] digest = MessageDigestUtils.createDigest(json, MessageDigestUtils.ALGO_SHA_256);
+        return Base64UrlUtility.encode(digest);
+    }
+    public static List<String> getRequiredFields(KeyType keyType) {
+        return JWK_REQUIRED_FIELDS_MAP.get(keyType);
     }
     public static JsonWebKey readJwkKey(URI uri) throws IOException {
         return readJwkKey(uri.toURL().openStream());
@@ -117,14 +149,16 @@ public final class JwkUtils {
         return jwe.encrypt(StringUtils.toBytesUTF8(writer.jwkSetToJson(jwkSet)), 
                            toJweHeaders("jwk-set+json"));
     }
-    public static String encryptJwkSet(JsonWebKeys jwkSet, RSAPublicKey key, String keyAlgo, String contentAlgo) {
+    public static String encryptJwkSet(JsonWebKeys jwkSet, RSAPublicKey key, KeyAlgorithm keyAlgo, 
+                                       ContentAlgorithm contentAlgo) {
         return JweUtils.encrypt(key, keyAlgo, contentAlgo, StringUtils.toBytesUTF8(jwkSetToJson(jwkSet)),
                                 "jwk-set+json");
     }
-    public static String signJwkSet(JsonWebKeys jwkSet, RSAPrivateKey key, String algo) {
+    public static String signJwkSet(JsonWebKeys jwkSet, RSAPrivateKey key, SignatureAlgorithm algo) {
         return JwsUtils.sign(key, algo, jwkSetToJson(jwkSet), "jwk-set+json");
     }
-    public static String encryptJwkSet(JsonWebKeys jwkSet, SecretKey key, String keyAlgo, String contentAlgo) {
+    public static String encryptJwkSet(JsonWebKeys jwkSet, SecretKey key, KeyAlgorithm keyAlgo, 
+                                       ContentAlgorithm contentAlgo) {
         return JweUtils.encrypt(key, keyAlgo, contentAlgo, StringUtils.toBytesUTF8(jwkSetToJson(jwkSet)),
                                 "jwk-set+json");
     }
@@ -137,13 +171,15 @@ public final class JwkUtils {
     public static JsonWebKeys decryptJwkSet(String jsonJwkSet, JweDecryptionProvider jwe, JwkReaderWriter reader) {
         return reader.jsonToJwkSet(jwe.decrypt(jsonJwkSet).getContentText());
     }
-    public static JsonWebKeys decryptJwkSet(RSAPrivateKey key, String keyAlgo, String ctAlgo, String jsonJwkSet) {
+    public static JsonWebKeys decryptJwkSet(RSAPrivateKey key, KeyAlgorithm keyAlgo, ContentAlgorithm ctAlgo,
+                                            String jsonJwkSet) {
         return readJwkSet(toString(JweUtils.decrypt(key, keyAlgo, ctAlgo, jsonJwkSet)));
     }
-    public static JsonWebKeys verifyJwkSet(RSAPublicKey key, String keyAlgo, String jsonJwk) {
+    public static JsonWebKeys verifyJwkSet(RSAPublicKey key, SignatureAlgorithm keyAlgo, String jsonJwk) {
         return readJwkSet(JwsUtils.verify(key, keyAlgo, jsonJwk));
     }
-    public static JsonWebKeys decryptJwkSet(SecretKey key, String keyAlgo, String ctAlgo, String jsonJwkSet) {
+    public static JsonWebKeys decryptJwkSet(SecretKey key, KeyAlgorithm keyAlgo, ContentAlgorithm ctAlgo, 
+                                            String jsonJwkSet) {
         return readJwkSet(toString(JweUtils.decrypt(key, keyAlgo, ctAlgo, jsonJwkSet)));
     }
     public static JsonWebKeys decryptJwkSet(InputStream is, char[] password) throws IOException {
@@ -167,15 +203,17 @@ public final class JwkUtils {
         return jwe.encrypt(StringUtils.toBytesUTF8(writer.jwkToJson(jwkKey)), 
                            toJweHeaders("jwk+json"));
     }
-    public static String encryptJwkKey(JsonWebKey jwkKey, RSAPublicKey key, String keyAlgo, String contentAlgo) {
+    public static String encryptJwkKey(JsonWebKey jwkKey, RSAPublicKey key, KeyAlgorithm keyAlgo, 
+                                       ContentAlgorithm contentAlgo) {
         return JweUtils.encrypt(key, keyAlgo, contentAlgo, StringUtils.toBytesUTF8(jwkKeyToJson(jwkKey)),
                                 "jwk+json");
     }
-    public static String encryptJwkKey(JsonWebKey jwkKey, SecretKey key, String keyAlgo, String contentAlgo) {
+    public static String encryptJwkKey(JsonWebKey jwkKey, SecretKey key, KeyAlgorithm keyAlgo, 
+                                       ContentAlgorithm contentAlgo) {
         return JweUtils.encrypt(key, keyAlgo, contentAlgo, StringUtils.toBytesUTF8(jwkKeyToJson(jwkKey)),
                                 "jwk+json");
     }
-    public static String signJwkKey(JsonWebKey jwkKey, RSAPrivateKey key, String algo) {
+    public static String signJwkKey(JsonWebKey jwkKey, RSAPrivateKey key, SignatureAlgorithm algo) {
         return JwsUtils.sign(key, algo, jwkKeyToJson(jwkKey), "jwk+json");
     }
     public static JsonWebKey decryptJwkKey(String jsonJwkKey, char[] password) {
@@ -184,13 +222,15 @@ public final class JwkUtils {
     public static JsonWebKey decryptJwkKey(String jsonJwkKey, char[] password, JwkReaderWriter reader) {
         return decryptJwkKey(jsonJwkKey, createDefaultDecryption(password), reader);
     }
-    public static JsonWebKey decryptJwkKey(RSAPrivateKey key, String keyAlgo, String ctAlgo, String jsonJwk) {
+    public static JsonWebKey decryptJwkKey(RSAPrivateKey key, KeyAlgorithm keyAlgo, ContentAlgorithm ctAlgo, 
+                                           String jsonJwk) {
         return readJwkKey(toString(JweUtils.decrypt(key, keyAlgo, ctAlgo, jsonJwk)));
     }
-    public static JsonWebKey verifyJwkKey(RSAPublicKey key, String keyAlgo, String jsonJwk) {
+    public static JsonWebKey verifyJwkKey(RSAPublicKey key, SignatureAlgorithm keyAlgo, String jsonJwk) {
         return readJwkKey(JwsUtils.verify(key, keyAlgo, jsonJwk));
     }
-    public static JsonWebKey decryptJwkKey(SecretKey key, String keyAlgo, String ctAlgo, String jsonJwk) {
+    public static JsonWebKey decryptJwkKey(SecretKey key, KeyAlgorithm keyAlgo, ContentAlgorithm ctAlgo, 
+                                           String jsonJwk) {
         return readJwkKey(toString(JweUtils.decrypt(key, keyAlgo, ctAlgo, jsonJwk)));
     }
     public static JsonWebKey decryptJwkKey(String jsonJwkKey, JweDecryptionProvider jwe, JwkReaderWriter reader) {
@@ -238,11 +278,11 @@ public final class JwkUtils {
             try {
                 InputStream is = ResourceUtils.getResourceStream(keyStoreLoc, bus);
                 if (is == null) {
-                    throw new SecurityException("Error in loading keystore location: " + keyStoreLoc);
+                    throw new JwkException("Error in loading keystore location: " + keyStoreLoc);
                 }
                 keyContent = IOUtils.readStringFromStream(is);
             } catch (Exception ex) {
-                throw new SecurityException(ex);
+                throw new JwkException(ex);
             }
         } else {
             keyContent = props.getProperty(RSSEC_KEY_STORE_JWKSET);
@@ -429,7 +469,7 @@ public final class JwkUtils {
     }
     public static JsonWebKey fromSecretKey(SecretKey secretKey, String algo) {
         if (!AlgorithmUtils.isOctet(algo)) {
-            throw new SecurityException("Invalid algorithm");
+            throw new JwkException("Invalid algorithm");
         }
         JsonWebKey jwk = new JsonWebKey();
         jwk.setKeyType(KeyType.OCTET);
@@ -446,12 +486,12 @@ public final class JwkUtils {
         return new AesCbcHmacJweEncryption(ContentAlgorithm.A128CBC_HS256, keyEncryption);
     }
     private static JweDecryptionProvider createDefaultDecryption(char[] password) {
-        KeyDecryptionAlgorithm keyDecryption = new PbesHmacAesWrapKeyDecryptionAlgorithm(password);
+        KeyDecryptionProvider keyDecryption = new PbesHmacAesWrapKeyDecryptionAlgorithm(password);
         return new AesCbcHmacJweDecryption(keyDecryption);
     }
     private static JsonWebKey prepareRSAJwk(BigInteger modulus, String algo) {
         if (!AlgorithmUtils.isRsa(algo)) {
-            throw new SecurityException("Invalid algorithm");
+            throw new JwkException("Invalid algorithm");
         }
         JsonWebKey jwk = new JsonWebKey();
         jwk.setKeyType(KeyType.RSA);
@@ -472,7 +512,7 @@ public final class JwkUtils {
     }
     public static void setPublicKeyInfo(JsonWebKey jwk, JoseHeaders headers, String algo,
                                         boolean reportPublicKey, boolean reportPublicKeyId) {
-        if (reportPublicKey && JsonWebKey.KEY_TYPE_RSA.equals(jwk.getKeyType())) {
+        if (reportPublicKey && KeyType.RSA.equals(jwk.getKeyType())) {
             List<String> chain = CastUtils.cast((List<?>)jwk.getProperty("x5c"));
             //TODO: if needed the chain can be reported as part of a 'jwk' property
             if (chain != null) {

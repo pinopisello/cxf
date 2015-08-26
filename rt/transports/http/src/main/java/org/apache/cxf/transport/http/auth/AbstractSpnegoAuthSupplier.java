@@ -101,8 +101,11 @@ public abstract class AbstractSpnegoAuthSupplier {
                             Message message) throws GSSException, 
         LoginException {
         
+        GSSCredential delegatedCred = 
+            (GSSCredential)message.getContextualProperty(GSSCredential.class.getName());
+        
         Subject subject = null;
-        if (authPolicy != null) {
+        if (authPolicy != null && delegatedCred == null) {
             String contextName = authPolicy.getAuthorization();
             if (contextName == null) {
                 contextName = "";
@@ -117,12 +120,9 @@ public abstract class AbstractSpnegoAuthSupplier {
                 subject = lc.getSubject();
             }
         }
-                                                                 
+        
         GSSManager manager = GSSManager.getInstance();
         GSSName serverName = manager.createName(spn, serviceNameType);
-
-        GSSCredential delegatedCred = 
-            (GSSCredential)message.getContextualProperty(GSSCredential.class.getName());
         
         GSSContext context = manager
                 .createContext(serverName.canonicalize(oid), oid, delegatedCred, GSSContext.DEFAULT_LIFETIME);

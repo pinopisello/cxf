@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.1.2-SNAPSHOT</version>
+        <version>3.1.3-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
@@ -85,6 +85,11 @@
         <dependency>
             <groupId>com.wordnik</groupId>
             <artifactId>swagger-jaxrs_2.10</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-jaxrs</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>

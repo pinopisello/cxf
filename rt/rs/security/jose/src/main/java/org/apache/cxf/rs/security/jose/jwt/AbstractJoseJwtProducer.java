@@ -19,40 +19,64 @@
 package org.apache.cxf.rs.security.jose.jwt;
 
 import org.apache.cxf.common.util.StringUtils;
+import org.apache.cxf.rs.security.jose.AbstractJoseProducer;
 import org.apache.cxf.rs.security.jose.jwe.JweEncryptionProvider;
-import org.apache.cxf.rs.security.jose.jwe.JweUtils;
+import org.apache.cxf.rs.security.jose.jwe.JweJwtCompactProducer;
 import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactProducer;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureProvider;
-import org.apache.cxf.rs.security.jose.jws.JwsUtils;
-import org.apache.cxf.rs.security.jose.jws.NoneJwsSignatureProvider;
 
-public abstract class AbstractJoseJwtProducer {
-    private JwsSignatureProvider sigProvider;
-    private JweEncryptionProvider encryptionProvider;
-    protected String processJwt(JwtToken jwt, boolean jwsRequired, boolean jweRequired) {
-        JwsJwtCompactProducer jws = new JwsJwtCompactProducer(jwt); 
-        JwsSignatureProvider theSigProvider = getInitializedSigProvider(jweRequired, jwsRequired);
-        String data = jws.signWith(theSigProvider);
-        JweEncryptionProvider theEncProvider = getInitializedEncryptionProvider(jweRequired);
-        if (theEncProvider != null) {
-            data = theEncProvider.encrypt(StringUtils.toBytesUTF8(data), null);
+public abstract class AbstractJoseJwtProducer extends AbstractJoseProducer {
+    private boolean jwsRequired = true;
+    private boolean jweRequired;
+    
+    protected String processJwt(JwtToken jwt) {
+        return processJwt(jwt, null, null);
+    }
+    protected String processJwt(JwtToken jwt,
+                                JweEncryptionProvider theEncProvider,
+                                JwsSignatureProvider theSigProvider) {
+        if (!isJwsRequired() && !isJweRequired()) {
+            throw new JwtException("Unable to secure JWT");
+        }
+        String data = null;
+        if (theEncProvider == null) {
+            theEncProvider = getInitializedEncryptionProvider();
+        }
+        if (theEncProvider == null && isJweRequired()) {
+            throw new JwtException("Unable to encrypt JWT");
+        }
+        if (isJwsRequired()) {
+            if (theSigProvider == null) {
+                theSigProvider = getInitializedSignatureProvider();
+            }
+            if (theSigProvider == null) {
+                throw new JwtException("Unable to sign JWT");
+            }
+            JwsJwtCompactProducer jws = new JwsJwtCompactProducer(jwt); 
+            data = jws.signWith(theSigProvider);
+            if (theEncProvider != null) {
+                data = theEncProvider.encrypt(StringUtils.toBytesUTF8(data), null);
+            }
+        } else {
+            JweJwtCompactProducer jwe = new JweJwtCompactProducer(jwt);
+            data = jwe.encryptWith(theEncProvider);
         }
         return data;
     }
-    protected JwsSignatureProvider getInitializedSigProvider(boolean jwsRequired, boolean jweRequired) {
-        if (sigProvider != null) {
-            return sigProvider;    
-        } 
-        JwsSignatureProvider theSigProvider = JwsUtils.loadSignatureProvider(jwsRequired);
-        if (theSigProvider == null && jweRequired) {
-            return new NoneJwsSignatureProvider();
-        }
-        throw new SecurityException();
+
+    public boolean isJwsRequired() {
+        return jwsRequired;
     }
-    protected JweEncryptionProvider getInitializedEncryptionProvider(boolean required) {
-        if (encryptionProvider != null) {
-            return encryptionProvider;    
-        }
-        return JweUtils.loadEncryptionProvider(required);
+
+    public void setJwsRequired(boolean jwsRequired) {
+        this.jwsRequired = jwsRequired;
+    }
+
+    public boolean isJweRequired() {
+        return jweRequired;
+    }
+
+    public void setJweRequired(boolean jweRequired) {
+        this.jweRequired = jweRequired;
     }
 }

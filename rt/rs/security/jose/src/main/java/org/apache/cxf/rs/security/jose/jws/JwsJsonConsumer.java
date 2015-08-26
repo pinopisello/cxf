@@ -32,8 +32,8 @@ import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.jaxrs.provider.json.JsonMapObject;
 import org.apache.cxf.jaxrs.provider.json.JsonMapObjectReaderWriter;
-import org.apache.cxf.rs.security.jose.JoseHeaders;
 import org.apache.cxf.rs.security.jose.JoseUtils;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 
 public class JwsJsonConsumer {
@@ -96,7 +96,7 @@ public class JwsJsonConsumer {
             new JwsJsonSignatureEntry(encodedJwsPayload, 
                                       protectedHeader, 
                                       signature, 
-                                      header != null ? new JoseHeaders(header) : null);
+                                      header != null ? new JwsHeaders(header) : null);
     }
     public String getSignedDocument() {
         return this.jwsSignedDocument;
@@ -113,12 +113,12 @@ public class JwsJsonConsumer {
     public List<JwsJsonSignatureEntry> getSignatureEntries() {
         return Collections.unmodifiableList(signatureEntries);
     }
-    public MultivaluedMap<String, JwsJsonSignatureEntry> getSignatureEntryMap() {
+    public MultivaluedMap<SignatureAlgorithm, JwsJsonSignatureEntry> getSignatureEntryMap() {
         return JwsUtils.getJwsJsonSignatureMap(signatureEntries);
     }
     public boolean verifySignatureWith(JwsSignatureVerifier validator) {
         List<JwsJsonSignatureEntry> theSignatureEntries = 
-            getSignatureEntryMap().get(validator.getAlgorithm().getJwaName());
+            getSignatureEntryMap().get(validator.getAlgorithm());
         if (theSignatureEntries != null) {
             for (JwsJsonSignatureEntry signatureEntry : theSignatureEntries) {
                 if (signatureEntry.verifySignatureWith(validator)) {
@@ -128,10 +128,10 @@ public class JwsJsonConsumer {
         }
         return false;
     }
-    public boolean verifySignatureWith(PublicKey key, String algo) {
+    public boolean verifySignatureWith(PublicKey key, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getPublicKeySignatureVerifier(key, algo));
     }
-    public boolean verifySignatureWith(byte[] key, String algo) {
+    public boolean verifySignatureWith(byte[] key, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getHmacSignatureVerifier(key, algo));
     }
     public boolean verifySignatureWith(List<JwsSignatureVerifier> validators) {
@@ -150,7 +150,7 @@ public class JwsJsonConsumer {
         List<JwsJsonSignatureEntry> validatedSignatures = new LinkedList<JwsJsonSignatureEntry>();
         for (JwsSignatureVerifier validator : validators) {
             List<JwsJsonSignatureEntry> theSignatureEntries = 
-                getSignatureEntryMap().get(validator.getAlgorithm().getJwaName());
+                getSignatureEntryMap().get(validator.getAlgorithm());
             if (theSignatureEntries != null) {
                 for (JwsJsonSignatureEntry sigEntry : theSignatureEntries) {
                     if (sigEntry.verifySignatureWith(validator)) {     
@@ -172,7 +172,7 @@ public class JwsJsonConsumer {
     public boolean verifySignatureWith(JsonWebKey key) {
         return verifySignatureWith(JwsUtils.getSignatureVerifier(key));
     }
-    public boolean verifySignatureWith(JsonWebKey key, String algo) {
+    public boolean verifySignatureWith(JsonWebKey key, SignatureAlgorithm algo) {
         return verifySignatureWith(JwsUtils.getSignatureVerifier(key, algo));
     }
     public JwsJsonProducer toProducer() {

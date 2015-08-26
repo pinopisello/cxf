@@ -26,9 +26,11 @@ import javax.crypto.SecretKey;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.cxf.helpers.CastUtils;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.provider.json.JsonMapObjectReaderWriter;
-import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
+import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwe.JweDecryptionProvider;
 import org.apache.cxf.rs.security.jose.jwe.JweUtils;
 import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactConsumer;
@@ -43,6 +45,7 @@ import org.apache.cxf.rt.security.crypto.CryptoUtils;
 
 public class JwtRequestCodeFilter implements AuthorizationCodeRequestFilter {
     private static final String REQUEST_PARAM = "request";
+    private static final String REQUEST_URI_PARAM = "request_uri";
     private JweDecryptionProvider jweDecryptor;
     private JwsSignatureVerifier jwsVerifier;
     private boolean verifyWithClientCertificates;
@@ -55,6 +58,12 @@ public class JwtRequestCodeFilter implements AuthorizationCodeRequestFilter {
                                                   UserSubject endUser,
                                                   Client client) {
         String requestToken = params.getFirst(REQUEST_PARAM);
+        if (requestToken == null) {
+            String requestUri = params.getFirst(REQUEST_URI_PARAM);
+            if (requestUri != null && requestUri.startsWith(getPrefix(client))) {
+                requestToken = WebClient.create(requestUri).get(String.class);
+            }
+        }
         if (requestToken != null) {
             JweDecryptionProvider theJweDecryptor = getInitializedDecryptionProvider(client);
             if (theJweDecryptor != null) {
@@ -91,6 +100,10 @@ public class JwtRequestCodeFilter implements AuthorizationCodeRequestFilter {
             return params;
         }
     }
+    private String getPrefix(Client client) {
+        //TODO: consider restricting to specific hosts
+        return "https://";
+    }
     public void setJweDecryptor(JweDecryptionProvider jweDecryptor) {
         this.jweDecryptor = jweDecryptor;
     }
@@ -105,7 +118,7 @@ public class JwtRequestCodeFilter implements AuthorizationCodeRequestFilter {
         } 
         if (decryptWithClientSecret) {
             SecretKey key = CryptoUtils.decodeSecretKey(c.getClientSecret());
-            return JweUtils.getDirectKeyJweDecryption(key, AlgorithmUtils.A128GCM_ALGO);
+            return JweUtils.getDirectKeyJweDecryption(key, ContentAlgorithm.A128GCM);
         }
         return JweUtils.loadDecryptionProvider(false);
     }
@@ -115,11 +128,11 @@ public class JwtRequestCodeFilter implements AuthorizationCodeRequestFilter {
         } 
         if (verifyWithClientSecret) {
             byte[] hmac = CryptoUtils.decodeSequence(c.getClientSecret());
-            return JwsUtils.getHmacSignatureVerifier(hmac, AlgorithmUtils.HMAC_SHA_256_ALGO);
+            return JwsUtils.getHmacSignatureVerifier(hmac, SignatureAlgorithm.HS256);
         } else if (verifyWithClientCertificates) {
             X509Certificate cert = 
                 (X509Certificate)CryptoUtils.decodeCertificate(c.getApplicationCertificates().get(0));
-            return JwsUtils.getPublicKeySignatureVerifier(cert, AlgorithmUtils.RS_SHA_256_ALGO);
+            return JwsUtils.getPublicKeySignatureVerifier(cert, SignatureAlgorithm.RS256);
         } 
         return JwsUtils.loadSignatureVerifier(true);
     }

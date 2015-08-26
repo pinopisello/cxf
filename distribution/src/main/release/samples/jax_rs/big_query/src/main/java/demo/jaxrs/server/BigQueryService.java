@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -39,30 +40,47 @@ public class BigQueryService {
 
     private static final String BQ_SELECT = 
         "SELECT corpus,corpus_date FROM publicdata:samples.shakespeare WHERE word=\\\"%s\\\"";
-    private static final String BQ_REQUEST = "{" +
-        "\"kind\": \"bigquery#queryRequest\"," 
+    private static final String BQ_REQUEST = "{"
+        + "\"kind\": \"bigquery#queryRequest\"," 
         + "\"query\": \"%s\","
         + "\"maxResults\": %d" 
         + "}";
     
+    @Context
+    private OidcClientTokenContext oidcContext;
     private WebClient bigQueryClient;
     
     @GET
+    @Path("/start")
+    @Produces("text/html")
+    public BigQueryStart startBigQuerySearch() {
+        return new BigQueryStart(getUserInfo());
+    }
+    
+    @POST
     @Path("/complete")
     @Produces("text/html")
-    public BigQueryResponse completeBigQuery(@Context OidcClientTokenContext context) {
+    public BigQueryResponse completeBigQuerySearch() {
         
-        ClientAccessToken accessToken = context.getToken();
+        ClientAccessToken accessToken = oidcContext.getToken();
         
-        MultivaluedMap<String, String> state = context.getState();
+        MultivaluedMap<String, String> state = oidcContext.getState();
         
         String searchWord = state.getFirst("word");
         String maxResults = state.getFirst("maxResults");
         
-        BigQueryResponse bigQueryResponse = new BigQueryResponse(context.getUserInfo().getName(),
-                                                                 searchWord);
+        BigQueryResponse bigQueryResponse = new BigQueryResponse(getUserInfo(), searchWord);
         bigQueryResponse.setTexts(getMatchingTexts(bigQueryClient, accessToken, searchWord, maxResults));
         return bigQueryResponse;
+    }
+
+    private String getUserInfo() {
+        if (oidcContext.getUserInfo() != null) {
+            return oidcContext.getUserInfo().getName();
+        } else {
+            return oidcContext.getIdToken().getSubject();
+        }
+        
     }
 
     public void setBigQueryClient(WebClient bigQueryClient) {

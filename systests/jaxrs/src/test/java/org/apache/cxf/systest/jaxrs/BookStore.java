@@ -91,6 +91,7 @@ import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.jaxrs.ext.Nullable;
 import org.apache.cxf.jaxrs.ext.Oneway;
+import org.apache.cxf.jaxrs.ext.PATCH;
 import org.apache.cxf.jaxrs.ext.StreamingResponse;
 import org.apache.cxf.jaxrs.ext.search.QueryContext;
 import org.apache.cxf.jaxrs.ext.search.SearchCondition;
@@ -157,7 +158,12 @@ public class BookStore {
     public void preDestroy() {
         //System.out.println("PreDestroy called");
     }
-
+    @GET
+    @Path("/booktype")
+    @Produces("application/json")
+    public BookType getBookType() {
+        return new BookType("root", 124L);
+    }
     @GET
     @Path("/")
     public Book getBookRoot() {
@@ -279,6 +285,14 @@ public class BookStore {
     @Consumes("application/xml")
     public Book retrieveBook(Book book) {
         return book;
+    }
+    
+    @PATCH
+    @Path("/patch")
+    @Produces("application/xml")
+    @Consumes("application/xml")
+    public Response patchBook(Book book) {
+        return Response.ok(book).build();
     }
     
     @DELETE

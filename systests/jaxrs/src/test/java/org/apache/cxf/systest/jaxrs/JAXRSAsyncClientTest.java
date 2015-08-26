@@ -81,10 +81,23 @@ public class JAXRSAsyncClientTest extends AbstractBusClientServerTestBase {
     public void testRetrieveBookCustomMethodAsyncSync() throws Exception {
         String address = "http://localhost:" + PORT + "/bookstore/retrieve";
         WebClient wc = WebClient.create(address);
+        // Setting this property is not needed given that 
+        // we have the async conduit loaded in the test module:
+        // WebClient.getConfig(wc).getRequestContext().put("use.async.http.conduit", true);
         wc.type("application/xml").accept("application/xml");
-        WebClient.getConfig(wc).getRequestContext().put("use.async.http.conduit", true);
         Book book = wc.invoke("RETRIEVE", new Book("Retrieve", 123L), Book.class);
         assertEquals("Retrieve", book.getName());
+        wc.close();
+    }
+    
+    @Test
+    public void testPatchBook() throws Exception {
+        String address = "http://localhost:" + PORT + "/bookstore/patch";
+        WebClient wc = WebClient.create(address);
+        wc.type("application/xml");
+        WebClient.getConfig(wc).getRequestContext().put("use.async.http.conduit", true);
+        Book book = wc.invoke("PATCH", new Book("Patch", 123L), Book.class);
+        assertEquals("Patch", book.getName());
         wc.close();
     }
     

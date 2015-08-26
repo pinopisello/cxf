@@ -47,9 +47,11 @@ import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.provider.FormEncodingProvider;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.phase.PhaseInterceptorChain;
 
 public final class FormUtils {
+    public static final String FORM_PARAMS_FROM_HTTP_PARAMS = "set.form.parameters.from.http.parameters";
     public static final String FORM_PARAM_MAP = "org.apache.cxf.form_data";
     
     private static final Logger LOG = LogUtils.getL7dLogger(FormUtils.class);
@@ -154,7 +156,8 @@ public final class FormUtils {
                                              javax.servlet.http.HttpServletRequest request) {
         if (!StringUtils.isEmpty(postBody)) {
             populateMapFromString(params, m, postBody, enc, decode);
-        } else if (request != null) {
+        } else if (request != null 
+            && MessageUtils.getContextualBoolean(m, FORM_PARAMS_FROM_HTTP_PARAMS, true)) {
             for (Enumeration<String> en = request.getParameterNames(); en.hasMoreElements();) {
                 String paramName = en.nextElement();
                 String[] values = request.getParameterValues(paramName);
@@ -165,6 +168,10 @@ public final class FormUtils {
     }
     
     public static void logRequestParametersIfNeeded(Map<String, List<String>> params, String enc) {
+        if ((PhaseInterceptorChain.getCurrentMessage() == null)
+            || (PhaseInterceptorChain.getCurrentMessage().getInterceptorChain() == null)) {
+            return;
+        }
         String chain = PhaseInterceptorChain.getCurrentMessage().getInterceptorChain().toString();
         if (chain.contains(LoggingInInterceptor.class.getSimpleName())) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
