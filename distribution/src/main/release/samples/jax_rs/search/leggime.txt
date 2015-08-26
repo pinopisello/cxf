@@ -1,0 +1,49 @@
+
+====================  Client =======================
+
+Usa apache httpClient per caricare 3 files [jsr339-jaxrs-2.0-final-spec.pdf,JavaWebSocketAPI_1.0_Final.pdf,apache-cxf-tika-lucene.odt]
+sul server [multipart Post verso http://localhost:9000/catalog].
+Si puo' anche usare l' interfaccia web:  http://localhost:9000
+
+
+
+
+
+
+
+
+
+
+
+====================  Server =======================
+
+Usa Lucene per 
+
+
+
+
+=================  CORS ===========================
+
+Il sito http://localhost:9000 puo' essere caricato come http://gloconm2/:9000
+Quando si esegue una request, in questo secondo caso, la request e' XHR verso localhost, non gloconm2 [http://localhost:9000/catalog/search?$filter=ct==pippa,source==*pippa*&_=1435600853255]
+Questo rende la request soggetta alle regole del Cross-Origin Resource Sharing standard [https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS]
+Il browser invia un header Origin:http://gloconm2:9000  .CrossOriginResourceSharingFilter.simpleRequest() cerca annotazione @CrossOriginResourceSharing nel metodo jax-rs invocato e la confronta
+con il valore dell'header "Origin" per verificare la compatibilita'/permessi.
+Per aprire a a tutti i domini:@CrossOriginResourceSharing(allowAllOrigins = true)
+Per aprire a uno o piu domini: @CrossOriginResourceSharing(allowAllOrigins = false,allowOrigins={"http://gloconms2:9000"})
+ 
+
+
+======================  Lucene 		======================================
+
+
+
+
+
+
+
+
+
+
+
+

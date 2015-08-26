@@ -23,7 +23,7 @@ under the License.
     <!-- HTTP/S configuration for proxy & web clients -->
     <!-- -->
     <http:conduit name="https://localhost:.*/customerservice/.*">
-        <http:client ConnectionTimeout="3000000" ReceiveTimeout="3000000"/>
+        <http:client ConnectionTimeout="30000000" ReceiveTimeout="30000000"/>
         <http:tlsClientParameters>
             <sec:keyManagers keyPassword="ckpass">
                 <sec:keyStore file="src/main/config/clientKeystore.jks" password="cspass" type="JKS"/>

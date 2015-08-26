@@ -34,7 +34,7 @@
 	
 	<!--  ============   Definizione server jaxrs  =========== -->
 
-	<jaxrs:server id="bookservice" address="/">
+	<jaxrs:server id="bookservice" address="/jaxrs">
 		<jaxrs:serviceBeans>
 			<ref bean="customerservice"/>
 			<ref bean="customerservice-secured"/>
@@ -51,9 +51,8 @@
 	<bean id="customerservice-secured" class="demo.jaxrs.service.CustomerServiceSecuredImpl"/> <!-- La gestione authorizzazioni con @Secured in CustomerServiceSecured.java -->
 	
 
-	<!-- ============ Definizione Spring security ===========-->
-	<security:global-method-security
-		secured-annotations="enabled">
+	<!-- ============ Definizione Spring security ===========  -->
+	<security:global-method-security secured-annotations="enabled"  >  <!-- secured-annotations abilita @Secured annotation on CustomerServiceSecured -->
 		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getCustomer(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>
 		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.addCustomer(*))" access="ROLE_ADMIN"/>
 		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.updateCustomer(Long,demo.jaxrs.service.Customer))" access="ROLE_ADMIN"/>
@@ -61,12 +60,20 @@
 		<security:protect-pointcut expression="execution(* demo.jaxrs.service.CustomerService.getOrder(*))" access="ROLE_CUSTOMER,ROLE_ADMIN"/>
 	</security:global-method-security>
 	
-	<!-- abilita security per tutte le urls della web-app proteggendo con basic auth-->
-	 <security:http auto-config="true">
-	 	 <security:http-basic/> 
-	 </security:http>
 	
-	<!--definisce users/passwords rispettivi roles -->
+	
+	<!-- abilita security per tutte le urls della web-app proteggendo con basic auth-->
+	 <security:http auto-config="true" use-expressions="true" >  
+	 	 <security:intercept-url pattern="/pippo.txt" access="isAnonymous()" />
+        <!-- <security:intercept-url pattern="/**" access="hasRole('ROLE_ADMIN')"/>	--> 
+ 		 <security:http-basic/>
+	 	 <!--<security:remember-me   key="spitterKey"   token-validity-seconds="1000" />-->
+	 </security:http>
+	 
+	 
+	 
+	
+	<!--definisce users/passwords rispettivi roles	 -->
 	<security:authentication-manager>
 		<security:authentication-provider>
 			<security:user-service>
@@ -75,6 +82,6 @@
 			</security:user-service>
 		</security:authentication-provider>
 	</security:authentication-manager>
-		
+	
 	
 </beans>

@@ -45,8 +45,10 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 
 @Path("/sample") 
-@Api(value = "/sample", description = "Sample JAX-RS service with Swagger documentation")
+@Api(value = "/sample", description = "Pippo pippo pippo")
 public class Sample {
+    
+    
     @Produces({ MediaType.APPLICATION_JSON })
     @GET
     @ApiOperation(

@@ -39,10 +39,14 @@ public final class Client {
     public static void main(String args[]) throws Exception {               
         final String url = "http://localhost:9000/catalog";
         final HttpClient httpClient = new HttpClient();
-                        
+              
+        
+        
         uploadToCatalog(url, httpClient, "jsr339-jaxrs-2.0-final-spec.pdf");
         uploadToCatalog(url, httpClient, "JavaWebSocketAPI_1.0_Final.pdf");
         uploadToCatalog(url, httpClient, "apache-cxf-tika-lucene.odt");
+        
+        
         
         list(url, httpClient);        
         

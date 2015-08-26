@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.activation.DataHandler;
 import javax.json.Json;
@@ -96,8 +97,7 @@ public class Catalog {
     private final Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_4_9);    
     private final Storage storage; 
     private final LuceneQueryVisitor<SearchBean> visitor;
-    private final ExecutorService executor = Executors.newFixedThreadPool(
-        Runtime.getRuntime().availableProcessors());
+    private final ExecutorService executor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors());
     
     public Catalog() throws IOException {
         this(new Storage());
@@ -112,10 +112,9 @@ public class Catalog {
     @POST
     @CrossOriginResourceSharing(allowAllOrigins = true)
     @Consumes("multipart/form-data")
-    public void addBook(@Suspended final AsyncResponse response, @Context final UriInfo uri, 
-            final MultipartBody body)  {
+    public void addBook(@Suspended final AsyncResponse response, @Context final UriInfo uri,   final MultipartBody body)  {
         
-        executor.submit(new Runnable() {
+     Future risultato =   executor.submit(new Runnable() {
             public void run() {
                 for (final Attachment attachment: body.getAllAttachments()) {
                     final DataHandler handler =  attachment.getDataHandler();
@@ -186,7 +185,7 @@ public class Catalog {
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @CrossOriginResourceSharing(allowAllOrigins = true)
+    @CrossOriginResourceSharing(allowAllOrigins = false,allowOrigins={"http://gloconm2:9000"})
     @Path("/search")
     public Response findBook(@Context SearchContext searchContext, 
             @Context final UriInfo uri) throws IOException {

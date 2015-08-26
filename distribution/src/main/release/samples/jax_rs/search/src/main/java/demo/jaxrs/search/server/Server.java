@@ -39,23 +39,28 @@ public class Server {
         final ServletHolder staticHolder = new ServletHolder(new DefaultServlet());
         // Register and map the dispatcher servlet
         final ServletHolder servletHolder = new ServletHolder(new CXFNonSpringJaxrsServlet());
+        
+        
         final ServletContextHandler context = new ServletContextHandler();      
         context.setContextPath("/");
-        context.addServlet(staticHolder, "/static/*");
-        context.addServlet(servletHolder, "/*");  
+        context.addServlet(staticHolder, "/static/*");  //registra staticHolder per rispondere a tutte le request "/static/*"
+        context.addServlet(servletHolder, "/*");        //registra staticHolder per rispondere a tutte altre requests "/*"
         context.setResourceBase(getClass().getResource("/browser").toURI().toString());
         
-        servletHolder.setInitParameter("redirects-list", 
-            "/ /index.html /js/fileinput.min.js /css/fileinput.min.css");
+        
+        //configurazione cxf servlet
+        servletHolder.setInitParameter("redirects-list", "/ /index.html /js/fileinput.min.js /css/fileinput.min.css");
         servletHolder.setInitParameter("redirect-servlet-name", staticHolder.getName());
         servletHolder.setInitParameter("redirect-attributes", "javax.servlet.include.request_uri");
-        servletHolder.setInitParameter("jaxrs.serviceClasses", Catalog.class.getName());
+        servletHolder.setInitParameter("jaxrs.serviceClasses", Catalog.class.getName());            //registra jax-rs endpoint /catalog
         servletHolder.setInitParameter("jaxrs.properties", StringUtils.join(
             new String[] {
                 "search.query.parameter.name=$filter",
                 SearchUtils.DATE_FORMAT_PROPERTY + "=yyyy/MM/dd"
             }, " ")            
         );
+        
+        
         servletHolder.setInitParameter("jaxrs.providers", StringUtils.join(
             new String[] {
                 MultipartProvider.class.getName(),
@@ -74,7 +79,7 @@ public class Server {
         new Server();
         System.out.println("Server ready...");
 
-        Thread.sleep(5 * 60000 * 1000);
+        Thread.sleep(5 * 60000 * 100000);
         System.out.println("Server exiting");
         System.exit(0);
     }

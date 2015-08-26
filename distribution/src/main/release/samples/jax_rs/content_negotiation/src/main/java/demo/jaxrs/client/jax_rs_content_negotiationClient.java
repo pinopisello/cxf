@@ -22,9 +22,9 @@ package demo.jaxrs.client;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 
-public final class Client {
+public final class jax_rs_content_negotiationClient {
 
-    private Client() {
+    private jax_rs_content_negotiationClient() {
     }
 
     public static void main(String args[]) throws Exception {

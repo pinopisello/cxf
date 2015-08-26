@@ -71,7 +71,7 @@
                                     <goal>java</goal>
                                 </goals>
                                 <configuration>
-                                    <mainClass>demo.jaxrs.client.Client</mainClass>
+                                    <mainClass>demo.jaxrs.client.jax_rs_content_negotiationClient</mainClass>
                                 </configuration>
                             </execution>
                         </executions>

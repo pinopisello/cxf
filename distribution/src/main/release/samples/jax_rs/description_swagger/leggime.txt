@@ -1,0 +1,4 @@
+Esempio di come ,annotando un endpoint jaxrs [Simple.java] con annotazioni swagger [com.wordnik.swagger.annotations.Api] si 
+autogenerano pagine web che descrivono tutti i metodi esposti.[http://localhost:9000/]
+
+

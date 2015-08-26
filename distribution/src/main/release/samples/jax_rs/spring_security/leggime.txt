@@ -45,7 +45,7 @@ UsernamePasswordAuthenticationFilter
 DefaultLoginPageGeneratingFilter
 BasicAuthenticationFilter.doFilter()        ==> Invocato perche' in beans.exml  <security:http-basic/>!!
 								
-												1/2Request NON ha header  Authorization [ex get da browser http://127.0.0.1:9002/customerservice/customers/123 senza Authorization headers]
+												1/2Request NON ha header  Authorization [ex get da browser http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice/customers/123 senza Authorization headers]
 								                PhaseInterceptorChain viene invocata e   ServiceInvokerInterceptor ad un certo punto invoca JAXRSInvoker.invoke().
 								                Di qui RoleVoter.vote(Authentication authentication, Object object, Collection<ConfigAttribute> attributes) 
 								                -- object e' ReflectiveMethodInvocation che contiene target = demo.jaxrs.service.CustomerServiceImpl

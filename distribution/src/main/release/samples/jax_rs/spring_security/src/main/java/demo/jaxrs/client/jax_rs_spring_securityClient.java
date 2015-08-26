@@ -77,7 +77,7 @@ public final class jax_rs_spring_securityClient {
         System.out.println("HTTP GET to query customer info, user : " 
             + name + ", password : " + password);
         GetMethod get = 
-            new GetMethod("http://localhost:9002/customerservice/customers/" + id);
+            new GetMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice/customers/" + id);
         setMethodHeaders(get, name, password);
         handleHttpMethod(get);
     } 
@@ -87,7 +87,7 @@ public final class jax_rs_spring_securityClient {
         System.out.println("HTTP GET to query customer info, user : " 
             + name + ", password : " + password);
         GetMethod get = 
-            new GetMethod("http://localhost:9002/customerservice-secured/customers/" + id);
+            new GetMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice-secured/customers/" + id);
         setMethodHeaders(get, name, password);
         handleHttpMethod(get);
     } 
@@ -97,7 +97,7 @@ public final class jax_rs_spring_securityClient {
                
         System.out.println("HTTP POST to add customer info, user : " 
             + name + ", password : " + password);
-        PostMethod post = new PostMethod("http://localhost:9002/customerservice/customers");
+        PostMethod post = new PostMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice/customers");
         setMethodHeaders(post, name, password);
         RequestEntity entity = new InputStreamRequestEntity(
             this.getClass().getClassLoader().getResourceAsStream("add_customer.xml"));
@@ -110,7 +110,7 @@ public final class jax_rs_spring_securityClient {
         
         System.out.println("HTTP POST to add customer info, user : " 
             + name + ", password : " + password);
-        PostMethod post = new PostMethod("http://localhost:9002/customerservice-secured/customers");
+        PostMethod post = new PostMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice-secured/customers");
         setMethodHeaders(post, name, password);
         RequestEntity entity = new InputStreamRequestEntity(
             this.getClass().getClassLoader().getResourceAsStream("add_customer.xml"));
@@ -123,7 +123,7 @@ public final class jax_rs_spring_securityClient {
                
         System.out.println("HTTP PUT to update customer info, user : " 
             + name + ", password : " + password);
-        PutMethod put = new PutMethod("http://localhost:9002/customerservice/customers/123");
+        PutMethod put = new PutMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice/customers/123");
         setMethodHeaders(put, name, password);
         RequestEntity entity = new InputStreamRequestEntity(
             this.getClass().getClassLoader().getResourceAsStream("update_customer.xml"));
@@ -136,7 +136,7 @@ public final class jax_rs_spring_securityClient {
         
         System.out.println("HTTP PUT to update customer info, user : " 
             + name + ", password : " + password);
-        PutMethod put = new PutMethod("http://localhost:9002/customerservice-secured/customers/123");
+        PutMethod put = new PutMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice-secured/customers/123");
         setMethodHeaders(put, name, password);
         RequestEntity entity = new InputStreamRequestEntity(
             this.getClass().getClassLoader().getResourceAsStream("update_customer.xml"));
@@ -146,31 +146,31 @@ public final class jax_rs_spring_securityClient {
     } 
     public void deleteCustomerInfo(String name, String password, int id) throws Exception {
                
-        System.out.println("HTTP DELETE to update customer info, user : " 
-            + name + ", password : " + password);
-        System.out.println("Confirming a customer with id " + id + " exists first");
-        getCustomerInfo(name, password, id);
+       // System.out.println("HTTP DELETE to update customer info, user : " 
+       //     + name + ", password : " + password);
+       // System.out.println("Confirming a customer with id " + id + " exists first");
+        ///getCustomerInfo(name, password, id);
         System.out.println("Deleting now...");
         DeleteMethod del = 
-            new DeleteMethod("http://localhost:9002/customerservice/customers/" + id);
+            new DeleteMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice/customers/" + id);
         setMethodHeaders(del, name, password);
         handleHttpMethod(del);
-        System.out.println("Confirming a customer with id " + id + " does not exist anymore");
-        getCustomerInfo(name, password, id);
+       // System.out.println("Confirming a customer with id " + id + " does not exist anymore");
+       // getCustomerInfo(name, password, id);
     }  
     public void deleteCustomerInfoSecured(String name, String password, int id) throws Exception {
         
-        System.out.println("HTTP DELETE to update customer info, user : " 
-            + name + ", password : " + password);
-        System.out.println("Confirming a customer with id " + id + " exists first");
-        getCustomerInfo(name, password, id);
-        System.out.println("Deleting now...");
+        //System.out.println("HTTP DELETE to update customer info, user : " 
+        //    + name + ", password : " + password);
+        //System.out.println("Confirming a customer with id " + id + " exists first");
+        //getCustomerInfo(name, password, id);
+        //System.out.println("Deleting now...");
         DeleteMethod del = 
-            new DeleteMethod("http://localhost:9002/customerservice-secured/customers/" + id);
+            new DeleteMethod("http://127.0.0.1:9002/cxf-servlet/jaxrs/customerservice-secured/customers/" + id);
         setMethodHeaders(del, name, password);
         handleHttpMethod(del);
-        System.out.println("Confirming a customer with id " + id + " does not exist anymore");
-        getCustomerInfo(name, password, id);
+       // System.out.println("Confirming a customer with id " + id + " does not exist anymore");
+       // getCustomerInfo(name, password, id);
     }  
     private static void handleHttpMethod(HttpMethod httpMethod) throws Exception {
         HttpClient client = new HttpClient();
@@ -198,10 +198,10 @@ public final class jax_rs_spring_securityClient {
 
     private static void setMethodHeaders(HttpMethod httpMethod, String name, String password) {
         if (httpMethod instanceof PostMethod || httpMethod instanceof PutMethod) {
-            httpMethod.setRequestHeader("Content-Type", "application/xml");
+            httpMethod.setRequestHeader("Content-Type", "application/xml,application/json");
         }         
         httpMethod.setDoAuthentication(false);
-        httpMethod.setRequestHeader("Accept", "application/xml");
+        httpMethod.setRequestHeader("Accept", "application/xml,application/json");
         httpMethod.setRequestHeader("Authorization", 
                              "Basic " + base64Encode(name + ":" + password));
           

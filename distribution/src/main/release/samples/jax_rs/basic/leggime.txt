@@ -1,0 +1,7 @@
+Semplice esempio jax-rs che usa JAXRSServerFactoryBean per pubblicare jax-rs encpoint [demo.jaxrs.server.CustomerService.java] annotato con @Path
+
+Client ua URL.java e apache HttpClient per generare get,post,put verso il server.
+
+Vedi jax_rs_spring_security per un esempio Jetty+Spring <jaxrs:server
+
+

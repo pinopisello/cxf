@@ -1,0 +1,11 @@
+Piuttosto banale.
+
+Vedi README.txt
+
+Il client settando diversi "Accept" headers [  get.addRequestHeader("Accept" , "application/xml");] ottiene
+indietro diverse representations [json vx xml].
+
+In CustomerService.java settando  @Produces("application/xml"), la request x json fallisce con error 406.
+Vicevers settando @Produces("application/json"),  la request x xml fallisce con error 406.
+
+

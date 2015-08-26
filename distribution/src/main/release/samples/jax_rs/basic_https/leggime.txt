@@ -1,0 +1,30 @@
+Esempio di jax-rs client e server che usno https-2way.
+
+Client deve authenticarsi col server fornendo un certificato.
+Tale certificato deve esere validato dal server.
+
+Endpoint:   https://localhost:9000/customerservice/customers/123   @Get e @Delete
+			https://localhost:9000/customerservice/customers        @Put e @Post
+================   Client  ==========================
+Usa :
+
+keystore:   src/main/config/clientKeystore.jks
+Api:        org.apache.cxf.jaxrs.client.WebClient.java   Apache HttpClient.java
+Spring:     /src/main/resources/ClientConfig.xml
+
+
+
+
+
+================  Server   ==========================
+
+keystore:   src/main/config/serviceKeystore.jks"
+Api:        org.apache.cxf.jaxrs.JAXRSServerFactoryBean.java
+Spring:     /src/main/resources/ServerConfig.xml
+
+
+
+
+
+
+
