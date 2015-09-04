@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.systest.jaxrs.description;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
@@ -46,8 +47,8 @@ public abstract class AbstractSwagger2ServiceDescriptionTest extends AbstractBus
     
     @Ignore
     public abstract static class Server extends AbstractBusTestServerBase {
-        private final String port;
-        private final boolean runAsFilter;
+        protected final String port;
+        protected final boolean runAsFilter;
         
         Server(final String port, final boolean runAsFilter) {
             this.port = port;
@@ -61,7 +62,6 @@ public abstract class AbstractSwagger2ServiceDescriptionTest extends AbstractBus
                 new SingletonResourceProvider(new BookStoreSwagger2()));
             sf.setProvider(new JacksonJsonProvider());
             final Swagger2Feature feature = new Swagger2Feature();
-            feature.setIgnoreHostPort(true);
             feature.setRunAsFilter(runAsFilter);
             sf.setFeatures(Arrays.asList(feature));
             sf.setAddress("http://localhost:" + port + "/");
@@ -88,17 +88,20 @@ public abstract class AbstractSwagger2ServiceDescriptionTest extends AbstractBus
     }
 
     protected abstract String getPort();
+
+    protected abstract String getExpectedFileJson();
+
+    protected abstract String getExpectedFileYaml();
     
     @Test
     public void testApiListingIsProperlyReturnedJSON() throws Exception {
         final WebClient client = createWebClient("/swagger.json");
-        
         try {
             final Response r = client.get();
             assertEquals(Status.OK.getStatusCode(), r.getStatus());
             JSONAssert.assertEquals(
-                IOUtils.readStringFromStream((InputStream)r.getEntity()), 
-                IOUtils.readStringFromStream(getClass().getResourceAsStream("swagger2-json.txt")),
+                getExpectedValue(getExpectedFileJson(), getPort()),
+                IOUtils.readStringFromStream((InputStream)r.getEntity()),
                 false);
         } finally {
             client.close();
@@ -112,9 +115,14 @@ public abstract class AbstractSwagger2ServiceDescriptionTest extends AbstractBus
         try {
             final Response r = client.get();
             assertEquals(Status.OK.getStatusCode(), r.getStatus());
+            //REVISIT find a better way of reliably comparing two yaml instances.
+            // I noticed that yaml.load instantiates a Map and
+            // for an integer valued key, an Integer or a String is arbitrarily instantiated, 
+            // which leads to the assertion error. So, we serilialize the yamls and compare the re-serialized texts.
             Yaml yaml = new Yaml();
-            assertEquals(yaml.load(getClass().getResourceAsStream("swagger2-yaml.txt")),
-                         yaml.load(IOUtils.readStringFromStream((InputStream)r.getEntity())));
+            assertEquals(yaml.load(getExpectedValue(getExpectedFileYaml(), getPort())).toString(),
+                         yaml.load(IOUtils.readStringFromStream((InputStream)r.getEntity())).toString());
+            
         } finally {
             client.close();
         }
@@ -125,5 +133,10 @@ public abstract class AbstractSwagger2ServiceDescriptionTest extends AbstractBus
             .create("http://localhost:" + getPort() + url, 
                 Arrays.< Object >asList(new JacksonJsonProvider()))
             .accept(MediaType.APPLICATION_JSON).accept("application/yaml");
+    }
+
+    private static String getExpectedValue(String name, Object... args) throws IOException {
+        return String.format(IOUtils.readStringFromStream(
+            AbstractSwagger2ServiceDescriptionTest.class.getResourceAsStream(name)), args);
     }
 }

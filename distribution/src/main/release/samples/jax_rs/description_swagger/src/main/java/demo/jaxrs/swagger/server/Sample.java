@@ -19,7 +19,13 @@
 
 package demo.jaxrs.swagger.server;
 
+<<<<<<< HEAD
 import java.util.Arrays;
+=======
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
+>>>>>>> 54723262aa1cc6f33a9b158e92694c454c3904d6
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

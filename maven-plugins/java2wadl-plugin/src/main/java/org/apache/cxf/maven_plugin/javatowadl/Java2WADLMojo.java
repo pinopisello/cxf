@@ -130,7 +130,7 @@ public class Java2WADLMojo extends AbstractMojo {
     private boolean useJson;
 
     /**
-     * @parameter default-value="false"
+     * @parameter default-value="true"
      */
     private boolean singleResourceMultipleMethods;
    
@@ -163,6 +163,32 @@ public class Java2WADLMojo extends AbstractMojo {
      * @parameter default-value="false"
      */
     private boolean ignoreOverloadedMethods;
+
+    /**
+     * @parameter default-value="true"
+     */
+    private boolean useJaxbContextForQnames;
+
+    
+    /**
+     * @parameter default-value="true"
+     */
+    private boolean usePathParamsToCompareOperations;
+    
+    /**
+     * @parameter default-value="true"
+     */
+    private boolean supportCollections;
+
+    /**
+     * @parameter default-value="true"
+     */
+    private boolean supportJaxbXmlType;
+
+    /**
+     * @parameter default-value="true"
+     */
+    private boolean supportJaxbSubstitutions;
     
     /**
      * @parameter
@@ -221,6 +247,11 @@ public class Java2WADLMojo extends AbstractMojo {
         wg.setLinkAnyMediaTypeToXmlSchema(linkAnyMediaTypeToXmlSchema);
         wg.setCheckAbsolutePathSlash(checkAbsolutePathSlash);
         wg.setIgnoreOverloadedMethods(ignoreOverloadedMethods);
+        wg.setUseJaxbContextForQnames(useJaxbContextForQnames);
+        wg.setUsePathParamsToCompareOperations(usePathParamsToCompareOperations);
+        wg.setSupportCollections(supportCollections);
+        wg.setSupportJaxbXmlType(supportJaxbXmlType);
+        wg.setSupportJaxbSubstitutions(supportJaxbSubstitutions);
         if (applicationTitle != null) {
             wg.setApplicationTitle(applicationTitle);
         } 
