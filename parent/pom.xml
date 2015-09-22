@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf</artifactId>
-        <version>3.1.3-SNAPSHOT</version>
+        <version>3.1.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cxf-parent</artifactId>
@@ -66,7 +66,7 @@
         <cxf.osgi.javax.xml.ws.version>[0.0,3)</cxf.osgi.javax.xml.ws.version>
         <!-- please maintain alphabetical order here -->
         <cxf.abdera.version>1.1.3</cxf.abdera.version>
-        <cxf.activemq.version>5.11.1</cxf.activemq.version>
+        <cxf.activemq.version>5.11.2</cxf.activemq.version>
         <cxf.ahc.version>1.9.8</cxf.ahc.version>
         <cxf.apacheds.version>2.0.0-M20</cxf.apacheds.version>
         <cxf.atmosphere.version>2.3.2</cxf.atmosphere.version>
@@ -89,7 +89,7 @@
         <cxf.httpcomponents.client.version>4.4.1</cxf.httpcomponents.client.version>
         <cxf.httpcomponents.core.version>4.4.1</cxf.httpcomponents.core.version>
         <cxf.httpcomponents.core.version.range>[4.3,4.5.0)</cxf.httpcomponents.core.version.range>
-        <cxf.jackson.version>2.4.1</cxf.jackson.version>
+        <cxf.jackson.version>2.4.2</cxf.jackson.version>
         <cxf.james.mim4j.version>0.7.2</cxf.james.mim4j.version>
         <cxf.logback.classic.version>1.0.13</cxf.logback.classic.version>
         <cxf.log4j.version>1.2.17</cxf.log4j.version>
@@ -112,7 +112,7 @@
         <cxf.jdom.version>1.0</cxf.jdom.version>
         <cxf.jettison.version>1.3.7</cxf.jettison.version>
         <cxf.jetty8.version>8.1.17.v20150415</cxf.jetty8.version>
-        <cxf.jetty9.version>9.2.10.v20150310</cxf.jetty9.version>
+        <cxf.jetty9.version>9.2.11.v20150529</cxf.jetty9.version>
         <cxf.jetty.version>${cxf.jetty9.version}</cxf.jetty.version>
         <cxf.jetty.osgi.version>[8.1,10)</cxf.jetty.osgi.version>
         <cxf.jibx.version>1.2.6</cxf.jibx.version>
@@ -121,7 +121,7 @@
         <cxf.msv.version>2013.6.1</cxf.msv.version>
         <cxf.neethi.version>3.0.3</cxf.neethi.version>
         <cxf.netty.version>4.0.19.Final</cxf.netty.version>
-        <cxf.netty3.version>3.9.1.Final</cxf.netty3.version>
+        <cxf.netty3.version>3.9.2.Final</cxf.netty3.version>
         <cxf.netty.version.range>[4,5)</cxf.netty.version.range>
         <cxf.oauth.bundle.version>20100527_1</cxf.oauth.bundle.version>
         <cxf.oauth.version>20100527</cxf.oauth.version>
@@ -136,8 +136,8 @@
         <cxf.servlet-api-2.5.version>1.1.2</cxf.servlet-api-2.5.version>
         <cxf.slf4j.version>1.7.12</cxf.slf4j.version>
         <cxf.specs.jaxws.api.version>1.2</cxf.specs.jaxws.api.version>
-        <cxf.spring.version>4.1.6.RELEASE</cxf.spring.version>
-        <cxf.spring.security.version>3.2.5.RELEASE</cxf.spring.security.version>
+        <cxf.spring.version>4.1.7.RELEASE</cxf.spring.version>
+        <cxf.spring.security.version>3.2.8.RELEASE</cxf.spring.security.version>
         <cxf.spring.osgi.version>1.2.1</cxf.spring.osgi.version>
         <cxf.spring.ldap.version>1.3.1.RELEASE</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>

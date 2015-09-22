@@ -369,12 +369,18 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                     ai.setNotAsserted(SPConstants.LAYOUT_LAX_TIMESTAMP_FIRST + " requires a timestamp");
                 } else {
                     addTopDownElement(timestampEl.getElement());
+                    ai.setAsserted(true);
                     assertPolicy(
                          new QName(binding.getLayout().getName().getNamespaceURI(), 
                                    SPConstants.LAYOUT_LAX_TIMESTAMP_FIRST));
                 }
             } else if (timestampEl != null) {
+                if (ai != null) {
+                    ai.setAsserted(true);
+                }
                 addTopDownElement(timestampEl.getElement());
+            } else if (ai != null) {
+                ai.setAsserted(true);
             }
             
             assertPolicy(
@@ -1121,18 +1127,20 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             // Store them so that the main Signature doesn't sign them
             if (parts != null) {
                 suppTokenParts.add(parts);
+                this.assertPolicy(parts.getName());
             }
             if (elements != null) {
                 suppTokenParts.add(elements);
+                this.assertPolicy(elements.getName());
             }
         } else {
             Collection<AssertionInfo> ais = getAllAssertionsByLocalname(SPConstants.SIGNED_PARTS);
             if (!ais.isEmpty()) {
                 for (AssertionInfo ai : ais) {
                     SignedParts signedParts = (SignedParts)ai.getAssertion();
+                    ai.setAsserted(true);
                     if (!suppTokenParts.contains(signedParts)) {
                         parts = signedParts;
-                        ai.setAsserted(true);
                     }
                 }            
             }
@@ -1141,9 +1149,9 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             if (!ais.isEmpty()) {
                 for (AssertionInfo ai : ais) {
                     SignedElements signedElements = (SignedElements)ai.getAssertion();
+                    ai.setAsserted(true);
                     if (!suppTokenParts.contains(signedElements)) {
                         elements = signedElements;
-                        ai.setAsserted(true);
                     }
                 }            
             }
@@ -1563,7 +1571,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             tokenTypeSet = true;
         }
         
-        assertPolicy(token);
+        assertToken(token);
         
         if (!tokenTypeSet) {
             boolean requestor = isRequestor();
@@ -1704,7 +1712,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         sig.setStoreBytesInAttachment(storeBytesInAttachment);
         checkForX509PkiPath(sig, token);
         if (token instanceof IssuedToken || token instanceof SamlToken) {
-            assertPolicy(token);
+            assertToken(token);
             SecurityToken securityToken = getSecurityToken();
             String tokenType = securityToken.getTokenType();
             
@@ -1867,9 +1875,10 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                 try {
                     if (supportingToken.getToken().getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
                         doSymmSignatureDerived(supportingToken.getToken(), token, sigParts,
-                                               isTokenProtection);
+                                               isTokenProtection, isSigProtect);
                     } else {
-                        doSymmSignature(supportingToken.getToken(), token, sigParts, isTokenProtection);
+                        doSymmSignature(supportingToken.getToken(), token, sigParts, 
+                                        isTokenProtection, isSigProtect);
                     }
                 } catch (Exception e) {
                     LOG.log(Level.FINE, e.getMessage(), e);
@@ -1894,9 +1903,10 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                     
                     if (supportingToken.getToken().getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
                         doSymmSignatureDerived(supportingToken.getToken(), secToken, sigParts, 
-                                               isTokenProtection);
+                                               isTokenProtection, isSigProtect);
                     } else {
-                        doSymmSignature(supportingToken.getToken(), secToken, sigParts, isTokenProtection);
+                        doSymmSignature(supportingToken.getToken(), secToken, sigParts, 
+                                        isTokenProtection, isSigProtect);
                     }
                 } catch (Exception e) {
                     LOG.log(Level.FINE, e.getMessage(), e);
@@ -1907,7 +1917,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     }
     
     private void doSymmSignatureDerived(AbstractToken policyToken, SecurityToken tok,
-                                 List<WSEncryptionPart> sigParts, boolean isTokenProtection)
+                                 List<WSEncryptionPart> sigParts, boolean isTokenProtection,
+                                 boolean isSigProtect)
         throws WSSecurityException {
         
         Document doc = saaj.getSOAPPart();
@@ -1983,11 +1994,17 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         //Do signature
         dkSign.computeSignature(referenceList, false, null);
         
+        if (isSigProtect) {
+            WSEncryptionPart part = new WSEncryptionPart(dkSign.getSignatureId(), "Element");
+            encryptedTokensList.add(part);
+        }
+        
         addSig(dkSign.getSignatureValue());
     }
     
     private void doSymmSignature(AbstractToken policyToken, SecurityToken tok,
-                                         List<WSEncryptionPart> sigParts, boolean isTokenProtection)
+                                         List<WSEncryptionPart> sigParts, boolean isTokenProtection,
+                                         boolean isSigProtect)
         throws WSSecurityException {
         
         Document doc = saaj.getSOAPPart();
@@ -2037,6 +2054,8 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
         sig.setCustomTokenId(sigTokId);
         sig.setSecretKey(tok.getSecret());
         sig.setSignatureAlgorithm(binding.getAlgorithmSuite().getSymmetricSignature());
+        AlgorithmSuiteType algType = binding.getAlgorithmSuite().getAlgorithmSuiteType();
+        sig.setDigestAlgo(algType.getDigest());
         sig.setSigCanonicalization(binding.getAlgorithmSuite().getC14n().getValue());
         sig.prepare(doc, getSignatureCrypto(), secHeader);
 
@@ -2045,6 +2064,12 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
 
         //Do signature
         sig.computeSignature(referenceList, false, null);
+        
+        if (isSigProtect) {
+            WSEncryptionPart part = new WSEncryptionPart(sig.getId(), "Element");
+            encryptedTokensList.add(part);
+        }
+        
         addSig(sig.getSignatureValue());
     }
     
