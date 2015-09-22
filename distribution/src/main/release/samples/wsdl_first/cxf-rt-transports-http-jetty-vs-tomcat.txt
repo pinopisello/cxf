@@ -5,7 +5,7 @@ In particolare : bindingFactory.addListener(destination, endpoint);
 
 
 
-=============    com.example.customerservice.server.CustomerServiceSpringServer + cxf-rt-transports-http-jetty  ====================
+=============    com.example.customerservice.server.CustomerServiceSpringServer.java [usa cxf-rt-transports-http-jetty ]  ====================
 
 Inizializzazione:
 

@@ -1,0 +1,15 @@
+In questo folder "samples" ci sono tutti gli esempi forniti da CXF.
+
+Ogni progetto su cui ho fatto prove/ho studiato ha un file "leggime.txt"
+
+Inizializzazione Spring =>wsdl_first/Spring-bean-setup.txt  
+
+
+=============		wsdl_first    ==================
+
+
+
+
+
+ 
+
