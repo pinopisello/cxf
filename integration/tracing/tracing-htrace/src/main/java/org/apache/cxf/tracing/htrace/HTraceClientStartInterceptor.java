@@ -18,39 +18,31 @@
  */
 package org.apache.cxf.tracing.htrace;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Message;
-import org.apache.cxf.message.MessageUtils;
+import org.apache.cxf.phase.Phase;
+import org.apache.htrace.Sampler;
 import org.apache.htrace.TraceScope;
 
-public class HTraceStopInterceptor extends AbstractHTraceInterceptor {
-    public HTraceStopInterceptor(final String phase) {
-        super(phase, null);
+public class HTraceClientStartInterceptor extends AbstractHTraceClientInterceptor {
+    public HTraceClientStartInterceptor(final Sampler< ? > sampler) {
+        this(Phase.PRE_STREAM, sampler);
+    }
+
+    public HTraceClientStartInterceptor(final String phase, final Sampler< ? > sampler) {
+        super(phase, sampler);
     }
 
     @Override
     public void handleMessage(Message message) throws Fault {
-        Map<String, List<Object>> responseHeaders = CastUtils.cast((Map<?, ?>)message.get(Message.PROTOCOL_HEADERS));
-        
-        if (responseHeaders == null) {
-            responseHeaders = new HashMap<String, List<Object>>();
-            message.put(Message.PROTOCOL_HEADERS, responseHeaders);
-        }
-        
-        boolean isRequestor = MessageUtils.isRequestor(message);
-        Message requestMessage = isRequestor ? message.getExchange().getOutMessage() 
-            : message.getExchange().getInMessage();
-        Map<String, List<String>> requestHeaders =  
-            CastUtils.cast((Map<?, ?>)requestMessage.get(Message.PROTOCOL_HEADERS));
-        
-        TraceScope span = (TraceScope)message.getExchange().get(TRACE_SPAN);
-        
-        super.stopTraceSpan(requestHeaders, responseHeaders, span);
+        Map<String, List<String>> headers = CastUtils.cast((Map<?, ?>)message.get(Message.PROTOCOL_HEADERS)); 
+        TraceScope scope = super.startTraceSpan(headers, (String)message.get(Message.ENDPOINT_ADDRESS), 
+            (String)message.get(Message.HTTP_REQUEST_METHOD));
+        message.getExchange().put(TRACE_SPAN, scope);
     }
     
 }

@@ -16,45 +16,37 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.systest.jaxrs.tracing.htrace;
+package org.apache.cxf.systest;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import org.apache.htrace.HTraceConfiguration;
-import org.apache.htrace.Span;
-import org.apache.htrace.SpanReceiver;
-
-/**
- * Test HTrace Span receiver
- */
-public class TestSpanReceiver implements SpanReceiver {
-    private static List<Span> spans = new ArrayList<Span>();
-
-    public TestSpanReceiver(final HTraceConfiguration conf) {
-    }
-
-    public Collection<Span> getSpans() {
-        return spans;
-    }
-
-    @Override
-    public void close() throws IOException {
-    }
-
-    @Override
-    public void receiveSpan(Span span) {
-        spans.add(span);
+public class Book {
+    private String title;
+    private String id;
+    
+    public Book() {
     }
     
-    public static void clear() {
-        spans.clear();
+    public Book(String id) {
+        this.id = id;
     }
     
-    public static List<Span> getAllSpans() {
-        return spans;
+    public Book(String title, String id) {
+        this.title = title;
+        this.id = id;
     }
-
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
+    public void setId(String i) {
+        id = i;
+    }
+ 
+    public String getId() {
+        return id;
+    }
 }
