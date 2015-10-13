@@ -295,6 +295,11 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
     
     @org.junit.Test
     public void testSAML2Dispatch() throws Exception {
+        
+        // Needed to prevent test failure using IBM JDK 
+        if ("IBM Corporation".equals(System.getProperty("java.vendor"))) {
+            System.setProperty("https.protocols", "TLSv1");
+        }
 
         SpringBusFactory bf = new SpringBusFactory();
         URL busFile = TransportBindingTest.class.getResource("cxf-client.xml");
@@ -337,6 +342,11 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
     
     @org.junit.Test
     public void testSAML2DispatchLocation() throws Exception {
+        
+        // Needed to prevent test failure using IBM JDK 
+        if ("IBM Corporation".equals(System.getProperty("java.vendor"))) {
+            System.setProperty("https.protocols", "TLSv1");
+        }
 
         SpringBusFactory bf = new SpringBusFactory();
         URL busFile = TransportBindingTest.class.getResource("cxf-client.xml");
@@ -446,6 +456,6 @@ public class TransportBindingTest extends AbstractBusClientServerTestBase {
     
     private static void doubleIt(DoubleItPortType port, int numToDouble) {
         int resp = port.doubleIt(numToDouble);
-        assertEquals(numToDouble * 2 , resp);
+        assertEquals(numToDouble * 2, resp);
     }
 }

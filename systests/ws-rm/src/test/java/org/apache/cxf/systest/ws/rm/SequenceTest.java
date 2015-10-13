@@ -749,7 +749,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
         init(cfg);
         
         class MessageNumberInterceptor extends AbstractPhaseInterceptor<Message> {
-            public MessageNumberInterceptor() {
+            MessageNumberInterceptor() {
                 super(Phase.PRE_STREAM);
             }
             
@@ -816,7 +816,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
         init("org/apache/cxf/systest/ws/rm/rminterceptors.xml");
         
         class SequenceIdInterceptor extends AbstractPhaseInterceptor<Message> {
-            public SequenceIdInterceptor() {
+            SequenceIdInterceptor() {
                 super(Phase.PRE_STREAM);
             }
             
@@ -904,7 +904,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
                                         RM10_GENERIC_FAULT_ACTION};
         mf.verifyActions(expectedActions, false);
         mf.verifyMessageNumbers(new String[] {null, "1", null}, false);
-        mf.verifyAcknowledgements(new boolean[] {false, true, false} , false);
+        mf.verifyAcknowledgements(new boolean[] {false, true, false}, false);
         
         // the third inbound message has a SequenceFault header
         mf.verifySequenceFault(RM10Constants.UNKNOWN_SEQUENCE_FAULT_QNAME, false, 2);
@@ -1018,7 +1018,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
         for (int i = 2; i < expectedAcks.length; i++) {
             expectedAcks[i] = true;
         }
-        mf.verifyAcknowledgements(expectedAcks , true);
+        mf.verifyAcknowledgements(expectedAcks, true);
  
         // Expected inbound:
         // createSequenceResponse 

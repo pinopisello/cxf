@@ -18,6 +18,8 @@
  */
 package org.apache.cxf.jaxrs.provider;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.RuntimeType;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -160,6 +163,18 @@ public final class ServerProviderFactory extends ProviderFactory {
     
     public void addBeanParamInfo(BeanParamInfo bpi) {
         beanParams.put(bpi.getResourceClass(), bpi);
+        for (Method m : bpi.getResourceClass().getMethods()) {
+            if (m.getAnnotation(BeanParam.class) != null) {
+                BeanParamInfo methodBpi = new BeanParamInfo(m.getParameterTypes()[0], getBus());
+                addBeanParamInfo(methodBpi);
+            }
+        }
+        for (Field f : bpi.getResourceClass().getDeclaredFields()) {
+            if (f.getAnnotation(BeanParam.class) != null) {
+                BeanParamInfo fieldBpi = new BeanParamInfo(f.getType(), getBus());
+                addBeanParamInfo(fieldBpi);
+            }
+        }
     }
     
     public BeanParamInfo getBeanParamInfo(Class<?> beanClass) {
@@ -352,7 +367,7 @@ public final class ServerProviderFactory extends ProviderFactory {
         private OperationResourceInfo ori;
         private String nameBinding;
         
-        public MethodFeatureContextImpl(OperationResourceInfo ori) {
+        MethodFeatureContextImpl(OperationResourceInfo ori) {
             this.ori = ori;
             configImpl = new MethodFeatureContextConfigurable(this);
             if (application != null) {
@@ -486,7 +501,7 @@ public final class ServerProviderFactory extends ProviderFactory {
     
     
     private class ServerConfigurationImpl implements Configuration {
-        public ServerConfigurationImpl() {
+        ServerConfigurationImpl() {
             
         }
         

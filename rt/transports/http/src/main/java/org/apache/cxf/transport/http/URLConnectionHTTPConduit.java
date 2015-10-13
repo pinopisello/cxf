@@ -103,7 +103,7 @@ public class URLConnectionHTTPConduit extends HTTPConduit {
         throws IOException {
         URL url = address.getURL();
         URI uri = address.getURI();
-        Proxy proxy = proxyFactory.createProxy(csPolicy , uri);
+        Proxy proxy = proxyFactory.createProxy(csPolicy, uri);
         message.put("http.scheme", uri.getScheme());
         // check tlsClientParameters from message header
         TLSClientParameters clientParameters = message.get(TLSClientParameters.class);
@@ -193,9 +193,9 @@ public class URLConnectionHTTPConduit extends HTTPConduit {
     
     class URLConnectionWrappedOutputStream extends WrappedOutputStream {
         HttpURLConnection connection;
-        public URLConnectionWrappedOutputStream(Message message, HttpURLConnection connection,
-                                                boolean needToCacheRequest, boolean isChunking,
-                                                int chunkThreshold, String conduitName) throws URISyntaxException {
+        URLConnectionWrappedOutputStream(Message message, HttpURLConnection connection,
+                                         boolean needToCacheRequest, boolean isChunking,
+                                         int chunkThreshold, String conduitName) throws URISyntaxException {
             super(message, needToCacheRequest, isChunking,
                   chunkThreshold, conduitName,
                   computeURI(message, connection));

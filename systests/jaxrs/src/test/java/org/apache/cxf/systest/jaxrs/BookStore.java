@@ -335,6 +335,10 @@ public class BookStore {
     public Book getBeanParamBook(@BeanParam BookBean bean) {
         
         long id = bean.getId() + bean.getId2() + bean.getId3(); 
+        if (bean.getNested().getId4() != id) {
+            throw new RuntimeException();
+        }
+        
         
         return books.get(id);
     }
@@ -1627,11 +1631,11 @@ public class BookStore {
         private String name;
         private long id;
         
-        public BookInfo() {
+        BookInfo() {
             
         }
         
-        public BookInfo(Book b) {
+        BookInfo(Book b) {
             this.name = b.getName();
             this.id = b.getId();
             if (id == 0) {
@@ -1656,11 +1660,11 @@ public class BookStore {
     }
     
     static class BookInfo2 extends BookInfo implements BookInfoInterface {
-        public BookInfo2() {
+        BookInfo2() {
             
         }
         
-        public BookInfo2(Book b) {
+        BookInfo2(Book b) {
             super(b);
         }
     }
@@ -1692,7 +1696,7 @@ public class BookStore {
     }
     
     static class BadBook {
-        public BadBook(String s) {
+        BadBook(String s) {
             throw new RuntimeException("The bad book");
         }
     }
@@ -1701,7 +1705,7 @@ public class BookStore {
 
         private boolean failEarly;
         
-        public StreamingOutputImpl(boolean failEarly) {
+        StreamingOutputImpl(boolean failEarly) {
             this.failEarly = failEarly;
         }
         
@@ -1751,6 +1755,7 @@ public class BookStore {
         @QueryParam("id_2")
         private long id2;
         private long id3;
+        private BookBeanNested nested;
 
         public long getId() {
             return id;
@@ -1781,6 +1786,28 @@ public class BookStore {
             return id3;
         }
 
+        public BookBeanNested getNested() {
+            return nested;
+        }
+
+        @BeanParam
+        public void setNested(BookBeanNested nested) {
+            this.nested = nested;
+        }
+
+        
+    }
+    
+    public static class BookBeanNested {
+        private long id4;
+
+        public long getId4() {
+            return id4;
+        }
+        @QueryParam("id4")
+        public void setId4(long id4) {
+            this.id4 = id4;
+        }
         
     }
     

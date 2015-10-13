@@ -114,6 +114,8 @@ import org.apache.cxf.jaxrs.model.Parameter;
 import org.apache.cxf.jaxrs.model.ParameterType;
 import org.apache.cxf.jaxrs.model.ResourceTypes;
 import org.apache.cxf.jaxrs.model.URITemplate;
+import org.apache.cxf.jaxrs.model.doc.DocumentationProvider;
+import org.apache.cxf.jaxrs.model.doc.JavaDocProvider;
 import org.apache.cxf.jaxrs.provider.ServerProviderFactory;
 import org.apache.cxf.jaxrs.utils.AnnotationUtils;
 import org.apache.cxf.jaxrs.utils.ExceptionUtils;
@@ -1871,7 +1873,7 @@ public class WadlGenerator implements ContainerRequestFilter {
 
         private List<String> theSchemas;
 
-        public StringSchemaWriter(List<String> schemas, List<URI> links, UriInfo ui) {
+        StringSchemaWriter(List<String> schemas, List<URI> links, UriInfo ui) {
 
             this.theSchemas = new LinkedList<String>();
             // we'll need to do the proper schema caching eventually
@@ -1948,7 +1950,7 @@ public class WadlGenerator implements ContainerRequestFilter {
 
         private SchemaCollection coll;
 
-        public SchemaCollectionWriter(SchemaCollection coll) {
+        SchemaCollectionWriter(SchemaCollection coll) {
             this.coll = coll;
         }
 
@@ -1969,7 +1971,7 @@ public class WadlGenerator implements ContainerRequestFilter {
         private List<URI> links;
         private UriInfo uriInfo;
 
-        public ExternalSchemaWriter(List<URI> links, UriInfo ui) {
+        ExternalSchemaWriter(List<URI> links, UriInfo ui) {
             this.links = links;
             this.uriInfo = ui;
         }
@@ -1992,7 +1994,7 @@ public class WadlGenerator implements ContainerRequestFilter {
 
         private JAXBContextProxy proxy;
         
-        public JaxbContextQNameResolver(JAXBContextProxy proxy) {
+        JaxbContextQNameResolver(JAXBContextProxy proxy) {
             this.proxy = proxy;
         }
 
@@ -2038,10 +2040,9 @@ public class WadlGenerator implements ContainerRequestFilter {
     }
 
     private class SchemaQNameResolver implements ElementQNameResolver {
-
         private Map<String, List<String>> map;
 
-        public SchemaQNameResolver(Map<String, List<String>> map) {
+        SchemaQNameResolver(Map<String, List<String>> map) {
             this.map = map;
         }
 
@@ -2180,7 +2181,7 @@ public class WadlGenerator implements ContainerRequestFilter {
         private static final String SCHEMA_LOCATION = "schemaLocation";
         private Map<String, String> locsMap;
 
-        public SchemaConverter(XMLStreamWriter writer, Map<String, String> locsMap) {
+        SchemaConverter(XMLStreamWriter writer, Map<String, String> locsMap) {
             super(writer);
             this.locsMap = locsMap;
         }

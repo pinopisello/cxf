@@ -38,6 +38,8 @@ import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 public abstract class AbstractJwtHandler extends AbstractGrantHandler {
     private Set<String> supportedIssuers; 
     private JwsSignatureVerifier jwsVerifier;
+    private int ttl;
+    private int clockOffset;
         
     protected AbstractJwtHandler(List<String> grants) {
         super(grants);
@@ -54,7 +56,16 @@ public abstract class AbstractJwtHandler extends AbstractGrantHandler {
         validateIssuer(claims.getIssuer());
         validateSubject(client, claims.getSubject());
         validateAudience(client, claims.getAudience());
-        JwtUtils.validateJwtTimeClaims(claims);    
+        
+        // If we have no issued time then we need to have an expiry
+        boolean expiredRequired = claims.getIssuedAt() == null;
+        JwtUtils.validateJwtExpiry(claims, clockOffset, expiredRequired);
+        
+        JwtUtils.validateJwtNotBefore(claims, clockOffset, false);
+        
+        // If we have no expiry then we must have an issued at
+        boolean issuedAtRequired = claims.getExpiryTime() == null;
+        JwtUtils.validateJwtIssuedAt(claims, ttl, clockOffset, issuedAtRequired);
     }
 
     protected void validateIssuer(String issuer) {
@@ -81,5 +92,21 @@ public abstract class AbstractJwtHandler extends AbstractGrantHandler {
             return jwsVerifier;    
         } 
         return JwsUtils.loadSignatureVerifier(true);
+    }
+    
+    public int getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(int ttl) {
+        this.ttl = ttl;
+    }
+
+    public int getClockOffset() {
+        return clockOffset;
+    }
+
+    public void setClockOffset(int clockOffset) {
+        this.clockOffset = clockOffset;
     }
 }

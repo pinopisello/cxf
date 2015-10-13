@@ -426,7 +426,7 @@ public class WSDiscoveryServiceImpl implements WSDiscoveryService {
     class WSDiscoveryProvider implements Provider<Source> {
         
         JAXBContext context;
-        public WSDiscoveryProvider() {
+        WSDiscoveryProvider() {
             try {
                 context = JAXBContextCache.getCachedContextAndSchemas(ObjectFactory.class).getContext();
             } catch (JAXBException e) {
@@ -447,7 +447,7 @@ public class WSDiscoveryServiceImpl implements WSDiscoveryService {
             inMap.put("{" + WSDVersion.INSTANCE_1_1.getAddressingNamespace() + "}*",
                       "{" + WSDVersion.INSTANCE_1_0.getAddressingNamespace() + "}*");
             
-            InTransformReader reader = new InTransformReader(domReader, inMap , null, false);
+            InTransformReader reader = new InTransformReader(domReader, inMap, null, false);
             doc = StaxUtils.read(reader);
             return new DOMSource(doc);            
         }
@@ -470,7 +470,7 @@ public class WSDiscoveryServiceImpl implements WSDiscoveryService {
                       "{" + WSDVersion.INSTANCE_1_1.getNamespace() + "}*");
             inMap.put("{" + WSDVersion.INSTANCE_1_0.getAddressingNamespace() + "}*",
                       "{" + WSDVersion.INSTANCE_1_1.getAddressingNamespace() + "}*");
-            InTransformReader reader = new InTransformReader(domReader, inMap , null, false);
+            InTransformReader reader = new InTransformReader(domReader, inMap, null, false);
             doc = StaxUtils.read(reader);
             //System.out.println(StaxUtils.toString(doc));
            

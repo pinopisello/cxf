@@ -34,12 +34,20 @@ import org.apache.cxf.rs.security.oauth2.provider.AbstractOAuthJoseJwtConsumer;
 public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsumer {
     private static final String SELF_ISSUED_ISSUER = "https://self-issued.me";
     private String issuerId;
-    private int issuedAtRange;
     private int clockOffset;
+    private int ttl;
     private WebClient jwkSetClient;
     private boolean supportSelfIssuedProvider;
+    private boolean strictTimeValidation;
     private ConcurrentHashMap<String, JsonWebKey> keyMap = new ConcurrentHashMap<String, JsonWebKey>(); 
-        
+
+    /**
+     * Validate core JWT claims
+     * @param claims the claims
+     * @param clientId OAuth2 client id
+     * @param validateClaimsAlways if set to true then enforce that the claims 
+     *                             to be validated must be set
+     */
     protected void validateJwtClaims(JwtClaims claims, String clientId, boolean validateClaimsAlways) {
         // validate the issuer
         String issuer = claims.getIssuer();
@@ -63,7 +71,21 @@ public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsume
                 throw new SecurityException("Invalid audience");
             }
     
-            JwtUtils.validateJwtTimeClaims(claims, clockOffset, issuedAtRange, validateClaimsAlways);
+            // If strict time validation: if no issuedTime claim is set then an expiresAt claim must be set
+            // Otherwise: validate only if expiresAt claim is set
+            boolean expiredRequired = 
+                validateClaimsAlways || strictTimeValidation && claims.getIssuedAt() == null;
+            JwtUtils.validateJwtExpiry(claims, clockOffset, expiredRequired);
+            
+            // If strict time validation: If no expiresAt claim is set then an issuedAt claim must be set
+            // Otherwise: validate only if issuedAt claim is set
+            boolean issuedAtRequired = 
+                validateClaimsAlways || strictTimeValidation && claims.getExpiryTime() == null;
+            JwtUtils.validateJwtIssuedAt(claims, ttl, clockOffset, issuedAtRequired);
+            
+            if (strictTimeValidation) {
+                JwtUtils.validateJwtNotBefore(claims, clockOffset, strictTimeValidation);
+            }
         }
     }
     
@@ -73,10 +95,6 @@ public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsume
 
     public void setJwkSetClient(WebClient jwkSetClient) {
         this.jwkSetClient = jwkSetClient;
-    }
-
-    public void setIssuedAtRange(int issuedAtRange) {
-        this.issuedAtRange = issuedAtRange;
     }
 
     @Override
@@ -120,13 +138,27 @@ public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsume
         return theJwsVerifier;
     }
 
-    public void setClockOffset(int clockOffset) {
-        this.clockOffset = clockOffset;
-    }
-
     public void setSupportSelfIssuedProvider(boolean supportSelfIssuedProvider) {
         this.supportSelfIssuedProvider = supportSelfIssuedProvider;
     }
 
-    
+    public int getClockOffset() {
+        return clockOffset;
+    }
+
+    public void setClockOffset(int clockOffset) {
+        this.clockOffset = clockOffset;
+    }
+
+    public void setStrictTimeValidation(boolean strictTimeValidation) {
+        this.strictTimeValidation = strictTimeValidation;
+    }
+
+    public int getTtl() {
+        return ttl;
+    }
+
+    public void setTtl(int ttl) {
+        this.ttl = ttl;
+    }
 }

@@ -32,11 +32,11 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.bus.spring.SpringBusFactory;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.rs.security.jose.common.PrivateKeyPasswordProvider;
 import org.apache.cxf.rs.security.jose.jaxrs.JweClientResponseFilter;
 import org.apache.cxf.rs.security.jose.jaxrs.JweWriterInterceptor;
 import org.apache.cxf.rs.security.jose.jaxrs.JwsClientResponseFilter;
 import org.apache.cxf.rs.security.jose.jaxrs.JwsWriterInterceptor;
-import org.apache.cxf.rs.security.jose.jaxrs.PrivateKeyPasswordProvider;
 import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
 import org.apache.cxf.rs.security.jose.jwa.KeyAlgorithm;
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
@@ -421,10 +421,10 @@ public class JAXRSJweJwsTest extends AbstractBusClientServerTestBase {
     
     private static class PrivateKeyPasswordProviderImpl implements PrivateKeyPasswordProvider {
         private String password = "password";
-        public PrivateKeyPasswordProviderImpl() {
+        PrivateKeyPasswordProviderImpl() {
             
         }
-        public PrivateKeyPasswordProviderImpl(String password) {
+        PrivateKeyPasswordProviderImpl(String password) {
             this.password = password;
         }
         @Override

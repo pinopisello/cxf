@@ -52,6 +52,7 @@ public class CachedWriter extends Writer {
     private static int defaultThreshold;
     private static long defaultMaxSize;
     private static String defaultCipherTransformation;
+    
     static {
         
         String s = SystemPropertyAction.getPropertyOrNull("org.apache.cxf.io.CachedOutputStream.OutputDirectory");
@@ -78,6 +79,7 @@ public class CachedWriter extends Writer {
     protected boolean outputLocked;
     protected Writer currentStream;
 
+    private boolean cosClosed;
     private long threshold = defaultThreshold;
     private long maxSize = defaultMaxSize;
 
@@ -98,7 +100,7 @@ public class CachedWriter extends Writer {
 
     
     static class LoadingCharArrayWriter extends CharArrayWriter {
-        public LoadingCharArrayWriter() {
+        LoadingCharArrayWriter() {
             super(1024);
         }
         public char[] rawCharArray() {
@@ -176,7 +178,10 @@ public class CachedWriter extends Writer {
     }
 
     public void flush() throws IOException {
-        currentStream.flush();
+        if (!cosClosed) {
+            currentStream.flush();
+        }
+        
         if (null != callbacks) {
             for (CachedWriterCallback cb : callbacks) {
                 cb.onFlush(this);
@@ -220,7 +225,9 @@ public class CachedWriter extends Writer {
     }
     
     public void close() throws IOException {
-        currentStream.flush();
+        if (!cosClosed) {
+            currentStream.flush();
+        }
         outputLocked = true;
         if (null != callbacks) {
             for (CachedWriterCallback cb : callbacks) {
@@ -598,19 +605,26 @@ public class CachedWriter extends Writer {
                     ciphers = new CipherPair(cipherTransformation);
                 }
             } catch (GeneralSecurityException e) {
+                out.close();
                 throw new IOException(e.getMessage(), e);
             }
             out = new CipherOutputStream(out, ciphers.getEncryptor()) {
-                boolean closed;
                 public void close() throws IOException {
-                    if (!closed) {
+                    if (!cosClosed) {
                         super.close();
-                        closed = true;
+                        cosClosed = true;
                     }
                 }
             };
         }
-        return new OutputStreamWriter(out, "utf-8");
+        return new OutputStreamWriter(out, "utf-8") {
+            public void close() throws IOException {
+                if (!cosClosed) {
+                    super.close();
+                    cosClosed = true;
+                }
+            }
+        };
     }
 
     private InputStreamReader createInputStreamReader(File file) throws IOException {
