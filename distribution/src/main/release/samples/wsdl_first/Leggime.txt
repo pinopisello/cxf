@@ -23,7 +23,7 @@ mvn -Pserver-spring
 
 
 
-3)Non Spring jetty transport cxf-rt-transports-http-netty-server [http://localhost:9090/CustomerServicePort]
+3)Non Spring netty transport cxf-rt-transports-http-netty-server [http://localhost:9090/CustomerServicePort]
 
 mvn -Pserver-netty
 
@@ -35,19 +35,33 @@ mvn tomcat7:run
 
 =============  Lanciare Client ===========
 
-
-
-
-1)Non Spring jetty transport cxf-rt-transports-http-jetty
+1)Non Spring standard transport cxf-rt-transports-http [CustomerServiceClient.java chiamata da command line]
 
 mvn -Pclient
 
-2)Non Spring jetty transport cxf-rt-transports-http-netty-client
-mvn -Pclient-netty
+PS:Ad ogni modo internamente Spring viene usato da cxf guts ... quindi Spring e' sempre usato comunque. 
 
 
-3)Spring jetty transport  cxf-rt-transports-http-jetty
+2)Non Spring netty transport cxf-rt-transports-http-netty-client [CustomerServiceClient.java chiamata da command line]
 mvn -Pclient-netty
+
+Come 1, soltanto usa dependency cxf-rt-transports-http-netty-client.
+
+
+3)Spring standard transport  cxf-rt-transports-http [CustomerServiceSpringClient.java chiamata da command line]
+mvn -Pclient-spring
+
+
+====  Scelta del transport: ====
+Il transport e' settato in SoapMessage [e' una map] con key= org.apache.cxf.transport.Conduit  da AbstractConduitSelector.getSelectedConduit().
+Il particolare trasporto e' deciso in HTTPTransportFactory.findFactory() [f = bus.getExtension(HTTPConduitFactory.class);]
+Se esiste uno spring bean di tipo org.apache.cxf.transport.http.HTTPConduitFactory  , questo viene usato come factory x la Conduit  factory.createConduit() 
+altrimenti  conduit = new URLConnectionHTTPConduit  [-Pclient].
+
+Nel caso client-netty, tale bean e' NettyHttpConduitFactory ed e' registrato come bus-extension Spring-bean in cxf-rt-transports-http-netty-client.jar/META-INF/cxf/bus-ectensions.txt.
+E' scoperta come bus-extension come bus extension in ExtensionManagerImpl.load(String resource, ClassLoader l)  ed instanziata in ExtensionManagerImpl.loadAndRegister(Extension e)
+
+
 
 
 

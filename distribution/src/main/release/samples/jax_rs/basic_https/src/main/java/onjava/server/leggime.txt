@@ -1,0 +1,135 @@
+Server 
+
+########  ServerSocketChannel registrato preso selectorThread    #######
+
+A boostrap Server registra preso selectorThread un ServerSocketChannel che ascolta su porta 9000 con interestset = OP_ACCEPT e associa alla SelectionKey istanza ServerAccessor.
+
+selectorThread comincia a luppare e i blocca su selector.select() aspettano che ssc  accetti una connessione
+
+
+
+
+########  Connessione arriva  #############
+
+selector.select() ritorna , trova la selection key del channel che ha ricevuto la connessione, estrae l' handler ServerAcceptor attached alla key
+e invoca ServerAcceptor.handleAcceptt().
+Qui il SocketChannel relativo alla nuova connessione e' ottenuto e passato a server.socketConnected(this, sc).
+Qui new  PacketChannel(sc, channelFactory, st, new SimpleProtocolDecoder(), this) e' creato .
+Nel suo costruttore socketChannel_handler = channelFactory.createSocketChannel_IOHandler(sc, st, this) e' creato che
+a sua volta crea new Secure_SocketChannel_IOHandler(st, sc, l, engine) dove engine e' un SSLEngine.
+In questo costrutto il SocketChannel e' registrato come channel con handler Secure_SocketChannel_IOHandler e interest 0 [da capire che vuol dire]
+
+Quidi a questo punto ho resgistarti presso selector:
+
+1)ServerSocketChannel ,interestset = OP_ACCEPT , handler = ServerAccessor
+
+2)SocketChannel, interestset = 0 , handler = Secure_SocketChannel_IOHandler
+
+Il selectorthread continua il loop infinito e stavolta Secure_SocketChannel_IOHandler.handleRead() e' invocato.
+Secure_SocketChannel_IOHandler usa SSLEngine, SocketChannel e i buffers inboundEncryptedData,inboundDecryptedData,outboundEncryptedData per cryptare e decriptare data
+da e verso il SocketChannel.
+
+###################   Secure_SocketChannel_IOHandler.handleRead()  - handshake  ##############
+
+
+Qui doHandshake() e' un loop infinito che esce solo quando SSLEngineResult.HandshakeStatus.FINISHED.
+All arrivo di una nuova connessione tipicamentecompie i seguenti steps:
+
+NEED_UNWRAP   
+NEED_TASK
+NEED_WRAP
+NEED_UNWRAP
+NEED_TASK
+NEED_UNWRAP
+NEED_WRAP
+FINISHED
+
+A questo punto SSL handshake e' completo ma nessun messaggio e' stato ricevuto.
+Secure_SocketChannel_IOHandler.registerForRead() e' chiamato in PacketChannel.reactivateReading() .
+Questo fa si che interestOps del SocketChannel viene nel selector aggiunto interest  OP_READ e Secure_SocketChannel_IOHandler.handleRead() e' invocato di nuovo.
+
+
+###################   Secure_SocketChannel_IOHandler.handleRead() Read&Decrypt  ##############
+
+Stavolta non c'e' il balletto dell' handshake: 
+bytesRead = sc.read(inboundEncryptedData);  				=> legge il payload criptato dal net
+engine.unwrap(inboundEncryptedData, inboundDecryptedData);  => decripta e carica inboundDecryptedData
+
+A questo punto il buffer inboundDecryptedData contiene il messaggio decriptato !!
+
+Prima di uscire,  handleRead informa st.sscManager che c'e' data decriptata che puo essere letta dall applicazione [st.getSscManager().registerForRead(this);]
+Cio' registra istanza Secure_SocketChannel_IOHandler in SSLChannelManager.readListeners.
+
+
+
+###################   Server.packetArrived()  ##################
+
+
+selectorthread riprende il loop infinito e chiama sscManager.fireEvents()
+Da qui sscManager.readListeners contiene Secure_SocketChannel_IOHandler di cui sopra.
+Viene estratto e Secure_SocketChannel_IOHandler.fireReadEvent() invocato.
+Secure_SocketChannel_IOHandler.listener e' PacketChannel.
+PacketChannel.handleRead() travasa in PacketChannel.inBuffer il contenuto Secure_SocketChannel_IOHandler.inboundDecryptedData
+PacketChannel.processInBuffer() usa protocolDecoder per decodificare inBuffer in un ByteBuffer packet locale e invoca PacketChannel.listener.packetArrived(this, packet);
+PacketChannel.listener e' Server quindi Server.packetArrived(PacketChannel, packet) il quale logga in console il contenuto e invoca PacketChannel.sendPacket(packet)
+
+PacketChannel.outBuffer punta packet, PacketChannel.handleWrite(),socketChannel_handler.write(outBuffer),outBuffer viene criptato e caricato in socketChannel_handler.outboundEncryptedData  engine.wrap(src, outboundEncryptedData); outboundEncryptedData
+outboundEncryptedData viene inviato al socketChannel [Secure_SocketChannel_IOHandler.flushData()]
+PacketChannel notifica Server invocando Server.packetSent(PacketChannel, outBuffer);
+Server => PacketChannel.resumeReading()  , PacketChannel=>Secure_SocketChannel_IOHandler.registerForRead() ,Secure_SocketChannel_IOHandler.selectorRegisterForRead() , SelectorThread.addChannelInterestNow(SocketChannel, SelectionKey.OP_READ);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

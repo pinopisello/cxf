@@ -5,6 +5,7 @@ Tale certificato deve esere validato dal server.
 
 Endpoint:   https://localhost:9000/customerservice/customers/123   @Get e @Delete
 			https://localhost:9000/customerservice/customers        @Put e @Post
+			
 ================   Client  ==========================
 Usa :
 
@@ -12,7 +13,12 @@ keystore:   src/main/config/clientKeystore.jks
 Api:        org.apache.cxf.jaxrs.client.WebClient.java   Apache HttpClient.java
 Spring:     /src/main/resources/ClientConfig.xml
 
+Trasporto cxf-rt-transports-http-jetty
+ClientConfig.xml configura transport jetty con tags <http:conduit> imponendo l autenticazione del client trustore [sec:keyManagers e sec:trustManagers]
+Il namespace http e' http://cxf.apache.org/transports/http/configuration che e' handled da org.apache.cxf.transport.http.spring.NamespaceHandler
 
+
+Un SSLContext con tutti i parametri configurati in ServerConfig.xml e' configurato in JettyHTTPServerEngine.createSSLContext()  e settato in SslContextFactory.
 
 
 
@@ -21,6 +27,18 @@ Spring:     /src/main/resources/ClientConfig.xml
 keystore:   src/main/config/serviceKeystore.jks"
 Api:        org.apache.cxf.jaxrs.JAXRSServerFactoryBean.java
 Spring:     /src/main/resources/ServerConfig.xml
+
+Trasporto cxf-rt-transports-http-jetty
+ServerConfig.xml configura transport jetty con tags <httpj:engine-factory> e <httpj:engine> imponendo l autenticazione del client certificate
+Il namespace http e' http://cxf.apache.org/transports/http-jetty/configuration che e' handled da org.apache.cxf.transport.http_jetty.spring.NamespaceHandler
+Cio' che viene configurato e' org.eclipse.jetty.util.ssl.SslContextFactory._context  in JettyHTTPServerEngine.createSSLContext()
+
+Ad ogni request SslConnectionFactory.newConnection() e' invocato e di nuovo org.eclipse.jetty.util.ssl.SslContextFactory._context.createSSLEngine() viene invocato.
+Questo engine [che e' ottenuto da _context configurato da ServerConfig.xml] e' usato in org.eclipse.jetty.io.ssl.SslConnection.fill()   
+
+In caso di un client con failed handshake un SSLHandshakeException e' lanciata in SslConnection.fill(ByteBuffer buffer) linea 516.
+
+In caso di successo, i bytes decriptati sono ritornati da return unwrapResult.bytesProduced();.
 
 
 

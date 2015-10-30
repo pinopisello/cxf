@@ -39,27 +39,31 @@ public final class Client {
     }
 
     public static void main(String args[]) throws Exception {
-        // Sent HTTP GET request to query all customer info
+        
+        URL url = null;
+        InputStream in = null;
+        
+        // Send HTTP GET request to query all customer info
         /*
-         * URL url = new URL("http://localhost:9000/customers");
+         * url = new URL("http://localhost:9000/customers");
          * System.out.println("Invoking server through HTTP GET to query all
          * customer info"); InputStream in = url.openStream(); StreamSource
          * source = new StreamSource(in); printSource(source);
          */
 
         // Sent HTTP GET request to query customer info
-        System.out.println("Sent HTTP GET request to query customer info");
-        URL url = new URL("http://localhost:9000/customerservice/customers/123");
-        InputStream in = url.openStream();
-        System.out.println(getStringFromInputStream(in));
+      //  System.out.println("Sent HTTP GET request to query customer info");
+      //  url = new URL("http://localhost:9000/customerservice/customers/123");
+      //  in = url.openStream();
+      //  System.out.println(getStringFromInputStream(in));
 
         // Sent HTTP GET request to query sub resource product info
         System.out.println("\n");
         System.out.println("Sent HTTP GET request to query sub resource product info");
-        url = new URL("http://localhost:9000/customerservice/orders/223/products/323");
+        url = new URL("http://localhost:9000/customerservice/orders/123/products/323");
         in = url.openStream();
         System.out.println(getStringFromInputStream(in));
-
+/*
         // Sent HTTP PUT request to update customer info
         System.out.println("\n");
         System.out.println("Sent HTTP PUT request to update customer info");
@@ -108,6 +112,7 @@ public final class Client {
 
         System.out.println("\n");
         System.exit(0);
+        */
     }
 
     private static String getStringFromInputStream(InputStream in) throws Exception {

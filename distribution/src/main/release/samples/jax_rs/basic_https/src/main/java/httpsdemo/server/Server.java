@@ -28,6 +28,8 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 public class Server {
 
     static {
+        
+        System.setProperty("java.util.logging.config.file","/Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/jax_rs/basic_https/src/main/java/logging.properties");
         // set the configuration file
         SpringBusFactory factory = new SpringBusFactory();
         Bus bus = factory.createBus("ServerConfig.xml");

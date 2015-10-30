@@ -38,8 +38,7 @@ import httpsdemo.common.CustomerService;
 public final class Client {
 
     private static final String CLIENT_CONFIG_FILE = "ClientConfig.xml";
-    private static final String BASE_SERVICE_URL = 
-        "https://localhost:9000/customerservice/customers";
+    private static final String BASE_SERVICE_URL =  "https://localhost:9000/customerservice/customers";
     
     private Client() {
     }
@@ -88,8 +87,7 @@ public final class Client {
          *  not using certificates.
          */
         System.out.println("\n\nSending HTTPS POST request to add customer");
-        CustomerService proxy = JAXRSClientFactory.create(BASE_SERVICE_URL, CustomerService.class,
-              CLIENT_CONFIG_FILE);
+        CustomerService proxy = JAXRSClientFactory.create(BASE_SERVICE_URL, CustomerService.class,CLIENT_CONFIG_FILE);
         customer = new Customer();
         customer.setName("Jack");
         resp = wc.post(customer);

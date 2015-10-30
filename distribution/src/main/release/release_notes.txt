@@ -24,7 +24,7 @@ Users are encourage to review the migration guide at:
 http://cxf.apache.org/docs/31-migration-guide.html
 for further information and requirements for upgrading from earlier
 versions of CXF.
-
+  
 3.1.3 fixes over 40 JIRA issues reported by users and the community.
 
 

@@ -186,6 +186,8 @@
                 </dependency>
             </dependencies>
         </profile>
+        
+        
         <profile>
             <id>client</id>
             <build>
@@ -202,9 +204,11 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>com.example.customerservice.client.CustomerServiceClient</mainClass>
-                                    <arguments>
+                                   <!-- niente argomenti punta il cliente verso tomcat -->  
+                                   <!--
+                                   <arguments>
                                         <argument>src/main/resources/CustomerService.wsdl</argument>
-                                    </arguments>
+                                    </arguments>-->
                                 </configuration>
                             </execution>
                         </executions>
@@ -212,6 +216,8 @@
                 </plugins>
             </build>
         </profile>
+        
+        
         <profile>
 			<id>client-spring</id>
 			<build>
@@ -238,6 +244,8 @@
 				</plugins>
 			</build>
 		</profile>
+		
+		
 		<profile>
             <id>client-netty</id>
             <build>
@@ -254,9 +262,11 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>com.example.customerservice.client.CustomerServiceClient</mainClass>
-                                    <arguments>
+                                    <!-- niente argomenti punta il cliente verso tomcat -->  
+                                   <!--
+                                   <arguments>
                                         <argument>src/main/resources/CustomerService.wsdl</argument>
-                                    </arguments>
+                                    </arguments>-->
                                 </configuration>
                             </execution>
                         </executions>

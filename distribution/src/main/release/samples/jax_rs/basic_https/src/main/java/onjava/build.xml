@@ -1,0 +1,92 @@
+
+<project name="Secure NIO" default="build-debug" basedir=".">	
+	<description>SMS Router source tree.</description>
+	<!-- Set global properties -->
+	<property name="src.dir" location="src"/>	
+	<property name="classes.dir" location="classes"
+		description="Directory for compiled classes"/>
+	<property name="javadocs.dir" location="docs/api"
+		description="Directory for the javadocs"/>
+	<property name="libs.dir" location="" 
+		description="External libraries required to compile source code"/>
+	
+	<!-- Major.minor.revision 
+		Major - Significant changes in the functionality.
+		Minor - Small improvements in functionality.
+		Revision - Bug fixes.
+	-->
+	<property name="version" value="0.1"/>
+
+	<fileset id="project.class.path" dir="${libs.dir}">
+	  <include name="**/*.jar"/>
+	</fileset>			
+	<property name="cp" refid="project.class.path"/>
+
+	<!-- Sets the compiler to the JVM 1.4. Required for the assert keyword -->
+	<property name="build.compiler" value="modern"/>
+	
+	<target name="init" 
+		description="Prepares the build">
+		<!-- Generate a time stamp -->
+		<tstamp/>
+		<!-- Create the directory to where classes will be compiled-->
+		<mkdir dir="${classes.dir}"/>
+	</target>
+		
+	<target name="build-debug" depends="init, clean" 
+		description="Compiles the source code">
+	<!-- Compiles from ${src} to ${classes.dir} -->
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="${cp}"
+			source="1.5"
+			debug="on" 
+			debuglevel="lines,vars,source"
+			optimize="on">
+		</javac>
+	</target>
+	
+	<target name="build-release" depends="init" 
+		description="Compiles the source code">
+	<!-- Compiles from ${src.dir} to ${classes.dir}. Does not compile
+		test or unused classes -->
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="${cp}"
+			source="1.5" 
+			debug="off" 
+			debuglevel="none" 
+			optimize="on"/>
+	</target>
+	
+	<target name="javadocs"
+		description="Generates the javadocs.">
+		<!-- Create the javadocs directory -->
+		<mkdir dir="${javadocs.dir}"/>
+		<javadoc 
+			sourcepath="${src.dir}" 
+			destdir="${javadocs.dir}"
+			classpath="${cp}"
+			source="1.5"
+			/>
+	</target>
+	
+	<!-- depends="build-debug"  -->
+	<target name="package" 
+		description="Generate the Secure NIO jar file">
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist.dir}"/>
+		<jar destfile="secureNIO-${version}.jar" 
+			excludes="**/*Test.class"
+			basedir="${classes.dir}" 
+			compress="false"></jar>
+	</target>
+	
+
+	<target name="clean" description="Removes intermediate files">
+		<delete>
+			<fileset dir="${classes.dir}">
+			    <include name="**/*.class"/>
+			    <exclude name="**/*.properties"/>
+			</fileset>
+		</delete>
+		<delete dir="${javadocs.dir}"/>
+		<delete file="${dist.dir}/secureNIO-${version}.jar"/>
+	</target>
+</project>

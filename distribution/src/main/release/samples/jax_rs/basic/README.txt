@@ -6,7 +6,7 @@ The demo shows a basic REST based Web Services using JAX-RS (JSR-311). The REST 
 A RESTful customer service is provided on URL http://localhost:9000/customers. 
 Users access this URI to operate on customer.
 
-A HTTP GET request to URL http://localhost:9000/customerservice/customers/123
+A HTTP GET request to URL https://localhost:9000/customerservice/customers/123
 returns a customer instance whose id is 123. The XML document returned:
 
 <Customer>

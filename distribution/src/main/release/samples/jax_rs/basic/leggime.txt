@@ -1,6 +1,16 @@
 Semplice esempio jax-rs che usa JAXRSServerFactoryBean per pubblicare jax-rs encpoint [demo.jaxrs.server.CustomerService.java] annotato con @Path
 
-Client ua URL.java e apache HttpClient per generare get,post,put verso il server.
+Client usa URL.java e apache HttpClient per generare get,post,put verso il server.
+
+
+Nell'esempio c'e' uso di "sub resource locator":http://localhost:9000/customerservice/orders/223/products/323
+Il client cerca product 323 nell ordine 223.
+Il trucco e' nell annotare Order.java [jaxb oggetto] con jax-rs annotazione @Path("products/{productId}/") nel metodo getProduct().
+Prima CustomerService.getOrder() e' invocato e un Order e' ritornato.
+Poi tale order e' usato per cercare l inner product 323 [JAXRSInvoker.invoke]
+
+
+
 
 Vedi jax_rs_spring_security per un esempio Jetty+Spring <jaxrs:server
 

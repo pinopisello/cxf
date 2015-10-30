@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmi:XMI xmi:version="20131001" xmlns:xmi="http://www.omg.org/spec/XMI/20131001" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ActionLanguage="http://www.omg.org/spec/ALF/20120827/ActionLanguage-Profile" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:uml="http://www.eclipse.org/uml2/5.0.0/UML" xsi:schemaLocation="http://www.omg.org/spec/ALF/20120827/ActionLanguage-Profile pathmap://PAPYRUS_ACTIONLANGUAGE_PROFILE/ActionLanguage-Profile.profile.uml#_sYse0YZLEeKyw49uR6nx3g">
+  <uml:Model xmi:id="_YFNhYHnKEeWaaOxVxoJeXw" name="model">
+    <packagedElement xmi:type="uml:Class" xmi:id="_s7QjMHnKEeWaaOxVxoJeXw" name="ClientConnector">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_Lnp64HnSEeWpLJqouZT-2Q" name="listener" type="_tqC70HnKEeWaaOxVxoJeXw"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_f__F8HnSEeWpLJqouZT-2Q" name="multiplexingClient" type="_tqC70HnKEeWaaOxVxoJeXw" association="_gAAUEHnSEeWpLJqouZT-2Q">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_f__F8XnSEeWpLJqouZT-2Q" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_f__F8nnSEeWpLJqouZT-2Q" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_mislAHnSEeWpLJqouZT-2Q" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_vWze8HnSEeWpLJqouZT-2Q" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw" association="_vW0tEHnSEeWpLJqouZT-2Q">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_vWze8XnSEeWpLJqouZT-2Q" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_vWze8nnSEeWpLJqouZT-2Q" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_wA034Hw5EeWvoOIG2nByWA" name="SocketChannel" type="_2i8hEHw5EeWvoOIG2nByWA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_-_77gHw5EeWvoOIG2nByWA" name="socketChannel" type="_2i8hEHw5EeWvoOIG2nByWA" association="_-_9JoHw5EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-_77gXw5EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-_77gnw5EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_fY-6gH5rEeWfr-zTNTkDxA" name="handleConnect"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_hCDKEH5rEeWfr-zTNTkDxA" name="connect"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_tqC70HnKEeWaaOxVxoJeXw" name="MultiplexingClient">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_EwmvEHw5EeWvoOIG2nByWA" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_X0nLgHw5EeWvoOIG2nByWA" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw" association="_X0yKoHw5EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_X0nLgXw5EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_X0nLgnw5EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_UKLrsHw6EeWvoOIG2nByWA" name="packetChannel" visibility="public" type="_H_Zw4Hw6EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_K6H0MH5sEeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_K6JpYH5sEeWfr-zTNTkDxA" value="1"/>
+      </ownedAttribute>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_6_TjAH57EeWfr-zTNTkDxA" name="connectionEstablished"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_8k3LkH57EeWfr-zTNTkDxA" name="connectionFailed"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_-jtd4H57EeWfr-zTNTkDxA" name="packetArrived"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_Aw3R8H58EeWfr-zTNTkDxA" name="packetSent"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_HJdLsH58EeWfr-zTNTkDxA" name="socketDisconnected"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_MUftMH58EeWfr-zTNTkDxA" name="connectionClosed"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_KsuA0HnLEeWaaOxVxoJeXw" name="SelectorThread">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_zHSzAH59EeWfr-zTNTkDxA" name="pendingInvocations"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_DjBJIH5_EeWfr-zTNTkDxA" name="sscManager" type="_REpXkH5-EeWfr-zTNTkDxA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_MQBVgH5_EeWfr-zTNTkDxA" name="sSLChannelManager" type="_REpXkH5-EeWfr-zTNTkDxA" association="_MQB8kH5_EeWfr-zTNTkDxA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_MQBVgX5_EeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_MQBVgn5_EeWfr-zTNTkDxA" value="1"/>
+      </ownedAttribute>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_Wnsl4H59EeWfr-zTNTkDxA" name="run("/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_aLDX4H59EeWfr-zTNTkDxA" name="doInvocations"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_eEaPEH59EeWfr-zTNTkDxA" name="invokeLater"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_gAAUEHnSEeWpLJqouZT-2Q" memberEnd="_gAAUEXnSEeWpLJqouZT-2Q _f__F8HnSEeWpLJqouZT-2Q">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_gAAUEXnSEeWpLJqouZT-2Q" name="clientConnector" type="_s7QjMHnKEeWaaOxVxoJeXw" association="_gAAUEHnSEeWpLJqouZT-2Q">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_gAAUEnnSEeWpLJqouZT-2Q" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_gAAUE3nSEeWpLJqouZT-2Q" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_vW0tEHnSEeWpLJqouZT-2Q" memberEnd="_vW0tEXnSEeWpLJqouZT-2Q _vWze8HnSEeWpLJqouZT-2Q">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_vW0tEXnSEeWpLJqouZT-2Q" name="clientConnector" type="_s7QjMHnKEeWaaOxVxoJeXw" association="_vW0tEHnSEeWpLJqouZT-2Q">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_vW0tEnnSEeWpLJqouZT-2Q" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_vW0tE3nSEeWpLJqouZT-2Q" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_X0yKoHw5EeWvoOIG2nByWA" memberEnd="_X0yKoXw5EeWvoOIG2nByWA _X0nLgHw5EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_X0yKoXw5EeWvoOIG2nByWA" name="multiplexingClient" type="_tqC70HnKEeWaaOxVxoJeXw" association="_X0yKoHw5EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_X0yKonw5EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_X0yKo3w5EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_2i8hEHw5EeWvoOIG2nByWA" name="SocketChannel"/>
+    <packagedElement xmi:type="uml:Association" xmi:id="_-_9JoHw5EeWvoOIG2nByWA" memberEnd="_-_9JoXw5EeWvoOIG2nByWA _-_77gHw5EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_-_9JoXw5EeWvoOIG2nByWA" name="clientConnector" type="_s7QjMHnKEeWaaOxVxoJeXw" association="_-_9JoHw5EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_-_9Jonw5EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_-_9Jo3w5EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_H_Zw4Hw6EeWvoOIG2nByWA" name="PacketChannel">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_a7x7UHw6EeWvoOIG2nByWA" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw" association="_a7yiYHw6EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_a7x7UXw6EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_a7x7Unw6EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_spX-cHw6EeWvoOIG2nByWA" name="protocolDecoder" type="_e2dBIHw6EeWvoOIG2nByWA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_wvGdsHw6EeWvoOIG2nByWA" name="selectorThread"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_yw2TAHw6EeWvoOIG2nByWA" name="simpleProtocolDecoder" type="_e2dBIHw6EeWvoOIG2nByWA" association="_yw26EHw6EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_yw2TAXw6EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_yw2TAnw6EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_3dC8YHw6EeWvoOIG2nByWA" name="listener" type="_tqC70HnKEeWaaOxVxoJeXw"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_9wLHUHw6EeWvoOIG2nByWA" name="socketChannel_handler" type="_ERpQQHw7EeWvoOIG2nByWA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_HoaXwHw7EeWvoOIG2nByWA" name="secure_SocketChannel_IOHandler" type="_ERpQQHw7EeWvoOIG2nByWA" association="_Hobl4Hw7EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_HoaXwXw7EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_HoaXwnw7EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_0PtdgH6GEeWfr-zTNTkDxA" name="multiplexingClient" type="_tqC70HnKEeWaaOxVxoJeXw" association="_0PvSsH6GEeWfr-zTNTkDxA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0PtdgX6GEeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0Ptdgn6GEeWfr-zTNTkDxA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_LjjaoH6LEeWfr-zTNTkDxA" name="inBuffer" type="_Mu-vIH6PEeWfr-zTNTkDxA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_PLoXwH6PEeWfr-zTNTkDxA" name="outBuffer" type="_Mu-vIH6PEeWfr-zTNTkDxA"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_vUeVwH6KEeWfr-zTNTkDxA" name="sendPacket"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_yPkN4H6KEeWfr-zTNTkDxA" name="handleRead"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_0PKuIH6KEeWfr-zTNTkDxA" name="handleWrite"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_rzYbUH6PEeWfr-zTNTkDxA" name="processInBuffer"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_a7yiYHw6EeWvoOIG2nByWA" memberEnd="_a7yiYXw6EeWvoOIG2nByWA _a7x7UHw6EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_a7yiYXw6EeWvoOIG2nByWA" name="packetChannel" type="_H_Zw4Hw6EeWvoOIG2nByWA" association="_a7yiYHw6EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_a7yiYnw6EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_a7yiY3w6EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_e2dBIHw6EeWvoOIG2nByWA" name="SimpleProtocolDecoder"/>
+    <packagedElement xmi:type="uml:Association" xmi:id="_yw26EHw6EeWvoOIG2nByWA" memberEnd="_yw26EXw6EeWvoOIG2nByWA _yw2TAHw6EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_yw26EXw6EeWvoOIG2nByWA" name="packetChannel" type="_H_Zw4Hw6EeWvoOIG2nByWA" association="_yw26EHw6EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_yw26Enw6EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_yw26E3w6EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_ERpQQHw7EeWvoOIG2nByWA" name="Secure_SocketChannel_IOHandler">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_cXzX8Hw7EeWvoOIG2nByWA" name="engine" type="_WxKfkHw7EeWvoOIG2nByWA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_h90lQHw7EeWvoOIG2nByWA" name="sSLEngine" type="_WxKfkHw7EeWvoOIG2nByWA" association="_h91zYHw7EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_h90lQXw7EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_h90lQnw7EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_mWzXsHw7EeWvoOIG2nByWA" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_SbdOIHw8EeWvoOIG2nByWA" name="listener" type="_H_Zw4Hw6EeWvoOIG2nByWA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_aEtegHw8EeWvoOIG2nByWA" name="packetChannel" type="_H_Zw4Hw6EeWvoOIG2nByWA" association="_aEusoHw8EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_aEtegXw8EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_aEtegnw8EeWvoOIG2nByWA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_kx1S4H6JEeWfr-zTNTkDxA" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw" association="_kx2hAH6JEeWfr-zTNTkDxA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_kx1S4X6JEeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_kx1S4n6JEeWfr-zTNTkDxA" value="1"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_iyT8EH6SEeWfr-zTNTkDxA" name="inboundEncryptedData" type="_Mu-vIH6PEeWfr-zTNTkDxA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_rys-gH6SEeWfr-zTNTkDxA" name="outboundEncryptedData" type="_Mu-vIH6PEeWfr-zTNTkDxA"/>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_VMJrkH6WEeWfr-zTNTkDxA" name="inboundDecryptedData" type="_Mu-vIH6PEeWfr-zTNTkDxA"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_tdJyEH8qEeW1Muve0qcoHw" name="doHandshake"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_zFZM8H8qEeW1Muve0qcoHw" name="finishInitialHandshake"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_1xcjgH8qEeW1Muve0qcoHw" name="flushData"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_4lBeYH8qEeW1Muve0qcoHw" name="doTasks"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_8k_T4H8qEeW1Muve0qcoHw" name="handleRead"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_-vmKQH8qEeW1Muve0qcoHw" name="handleWrite"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_ArvG0H8rEeW1Muve0qcoHw" name="read"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_CzYIwH8rEeW1Muve0qcoHw" name="write"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_FXaLwH8rEeW1Muve0qcoHw" name="fireReadEvent"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_HDZMcH8rEeW1Muve0qcoHw" name="fireWriteEvent"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_KM1poH8rEeW1Muve0qcoHw" name="registerForRead"/>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_L601cH8rEeW1Muve0qcoHw" name="registerForWrite"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_Hobl4Hw7EeWvoOIG2nByWA" memberEnd="_Hobl4Xw7EeWvoOIG2nByWA _HoaXwHw7EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_Hobl4Xw7EeWvoOIG2nByWA" name="packetChannel" type="_H_Zw4Hw6EeWvoOIG2nByWA" association="_Hobl4Hw7EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_Hobl4nw7EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_Hobl43w7EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_WxKfkHw7EeWvoOIG2nByWA" name="SSLEngine"/>
+    <packagedElement xmi:type="uml:Association" xmi:id="_h91zYHw7EeWvoOIG2nByWA" memberEnd="_h91zYXw7EeWvoOIG2nByWA _h90lQHw7EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_h91zYXw7EeWvoOIG2nByWA" name="secure_SocketChannel_IOHandler" type="_ERpQQHw7EeWvoOIG2nByWA" association="_h91zYHw7EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_h91zYnw7EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_h91zY3w7EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_aEusoHw8EeWvoOIG2nByWA" memberEnd="_aEusoXw8EeWvoOIG2nByWA _aEtegHw8EeWvoOIG2nByWA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_aEusoXw8EeWvoOIG2nByWA" name="secure_SocketChannel_IOHandler" type="_ERpQQHw7EeWvoOIG2nByWA" association="_aEusoHw8EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_aEusonw8EeWvoOIG2nByWA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_aEuso3w8EeWvoOIG2nByWA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_REpXkH5-EeWfr-zTNTkDxA" name="SSLChannelManager">
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_VQXxIH5-EeWfr-zTNTkDxA" name="readListeners" type="_ERpQQHw7EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_1uUDIH5-EeWfr-zTNTkDxA"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_1uUqMH5-EeWfr-zTNTkDxA" value="*"/>
+      </ownedAttribute>
+      <ownedAttribute xmi:type="uml:Property" xmi:id="_5EpFwH5-EeWfr-zTNTkDxA" name="writeListeners" type="_ERpQQHw7EeWvoOIG2nByWA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_9HlWwH5-EeWfr-zTNTkDxA"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_9Hl90H5-EeWfr-zTNTkDxA" value="*"/>
+      </ownedAttribute>
+      <ownedOperation xmi:type="uml:Operation" xmi:id="_Af0d4H5_EeWfr-zTNTkDxA" name="fireEvents"/>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_MQB8kH5_EeWfr-zTNTkDxA" memberEnd="_MQB8kX5_EeWfr-zTNTkDxA _MQBVgH5_EeWfr-zTNTkDxA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_MQB8kX5_EeWfr-zTNTkDxA" name="selectorThread" type="_KsuA0HnLEeWaaOxVxoJeXw" association="_MQB8kH5_EeWfr-zTNTkDxA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_MQB8kn5_EeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_MQB8k35_EeWfr-zTNTkDxA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_0PvSsH6GEeWfr-zTNTkDxA" memberEnd="_0PvSsX6GEeWfr-zTNTkDxA _0PtdgH6GEeWfr-zTNTkDxA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_0PvSsX6GEeWfr-zTNTkDxA" name="packetChannel" type="_H_Zw4Hw6EeWvoOIG2nByWA" association="_0PvSsH6GEeWfr-zTNTkDxA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_0PvSsn6GEeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_0PvSs36GEeWfr-zTNTkDxA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Association" xmi:id="_kx2hAH6JEeWfr-zTNTkDxA" memberEnd="_kx2hAX6JEeWfr-zTNTkDxA _kx1S4H6JEeWfr-zTNTkDxA">
+      <name xsi:nil="true"/>
+      <ownedEnd xmi:type="uml:Property" xmi:id="_kx2hAX6JEeWfr-zTNTkDxA" name="secure_SocketChannel_IOHandler" type="_ERpQQHw7EeWvoOIG2nByWA" association="_kx2hAH6JEeWfr-zTNTkDxA">
+        <lowerValue xmi:type="uml:LiteralInteger" xmi:id="_kx2hAn6JEeWfr-zTNTkDxA" value="1"/>
+        <upperValue xmi:type="uml:LiteralUnlimitedNatural" xmi:id="_kx2hA36JEeWfr-zTNTkDxA" value="1"/>
+      </ownedEnd>
+    </packagedElement>
+    <packagedElement xmi:type="uml:Class" xmi:id="_Mu-vIH6PEeWfr-zTNTkDxA" name="ByteBuffer"/>
+    <profileApplication xmi:type="uml:ProfileApplication" xmi:id="_th1W0HnREeWpLJqouZT-2Q">
+      <eAnnotations xmi:type="ecore:EAnnotation" xmi:id="_tn9M8HnREeWpLJqouZT-2Q" source="http://www.eclipse.org/uml2/2.0.0/UML">
+        <references xmi:type="ecore:EPackage" href="pathmap://PAPYRUS_ACTIONLANGUAGE_PROFILE/ActionLanguage-Profile.profile.uml#_sYse0YZLEeKyw49uR6nx3g"/>
+      </eAnnotations>
+      <appliedProfile xmi:type="uml:Profile" href="pathmap://PAPYRUS_ACTIONLANGUAGE_PROFILE/ActionLanguage-Profile.profile.uml#ActionLanguage"/>
+    </profileApplication>
+  </uml:Model>
+  <ActionLanguage:TextualRepresentation xmi:id="_EgQvIH5sEeWfr-zTNTkDxA" language="org.eclipse.papyrus.uml.textedit.property.xtext.UmlProperty"/>
+</xmi:XMI>

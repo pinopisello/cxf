@@ -2,10 +2,65 @@ In questo folder "samples" ci sono tutti gli esempi forniti da CXF.
 
 Ogni progetto su cui ho fatto prove/ho studiato ha un file "leggime.txt"
 
+
 Inizializzazione Spring =>wsdl_first/Spring-bean-setup.txt  
 
 
 =============		wsdl_first    ==================
+Come , a partire da un wsdl, costruire server e client , Spring e non spring based, con diversi transports.
+
+Server:Non Spring jetty transport   [-Pserver]
+	   Spring  jetty                [-Pserver-spring]
+	   Non Spring netty             [-Pserver-netty]
+	   Tomcat 7                     [tomcat7:run]
+	   
+	   
+Client:Non Spring standard transport    [-Pclient]
+	   Non Spring netty                 [-Pclient-netty]
+	   Spring jetty standard transport  [-Pclient-spring]
+
+
+
+
+=============		jax_rs_basic    ==================
+Implementa un server  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean.
+L'esempio implementa jax-rs sub-resource-locator [vedi http://localhost:9000/customerservice/orders/223/products/323]
+Client usa apache http-client 
+Ambo client e server non sono configurati con Spring.
+
+
+
+Server:[-Pserver]
+
+Client:[-Pclient]
+
+=============		jax_rs_https    ==================
+Implementa un server  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean ma con Spring configration
+ServerConfig.xml configura keyManagers,trustManagers,port del transport jetty con tags <httpj:engine-factory> e <httpj:engine> imponendo l autenticazione del client certificate
+
+Client usa org.apache.cxf.jaxrs.client.WebClient.java [cxf-rt-rs-client] configurando con ClientConfig.xml con tag <http:conduit> il keystore da usare.
+
+Server:[-Pserver]
+
+Client:[-Pclient]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

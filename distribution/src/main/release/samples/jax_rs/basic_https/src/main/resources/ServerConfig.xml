@@ -20,18 +20,26 @@
 <!-- 
   ** This file configures the Server which exposes the REST endpoint.
 -->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:sec="http://cxf.apache.org/configuration/security" xmlns:http="http://cxf.apache.org/transports/http/configuration" xmlns:httpj="http://cxf.apache.org/transports/http-jetty/configuration" xsi:schemaLocation="        http://cxf.apache.org/configuration/security                  http://cxf.apache.org/schemas/configuration/security.xsd        http://cxf.apache.org/transports/http/configuration        http://cxf.apache.org/schemas/configuration/http-conf.xsd        http://cxf.apache.org/transports/http-jetty/configuration        http://cxf.apache.org/schemas/configuration/http-jetty.xsd        http://www.springframework.org/schema/beans        http://www.springframework.org/schema/beans/spring-beans.xsd">
-    <httpj:engine-factory bus="cxf">
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:sec="http://cxf.apache.org/configuration/security" 
+	xmlns:http="http://cxf.apache.org/transports/http/configuration" 
+	xmlns:httpj="http://cxf.apache.org/transports/http-jetty/configuration" 
+	xsi:schemaLocation="http://cxf.apache.org/configuration/security                  http://cxf.apache.org/schemas/configuration/security.xsd        
+						http://cxf.apache.org/transports/http/configuration        http://cxf.apache.org/schemas/configuration/http-conf.xsd
+				        http://cxf.apache.org/transports/http-jetty/configuration        http://cxf.apache.org/schemas/configuration/http-jetty.xsd 
+				        http://www.springframework.org/schema/beans        http://www.springframework.org/schema/beans/spring-beans.xsd">
+    <httpj:engine-factory bus="cxf"> <!--  vedi org.apache.cxf.transport.http_jetty.spring.NamespaceHandler e cxf-rt-transports-http-jetty/src/main/resources/META-INF/spring.handlers -->
         <httpj:engine port="9000">
-            <httpj:tlsServerParameters>
-                <sec:keyManagers keyPassword="skpass">
+            <httpj:tlsServerParameters >
+               <!-- <sec:keyManagers keyPassword="skpass">
                     <sec:keyStore file="src/main/config/serviceKeystore.jks" password="sspass" type="JKS"/>
                 </sec:keyManagers>
                 <sec:trustManagers>
                     <sec:keyStore file="src/main/config/serviceKeystore.jks" password="sspass" type="JKS"/>
                 </sec:trustManagers>
-                <sec:clientAuthentication want="true" required="true"/>
-            </httpj:tlsServerParameters>
+                <sec:clientAuthentication want="true" required="true"/>-->
+            </httpj:tlsServerParameters> 
         </httpj:engine>
     </httpj:engine-factory>
 </beans>
