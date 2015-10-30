@@ -29,7 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.crypto.Cipher;
+import javax.ws.rs.BadRequestException;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
@@ -40,8 +40,8 @@ import org.apache.cxf.rs.security.jose.jaxrs.JweClientResponseFilter;
 import org.apache.cxf.rs.security.jose.jaxrs.JweWriterInterceptor;
 import org.apache.cxf.rs.security.jose.jaxrs.JwsJsonClientResponseFilter;
 import org.apache.cxf.rs.security.jose.jaxrs.JwsJsonWriterInterceptor;
-import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
 import org.apache.cxf.systest.jaxrs.security.Book;
+import org.apache.cxf.systest.jaxrs.security.SecurityTestUtil;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -56,21 +56,15 @@ public class JAXRSJwsJsonTest extends AbstractBusClientServerTestBase {
     public static void startServers() throws Exception {
         assertTrue("server did not launch correctly", 
                    launchServer(BookServerJwsJson.class, true));
-        registerBouncyCastleIfNeeded();
+        registerBouncyCastle();
     }
     
-    private static void registerBouncyCastleIfNeeded() throws Exception {
-        try {
-            // Java 8 apparently has it
-            Cipher.getInstance(AlgorithmUtils.AES_GCM_ALGO_JAVA);
-        } catch (Throwable t) {
-            // Oracle Java 7
-            Security.addProvider(new BouncyCastleProvider());    
-        }
+    private static void registerBouncyCastle() throws Exception {
+        Security.addProvider(new BouncyCastleProvider());    
     }
     @AfterClass
     public static void unregisterBouncyCastleIfNeeded() throws Exception {
-        Security.removeProvider(BouncyCastleProvider.class.getName());    
+        Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);    
     }
     
     @Test
@@ -94,6 +88,9 @@ public class JAXRSJwsJsonTest extends AbstractBusClientServerTestBase {
     }
     @Test
     public void testJweCompactJwsJsonBookBeanHmac() throws Exception {
+        if (!SecurityTestUtil.checkUnrestrictedPoliciesInstalled()) {
+            return;
+        }
         String address = "https://localhost:" + PORT + "/jwejwsjsonhmac";
         List<?> extraProviders = Arrays.asList(new JacksonJsonProvider(),
                                                new JweWriterInterceptor(),
@@ -128,10 +125,37 @@ public class JAXRSJwsJsonTest extends AbstractBusClientServerTestBase {
         List<String> properties = new ArrayList<String>();
         properties.add("org/apache/cxf/systest/jaxrs/security/secret.jwk.hmac2.properties");
         BookStore bs = createBookStore(address, properties, null);
-        Book book = bs.echoBook(new Book("book", 123L));
+        Book book = bs.echoBook2(new Book("book", 123L));
         assertEquals("book", book.getName());
         assertEquals(123L, book.getId());
     }
+    
+    // Test signing an XML payload
+    @Test
+    public void testJwsJsonPlainTextHmacXML() throws Exception {
+        String address = "https://localhost:" + PORT + "/jwsjsonhmac";
+        BookStore bs = createBookStore(address, 
+                                       "org/apache/cxf/systest/jaxrs/security/secret.jwk.properties",
+                                       null);
+        String text = bs.echoText("book");
+        assertEquals("book", text);
+    }
+    
+    // Test signing with a bad signature key
+    @Test
+    public void testJwsJsonPlaintextHMACBadKey() throws Exception {
+        String address = "https://localhost:" + PORT + "/jwsjsonhmac";
+        BookStore bs = createBookStore(address, 
+                                       "org/apache/cxf/systest/jaxrs/security/secret.jwk.bad.properties",
+                                       null);
+        try {
+            bs.echoText("book");
+            fail("Failure expected on a bad signature key");
+        } catch (BadRequestException ex) {
+            // expected
+        }
+    }
+    
     private BookStore createBookStore(String address, Object properties,
                                       List<?> extraProviders) throws Exception {
         return createBookStore(address, 

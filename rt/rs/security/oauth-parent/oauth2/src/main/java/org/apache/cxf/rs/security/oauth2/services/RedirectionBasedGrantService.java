@@ -145,9 +145,9 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
             return createErrorResponse(params, redirectUri, OAuthConstants.INVALID_SCOPE);
         }
         // Convert the requested scopes to OAuthPermission instances
-        List<OAuthPermission> permissions = null;
+        List<OAuthPermission> requestedPermissions = null;
         try {
-            permissions = getDataProvider().convertScopeToPermissions(client, requestedScope);
+            requestedPermissions = getDataProvider().convertScopeToPermissions(client, requestedScope);
         } catch (OAuthServiceException ex) {
             return createErrorResponse(params, redirectUri, OAuthConstants.INVALID_SCOPE);
         }
@@ -160,18 +160,22 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
         // Request a new grant only if no pre-authorized token is available
         ServerAccessToken preAuthorizedToken = getDataProvider().getPreauthorizedToken(
             client, requestedScope, userSubject, supportedGrantType);
-        final boolean preAuthorizedTokenAvailable = preAuthorizedToken != null;
+        final boolean authorizationCanBeSkipped = 
+            preAuthorizedToken != null 
+            || canAuthorizationBeSkipped(client, requestedScope, requestedPermissions);
         
         // Populate the authorization challenge data 
         OAuthAuthorizationData data = 
-            createAuthorizationData(client, params, redirectUri, userSubject, permissions, 
-                                    preAuthorizedTokenAvailable);
+            createAuthorizationData(client, params, redirectUri, userSubject, requestedPermissions, 
+                                    authorizationCanBeSkipped);
         
-        if (preAuthorizedTokenAvailable) {
+        if (authorizationCanBeSkipped) {
+            List<OAuthPermission> approvedScopes = 
+                preAuthorizedToken != null ? preAuthorizedToken.getScopes() : requestedPermissions; 
             return createGrant(data,
                                client, 
                                requestedScope,
-                               OAuthUtils.convertPermissionsToScopeList(preAuthorizedToken.getScopes()),
+                               OAuthUtils.convertPermissionsToScopeList(approvedScopes),
                                userSubject,
                                preAuthorizedToken);
         }
@@ -180,6 +184,12 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
         
     }
     
+    protected boolean canAuthorizationBeSkipped(Client client, 
+                                                List<String> requestedScope, 
+                                                List<OAuthPermission> permissions) {
+        return false;
+    }
+
     /**
      * Create the authorization challenge data 
      */
@@ -188,7 +198,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
                                                              String redirectUri, 
                                                              UserSubject subject,
                                                              List<OAuthPermission> perms,
-                                                             boolean preAuthorizedTokenAvailable) {
+                                                             boolean authorizationCanBeSkipped) {
         
         OAuthAuthorizationData secData = new OAuthAuthorizationData();
         
@@ -197,7 +207,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
         secData.setAudience(params.getFirst(OAuthConstants.CLIENT_AUDIENCE));
         secData.setClientId(client.getClientId());
         secData.setProposedScope(params.getFirst(OAuthConstants.SCOPE));
-        if (!preAuthorizedTokenAvailable) {
+        if (!authorizationCanBeSkipped) {
             secData.setPermissions(perms);
             secData.setApplicationName(client.getApplicationName()); 
             secData.setApplicationWebUri(client.getApplicationWebUri());
