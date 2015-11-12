@@ -1,0 +1,67 @@
+Client
+
+
+
+Concetti chiave:
+
+SelectorThread registra 2 channels e relativi handlers:
+
+    Channel								handler                            selectio_key
+
+1)java.nio.channels.SocketChannel     ClientConnector                      SelectionKey.OP_CONNECT
+
+2)java.nio.channels.SocketChannel     Secure_SocketChannel_IOHandler       0
+
+
+
+
+
+
+########  SocketChannel registrato presso selectorThread  con OP_CONNECT  #######
+
+A boostrap [ClientConnector.connect()] Server registra preso selectorThread un SocketChannel che ascolta su porta 9000 con interestset = OP_CONNECT e associa alla SelectionKey istanza ClientConnector come handler.
+
+selectorThread comincia a luppare e trova currentSelectionKey di cui sopra "connectable".
+Quindi invoca l handler.handleConnect() ossia ClientConnector.handleConnect() che a sua volta  MultiplexingClient.connectionEstablished() .
+Qui un PacketChannel e' creato e a sua volta Secure_SocketChannel_IOHandler che nel costruttore registra presso il selectorThread  SocketChannel "connesso" con handler se stesso e interstOps =0 [ogni operazione].
+
+########  SocketChannel registrato presso selectorThread  con interstOps=0  #######
+
+MultiplexingClient.connectionEstablished() invoca sendMessage() che a sua volta PacketChannel.sendPacket() che a sua volta Secure_SocketChannel_IOHandler.packetChannelWrite() e da qui 
+Secure_SocketChannel_IOHandler.registerForWrite().Qui semplicemente selectorThread.getSscManager().registerForWrite(this) [non lo puo' inviare subito perche l ssl handshake non e' ancora finito...] ossia Secure_SocketChannel_IOHandler si mette nella lista di
+SSLChannelManager.writeListeners .Il message perparato da MultiplexingClient non e' ancora stato spedito!!
+
+SelectorTread resume il ciclo e lancia sscManager.fireEvents().
+Qui Secure_SocketChannel_IOHandler.fireWriteEvent() =>PacketChannel.handleWrite()=>Secure_SocketChannel_IOHandler.packetChannelWrite() dove finalmente il messaggio e' criptato e poi
+inviato verso il socket Secure_SocketChannel_IOHandler.flushData().
+
+##########   Messaggio criptato ed inviato    #########################
+
+In PacketChannel.handleWrite() , MultiplexingClient.packetSent(this, sentPacket) ossia il client viene notificato che il message e' inviato.
+
+Qui PacketChannel.resumeReading() => Secure_SocketChannel_IOHandler.registerForRead() => Secure_SocketChannel_IOHandler.selectorRegisterForRead() => selectorThread.addChannelInterestNow(sc, SelectionKey.OP_READ);
+
+##########  Ora SocketChannel e' regitrato con interest OP_READ per leggere la risposta dal server ###############
+
+SelectorRhread resume di nuovo ed invoca Secure_SocketChannel_IOHandler.selectorThreadHandleRead() =>Secure_SocketChannel_IOHandler.readAndUnwrap()
+
+Qui il socketChannel droppa i cripted bytes dal server in Secure_SocketChannel_IOHandler.inboundEncryptedData , poi SSLEngine carica Secure_SocketChannel_IOHandler.inboundDecryptedData col messaggio decriptato .
+
+Prima di uscire , Secure_SocketChannel_IOHandler.registerForRead().
+
+########   Messaggio risposta ricevuto e ecriptato #########
+
+SelectorThread resume e chiama sscManager.fireEvents() => Secure_SocketChannel_IOHandler.fireReadEvent()=>PacketChannel.handleRead() =>PacketChannel.processInBuffer() => MultiplexingClient.packetArrived() 
+=>PacketChannel.close() =>Secure_SocketChannel_IOHandler.close() =>Secure_SocketChannel_IOHandler.shutDown()
+																																										                                     
+########  Rsources released ##############
+
+
+
+
+
+
+
+
+
+
