@@ -20,6 +20,7 @@
 package org.apache.cxf.sts.token.provider;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ import org.apache.cxf.sts.cache.CacheUtils;
 import org.apache.cxf.sts.claims.ClaimsAttributeStatementProvider;
 import org.apache.cxf.sts.request.KeyRequirements;
 import org.apache.cxf.sts.request.TokenRequirements;
-import org.apache.cxf.sts.token.realm.SAMLRealm;
+import org.apache.cxf.sts.token.realm.RealmProperties;
 import org.apache.cxf.ws.security.sts.provider.STSException;
 import org.apache.cxf.ws.security.tokenstore.SecurityToken;
 import org.apache.wss4j.common.saml.SAMLCallback;
@@ -64,7 +65,7 @@ public class SAMLTokenProvider extends AbstractSAMLTokenProvider implements Toke
     private SubjectProvider subjectProvider = new DefaultSubjectProvider();
     private ConditionsProvider conditionsProvider = new DefaultConditionsProvider();
     private boolean signToken = true;
-    private Map<String, SAMLRealm> realmMap = new HashMap<>();
+    private Map<String, RealmProperties> realmMap = new HashMap<>();
     private SamlCustomHandler samlCustomHandler;
     
     /**
@@ -136,7 +137,7 @@ public class SAMLTokenProvider extends AbstractSAMLTokenProvider implements Toke
             }
             
             TokenProviderResponse response = new TokenProviderResponse();
-            response.setToken(token);
+            
             String tokenType = tokenRequirements.getTokenType();
             if (WSConstants.WSS_SAML2_TOKEN_TYPE.equals(tokenType) 
                 || WSConstants.SAML2_NS.equals(tokenType)) {
@@ -144,6 +145,15 @@ public class SAMLTokenProvider extends AbstractSAMLTokenProvider implements Toke
             } else {
                 response.setTokenId(token.getAttributeNS(null, "AssertionID"));
             }
+            
+            if (tokenParameters.isEncryptToken()) {
+                token = TokenProviderUtils.encryptToken(token, response.getTokenId(), 
+                                                        tokenParameters.getStsProperties(), 
+                                                        tokenParameters.getEncryptionProperties(), 
+                                                        keyRequirements,
+                                                        tokenParameters.getWebServiceContext());
+            }
+            response.setToken(token);
             
             DateTime validFrom = null;
             DateTime validTill = null;
@@ -262,19 +272,22 @@ public class SAMLTokenProvider extends AbstractSAMLTokenProvider implements Toke
     }
     
     /**
-     * Set the map of realm->SAMLRealm for this token provider
-     * @param realms the map of realm->SAMLRealm for this token provider
+     * Set the map of realm->RealmProperties for this token provider
+     * @param realms the map of realm->RealmProperties for this token provider
      */
-    public void setRealmMap(Map<String, SAMLRealm> realms) {
-        this.realmMap = realms;
+    public void setRealmMap(Map<String, ? extends RealmProperties> realms) {
+        this.realmMap.clear();
+        if (realms != null) {
+            this.realmMap.putAll(realms);
+        }
     }
     
     /**
-     * Get the map of realm->SAMLRealm for this token provider
-     * @return the map of realm->SAMLRealm for this token provider
+     * Get the map of realm->RealmProperties for this token provider
+     * @return the map of realm->RealmProperties for this token provider
      */
-    public Map<String, SAMLRealm> getRealmMap() {
-        return realmMap;
+    public Map<String, RealmProperties> getRealmMap() {
+        return Collections.unmodifiableMap(realmMap);
     }
 
     public void setSamlCustomHandler(SamlCustomHandler samlCustomHandler) {
@@ -285,7 +298,7 @@ public class SAMLTokenProvider extends AbstractSAMLTokenProvider implements Toke
         TokenProviderParameters tokenParameters, byte[] secret, Document doc
     ) throws Exception {
         String realm = tokenParameters.getRealm();
-        SAMLRealm samlRealm = null;
+        RealmProperties samlRealm = null;
         if (realm != null && realmMap.containsKey(realm)) {
             samlRealm = realmMap.get(realm);
         }
@@ -310,7 +323,7 @@ public class SAMLTokenProvider extends AbstractSAMLTokenProvider implements Toke
     }
     
     public SamlCallbackHandler createCallbackHandler(
-        TokenProviderParameters tokenParameters, byte[] secret, SAMLRealm samlRealm, Document doc
+        TokenProviderParameters tokenParameters, byte[] secret, RealmProperties samlRealm, Document doc
     ) throws Exception {
         boolean statementAdded = false;
         

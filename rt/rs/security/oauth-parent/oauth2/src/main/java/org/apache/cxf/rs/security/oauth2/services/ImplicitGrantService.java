@@ -19,6 +19,8 @@
 
 package org.apache.cxf.rs.security.oauth2.services;
 
+import java.util.Set;
+
 import javax.ws.rs.Path;
 
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
@@ -38,6 +40,9 @@ public class ImplicitGrantService extends AbstractImplicitGrantService {
 
     public ImplicitGrantService() {
         super(OAuthConstants.TOKEN_RESPONSE_TYPE, OAuthConstants.IMPLICIT_GRANT);
+    }
+    public ImplicitGrantService(Set<String> responseTypes) {
+        super(responseTypes, OAuthConstants.IMPLICIT_GRANT);
     }
 }
 

@@ -113,7 +113,7 @@ public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsume
                 throw new SecurityException("Self-issued JWK key is invalid or not available");
             }
         } else {
-            String keyId = jwt.getHeaders().getKeyId();
+            String keyId = jwt.getJwsHeaders().getKeyId();
             key = keyId != null ? keyMap.get(keyId) : null;
             if (key == null && jwkSetClient != null) {
                 JsonWebKeys keys = jwkSetClient.get(JsonWebKeys.class);
@@ -129,7 +129,7 @@ public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsume
         if (key != null) {
             theJwsVerifier = JwsUtils.getSignatureVerifier(key);
         } else {
-            theJwsVerifier = super.getInitializedSignatureVerifier(jwt);
+            theJwsVerifier = super.getInitializedSignatureVerifier(jwt.getJwsHeaders());
         }
         if (theJwsVerifier == null) {
             throw new SecurityException("JWS Verifier is not available");

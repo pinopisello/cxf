@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -135,11 +136,12 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testEchoXmlBookQuery() throws Exception {
         String address = "http://localhost:" + PORT;
         BookStore store = JAXRSClientFactory.create(address, BookStore.class,
-            Collections.singletonList(new BookServer.XmlBookParamConverter()));
-        Book b = store.echoXmlBookQuery(new Book("query", 125L));
+            Collections.singletonList(new BookServer.ParamConverterImpl()));
+        Book b = store.echoXmlBookQuery(new Book("query", 125L), (byte)125);
         assertEquals(125L, b.getId());
         assertEquals("query", b.getName());
     }
+    
     @Test
     public void testGetBookRoot() throws Exception {
         String address = "http://localhost:" + PORT + "/bookstore/;JSESSIONID=xxx";
@@ -547,7 +549,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         // not disallowed in the path components 
         String endpointAddressUrlEncoded =
             "http://localhost:" + PORT + "/bookstore/books/colon/" 
-            + URLEncoder.encode("1:2:3", "UTF-8");
+            + URLEncoder.encode("1:2:3", StandardCharsets.UTF_8.name());
         
         Response r = WebClient.create(endpointAddressUrlEncoded).get();
         assertEquals(404, r.getStatus());

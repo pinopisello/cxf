@@ -20,6 +20,7 @@ package org.apache.cxf.rs.security.oauth2.client;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import javax.annotation.Priority;
@@ -65,6 +66,8 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
     private long expiryThreshold;
     private String redirectUri;
     private boolean setFormPostResponseMode;
+    private boolean faultAccessDeniedResponses;
+    private boolean applicationCanHandleAccessDenied;
         
     @Override
     public void filter(ContainerRequestContext rc) throws IOException {
@@ -93,18 +96,33 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
             Response codeResponse = createCodeResponse(rc,  ui);
             rc.abortWith(codeResponse);
         } else if (absoluteRequestUri.endsWith(completeUri)) {
-            processCodeResponse(rc, ui);
-            checkSecurityContextEnd(rc);
+            MultivaluedMap<String, String> requestParams = toRequestState(rc, ui);
+            processCodeResponse(rc, ui, requestParams);
+            checkSecurityContextEnd(rc, requestParams);
         }
     }
 
     protected void checkSecurityContextStart(ContainerRequestContext rc) {
-        checkSecurityContextEnd(rc);
-    }
-    private void checkSecurityContextEnd(ContainerRequestContext rc) {
         SecurityContext sc = rc.getSecurityContext();
         if (sc == null || sc.getUserPrincipal() == null) {
             throw ExceptionUtils.toNotAuthorizedException(null, null);
+        }
+    }
+    private void checkSecurityContextEnd(ContainerRequestContext rc,
+                                         MultivaluedMap<String, String> requestParams) {
+        String codeParam = requestParams.getFirst(OAuthConstants.AUTHORIZATION_CODE_VALUE);
+        SecurityContext sc = rc.getSecurityContext();
+        if (sc == null || sc.getUserPrincipal() == null) {
+            if (codeParam == null 
+                && requestParams.containsKey(OAuthConstants.ERROR_KEY)
+                && OAuthConstants.ACCESS_DENIED.equals(requestParams.getFirst(OAuthConstants.ERROR_KEY))
+                && !faultAccessDeniedResponses) {
+                if (!applicationCanHandleAccessDenied) {
+                    rc.abortWith(Response.ok(new AccessDeniedResponse()).build());    
+                }
+            } else {
+                throw ExceptionUtils.toNotAuthorizedException(null, null);
+            }
         }
     }
 
@@ -141,15 +159,17 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
             return ui.getAbsolutePath();
         }
     }
-    protected void processCodeResponse(ContainerRequestContext rc, UriInfo ui) {
-        MultivaluedMap<String, String> params = toRequestState(rc, ui);
-        String codeParam = params.getFirst(OAuthConstants.AUTHORIZATION_CODE_VALUE);
+    protected void processCodeResponse(ContainerRequestContext rc, 
+                                       UriInfo ui,
+                                       MultivaluedMap<String, String> requestParams) {
+        
+        String codeParam = requestParams.getFirst(OAuthConstants.AUTHORIZATION_CODE_VALUE);
         ClientAccessToken at = null;
         if (codeParam != null) {
             AccessTokenGrant grant = new AuthorizationCodeGrant(codeParam, getAbsoluteRedirectUri(ui));
             at = OAuthClientUtils.getAccessToken(accessTokenServiceClient, consumer, grant);
         }
-        ClientTokenContext tokenContext = initializeClientTokenContext(rc, at, params);
+        ClientTokenContext tokenContext = initializeClientTokenContext(rc, at, requestParams);
         if (at != null && clientTokenContextManager != null) {
             clientTokenContextManager.setClientTokenContext(mc, tokenContext);
         }
@@ -194,9 +214,9 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
         MultivaluedMap<String, String> requestState = new MetadataMap<String, String>();
         requestState.putAll(ui.getQueryParameters(decodeRequestParameters));
         if (MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(rc.getMediaType())) {
-            String body = FormUtils.readBody(rc.getEntityStream(), "UTF-8");
+            String body = FormUtils.readBody(rc.getEntityStream(), StandardCharsets.UTF_8.name());
             FormUtils.populateMapFromString(requestState, JAXRSUtils.getCurrentMessage(), body, 
-                                            "UTF-8", decodeRequestParameters);
+                                            StandardCharsets.UTF_8.name(), decodeRequestParameters);
         }
         return requestState;
     }
@@ -212,7 +232,7 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
         setScopes(sb.toString());
     }
     public void setScopes(String scopes) {
-        this.scopes = scopes;
+        this.scopes = scopes.trim();
     }
 
     public void setStartUri(String relStartUri) {
@@ -286,5 +306,13 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
 
     public void setSetFormPostResponseMode(boolean setFormPostResponseMode) {
         this.setFormPostResponseMode = setFormPostResponseMode;
+    }
+
+    public void setBlockAccessDeniedResponses(boolean blockAccessDeniedResponses) {
+        this.faultAccessDeniedResponses = blockAccessDeniedResponses;
+    }
+
+    public void setApplicationCanHandleAccessDenied(boolean applicationCanHandleAccessDenied) {
+        this.applicationCanHandleAccessDenied = applicationCanHandleAccessDenied;
     }
 }

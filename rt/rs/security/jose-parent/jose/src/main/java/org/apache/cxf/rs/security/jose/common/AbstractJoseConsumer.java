@@ -19,7 +19,9 @@
 package org.apache.cxf.rs.security.jose.common;
 
 import org.apache.cxf.rs.security.jose.jwe.JweDecryptionProvider;
+import org.apache.cxf.rs.security.jose.jwe.JweHeaders;
 import org.apache.cxf.rs.security.jose.jwe.JweUtils;
+import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
 import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 
@@ -43,18 +45,18 @@ public abstract class AbstractJoseConsumer {
         return jwsVerifier;
     }
 
-    protected JweDecryptionProvider getInitializedDecryptionProvider() {
+    protected JweDecryptionProvider getInitializedDecryptionProvider(JweHeaders jweHeaders) {
         if (jweDecryptor != null) {
             return jweDecryptor;    
         } 
-        return JweUtils.loadDecryptionProvider(false);
+        return JweUtils.loadDecryptionProvider(jweHeaders, false);
     }
-    protected JwsSignatureVerifier getInitializedSignatureVerifier() {
+    protected JwsSignatureVerifier getInitializedSignatureVerifier(JwsHeaders jwsHeaders) {
         if (jwsVerifier != null) {
             return jwsVerifier;    
         }
         
-        return JwsUtils.loadSignatureVerifier(false);
+        return JwsUtils.loadSignatureVerifier(jwsHeaders, false);
     }
 
 }

@@ -19,7 +19,9 @@
 package org.apache.cxf.rs.security.jose.common;
 
 import org.apache.cxf.rs.security.jose.jwe.JweEncryptionProvider;
+import org.apache.cxf.rs.security.jose.jwe.JweHeaders;
 import org.apache.cxf.rs.security.jose.jwe.JweUtils;
+import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureProvider;
 import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 
@@ -27,18 +29,18 @@ public abstract class AbstractJoseProducer {
     private JwsSignatureProvider sigProvider;
     private JweEncryptionProvider encryptionProvider;
     
-    protected JwsSignatureProvider getInitializedSignatureProvider() {
+    protected JwsSignatureProvider getInitializedSignatureProvider(JwsHeaders jwsHeaders) {
         if (sigProvider != null) {
             return sigProvider;    
         } 
         
-        return JwsUtils.loadSignatureProvider(false);
+        return JwsUtils.loadSignatureProvider(jwsHeaders, false);
     }
-    protected JweEncryptionProvider getInitializedEncryptionProvider() {
+    protected JweEncryptionProvider getInitializedEncryptionProvider(JweHeaders jweHeaders) {
         if (encryptionProvider != null) {
             return encryptionProvider;    
         }
-        return JweUtils.loadEncryptionProvider(false);
+        return JweUtils.loadEncryptionProvider(jweHeaders, false);
     }
 
     public void setEncryptionProvider(JweEncryptionProvider encryptionProvider) {

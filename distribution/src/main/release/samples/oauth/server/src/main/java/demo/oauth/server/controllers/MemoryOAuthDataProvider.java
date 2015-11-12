@@ -19,6 +19,7 @@
 
 package demo.oauth.server.controllers;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -169,7 +170,7 @@ public class MemoryOAuthDataProvider implements OAuthDataProvider {
     protected String generateToken() throws OAuthServiceException {
         String token;
         try {
-            token = tokenGenerator.generate(UUID.randomUUID().toString().getBytes("UTF-8"));
+            token = tokenGenerator.generate(UUID.randomUUID().toString().getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new OAuthServiceException("Unable to create token ", e.getCause());
         }

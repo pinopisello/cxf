@@ -18,8 +18,11 @@
  */
 package org.apache.cxf.rs.security.oauth2.provider;
 
+import java.util.Properties;
+
 import javax.crypto.SecretKey;
 
+import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
 import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwe.JweEncryptionProvider;
@@ -42,15 +45,20 @@ public abstract class AbstractOAuthJoseJwtProducer extends AbstractJoseJwtProduc
     
     protected JwsSignatureProvider getInitializedSignatureProvider(String clientSecret) {
         if (signWithClientSecret) {
-            byte[] hmac = CryptoUtils.decodeSequence(clientSecret);
-            return JwsUtils.getHmacSignatureProvider(hmac, SignatureAlgorithm.HS256);
+            Properties props = JwsUtils.loadSignatureOutProperties(false);
+            SignatureAlgorithm sigAlgo = JwsUtils.getSignatureAlgorithm(props, SignatureAlgorithm.HS256);
+            if (AlgorithmUtils.isHmacSign(sigAlgo)) {
+                return JwsUtils.getHmacSignatureProvider(clientSecret, sigAlgo);
+            }
         }
         return null;
     }
     protected JweEncryptionProvider getInitializedEncryptionProvider(String clientSecret) {
         if (encryptWithClientSecret) {
             SecretKey key = CryptoUtils.decodeSecretKey(clientSecret);
-            return JweUtils.getDirectKeyJweEncryption(key, ContentAlgorithm.A128GCM);
+            Properties props = JweUtils.loadEncryptionOutProperties(false);
+            ContentAlgorithm ctAlgo = JweUtils.getContentEncryptionAlgorithm(props, ContentAlgorithm.A128GCM);
+            return JweUtils.getDirectKeyJweEncryption(key, ctAlgo);
         }
         return null;
     }

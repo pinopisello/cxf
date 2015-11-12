@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
@@ -501,7 +502,7 @@ public final class JwkUtils {
     }
     private static String toString(byte[] bytes) {
         try {
-            return new String(bytes, "UTF-8");
+            return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -512,7 +513,7 @@ public final class JwkUtils {
     
     public static void includeCertChain(JsonWebKey jwk, JoseHeaders headers, String algo) {
         if (KeyType.RSA.equals(jwk.getKeyType())) {
-            List<String> chain = CastUtils.cast((List<?>)jwk.getProperty("x5c"));
+            List<String> chain = CastUtils.cast((List<?>)jwk.getProperty(JsonWebKey.X509_CHAIN));
             if (chain != null) {
                 headers.setX509Chain(chain);
             }

@@ -104,7 +104,7 @@ public class Secure_SocketChannel_IOHandler extends ServerSocketChannel_IOHandle
         inboundDecryptedData.position(inboundDecryptedData.limit());
         outboundEncryptedData.position(outboundEncryptedData.limit());
         st.registerChannelNow(sc, 0, this);// registra SocketChannel presso selectorThread cosi che i suoi
-                                           // events vengano processati dal selectorThread con questa istanza come hadler.
+                                           // events vengano processati dal selectorThread con questa istanza come handler.
 
         log.fine("Starting handshake");
         engine.beginHandshake();
@@ -125,7 +125,7 @@ public class Secure_SocketChannel_IOHandler extends ServerSocketChannel_IOHandle
         }
     }
 
-    public int read(ByteBuffer dst) throws IOException {
+    public int packetChannelRead(ByteBuffer dst) throws IOException {
         // log.fine("");
         checkChannelStillValid();
         if (initialHandshake) {

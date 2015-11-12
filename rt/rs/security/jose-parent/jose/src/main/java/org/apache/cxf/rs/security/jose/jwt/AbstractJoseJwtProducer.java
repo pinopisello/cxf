@@ -41,7 +41,7 @@ public abstract class AbstractJoseJwtProducer extends AbstractJoseProducer {
         String data = null;
         
         if (isJweRequired() && theEncProvider == null) {
-            theEncProvider = getInitializedEncryptionProvider();
+            theEncProvider = getInitializedEncryptionProvider(jwt.getJweHeaders());
             if (theEncProvider == null) {
                 throw new JwtException("Unable to encrypt JWT");
             }
@@ -53,7 +53,7 @@ public abstract class AbstractJoseJwtProducer extends AbstractJoseProducer {
                 data = jws.getSignedEncodedJws();
             } else {
                 if (theSigProvider == null) {
-                    theSigProvider = getInitializedSignatureProvider();
+                    theSigProvider = getInitializedSignatureProvider(jwt.getJwsHeaders());
                 }
                 
                 if (theSigProvider == null) {
@@ -87,4 +87,5 @@ public abstract class AbstractJoseJwtProducer extends AbstractJoseProducer {
     public void setJweRequired(boolean jweRequired) {
         this.jweRequired = jweRequired;
     }
+    
 }

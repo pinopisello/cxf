@@ -22,6 +22,7 @@ package org.apache.cxf.jaxrs.utils;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate;
 
 import org.apache.cxf.common.i18n.BundleUtils;
 import org.apache.cxf.common.logging.LogUtils;
+import org.apache.cxf.common.util.PropertyUtils;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.common.util.UrlUtils;
 import org.apache.cxf.helpers.CastUtils;
@@ -71,6 +73,7 @@ public final class HttpUtils {
     
     private static final String HTTP_SCHEME = "http";
     private static final String LOCAL_HOST_IP_ADDRESS = "127.0.0.1";
+    private static final String REPLACE_LOOPBACK_PROPERTY = "replace.loopback.address.with.localhost";
     private static final String LOCAL_HOST_IP_ADDRESS_SCHEME = "://" + LOCAL_HOST_IP_ADDRESS;
     private static final String ANY_IP_ADDRESS = "0.0.0.0";
     private static final String ANY_IP_ADDRESS_SCHEME = "://" + ANY_IP_ADDRESS;
@@ -130,7 +133,7 @@ public final class HttpUtils {
     
     public static String urlEncode(String value) {
         
-        return urlEncode(value, "UTF-8");
+        return urlEncode(value, StandardCharsets.UTF_8.name());
     }
     
     public static String urlEncode(String value, String enc) {
@@ -351,7 +354,7 @@ public final class HttpUtils {
             (HttpServletRequest)message.get(AbstractHTTPDestination.HTTP_REQUEST);
         boolean absolute = u.isAbsolute();
         StringBuilder uriBuf = new StringBuilder(); 
-        if (request != null && (!absolute || isLocalHostOrAnyIpAddress(u, uriBuf))) {
+        if (request != null && (!absolute || isLocalHostOrAnyIpAddress(u, uriBuf, message))) {
             String serverAndPort = request.getServerName();
             boolean localAddressUsed = false;
             if (absolute) {
@@ -384,14 +387,19 @@ public final class HttpUtils {
         return u;
     }
     
-    private static boolean isLocalHostOrAnyIpAddress(URI u, StringBuilder uriStringBuffer) {
+    private static boolean isLocalHostOrAnyIpAddress(URI u, StringBuilder uriStringBuffer, Message m) {
         String uriString = u.toString();
-        boolean result = uriString.contains(LOCAL_HOST_IP_ADDRESS_SCHEME) 
+        boolean result = uriString.contains(LOCAL_HOST_IP_ADDRESS_SCHEME) && replaceLoopBackAddress(m) 
             || uriString.contains(ANY_IP_ADDRESS_SCHEME);
         uriStringBuffer.append(uriString);
         return result;
     }
     
+    private static boolean replaceLoopBackAddress(Message m) {
+        Object prop = m.getContextualProperty(REPLACE_LOOPBACK_PROPERTY);
+        return prop == null || PropertyUtils.isTrue(prop);
+    }
+
     public static void resetRequestURI(Message m, String requestURI) {
         m.remove(REQUEST_PATH_TO_MATCH_SLASH);
         m.remove(REQUEST_PATH_TO_MATCH);
@@ -551,7 +559,7 @@ public final class HttpUtils {
             headers.putSingle(HttpHeaders.CONTENT_TYPE, 
                 JAXRSUtils.mediaTypeToString(mt, CHARSET_PARAMETER) 
                 + ';' + CHARSET_PARAMETER + "=" 
-                + (defaultEncoding == null ? "UTF-8" : defaultEncoding));
+                + (defaultEncoding == null ? StandardCharsets.UTF_8 : defaultEncoding));
         }
         return defaultEncoding;
     }

@@ -17,6 +17,7 @@
  * under the License.
  */
 package org.apache.cxf.rs.security.jose.jwe;
+import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 
 import javax.crypto.SecretKey;
@@ -53,9 +54,13 @@ public class JweJwtCompactConsumer  {
         JwtClaims claims = new JwtTokenReaderWriter().fromJsonClaims(toString(bytes));
         return new JwtToken(headers, claims);
     }
+    
+    public JweHeaders getHeaders() {
+        return headers;
+    }
     private static String toString(byte[] bytes) {
         try {
-            return new String(bytes, "UTF-8");
+            return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

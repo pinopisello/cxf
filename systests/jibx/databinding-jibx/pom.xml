@@ -21,7 +21,7 @@
     <parent>
         <artifactId>cxf-systests-jibx</artifactId>
         <groupId>org.apache.cxf.systests</groupId>
-        <version>3.1.4-SNAPSHOT</version>
+        <version>3.2.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -104,6 +104,13 @@
                 <groupId>org.jibx</groupId>
                 <artifactId>maven-jibx-plugin</artifactId>
                 <version>${cxf.jibx.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>bcel-findbugs</artifactId>
+                        <version>6.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <directory>target/generated/src/test/java/jibx_bindings</directory>
                     <!--load>true</load-->

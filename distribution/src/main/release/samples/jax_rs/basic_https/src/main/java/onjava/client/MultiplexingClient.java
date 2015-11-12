@@ -142,7 +142,7 @@ public class MultiplexingClient implements ConnectorListener, PacketChannelListe
             System.out.println("[" + connector + "] Connected: " + sc.socket().getInetAddress() + " ("
                                + connectionsEstablished + "/" + connectionCount + ")");
             // If if all connections are established.
-            checkAllConnected();
+            sendMessage();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -151,7 +151,7 @@ public class MultiplexingClient implements ConnectorListener, PacketChannelListe
     public void connectionFailed(ClientConnector connector, Exception cause) {
         System.out.println("[" + connector + "] Error: " + cause.getMessage());
         connectionsFailed++;
-        checkAllConnected();
+        sendMessage();
     }
 
     private String bufferToString(ByteBuffer bb) {
@@ -241,7 +241,7 @@ public class MultiplexingClient implements ConnectorListener, PacketChannelListe
      * Checks if all connections have been established. If so, starts them all by sending an initial packet to
      * all of them.
      */
-    private void checkAllConnected() {
+    private void sendMessage() {
         // Starts sending packets only after all connections are established.
         if ((connectionsEstablished + connectionsFailed) == connectionCount) {
             System.out.println("MultiplexClient start sending packets to the servers: MultiplexClient.checkAllConnected()");
