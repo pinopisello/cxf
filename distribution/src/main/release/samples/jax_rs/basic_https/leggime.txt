@@ -1,9 +1,11 @@
 Esempio di jax-rs client e server che usno https-2way.
 
+Sono usate le jax-rs annotations, ma non server e' lanciato da JAXRSServerFactoryBean, non tomcat.
+
 Client deve authenticarsi col server fornendo un certificato.
 Tale certificato deve esere validato dal server.
 
-Endpoint:   https://localhost:9000/customerservice/customers/123   @Get e @Delete
+Endpoint:   https://localhost:9000/customerservice/customers/123    @Get e @Delete
 			https://localhost:9000/customerservice/customers        @Put e @Post
 			
 ================   Client  ==========================
@@ -18,7 +20,7 @@ ClientConfig.xml configura transport jetty con tags <http:conduit> imponendo l a
 Il namespace http e' http://cxf.apache.org/transports/http/configuration che e' handled da org.apache.cxf.transport.http.spring.NamespaceHandler
 
 
-Un SSLContext con tutti i parametri configurati in ServerConfig.xml e' configurato in JettyHTTPServerEngine.createSSLContext()  e settato in SslContextFactory.
+Un SSLContext con tutti i parametri configurati in ClientConfig.xml e' configurato in JettyHTTPServerEngine.createSSLContext()  e settato in SslContextFactory.
 
 
 
