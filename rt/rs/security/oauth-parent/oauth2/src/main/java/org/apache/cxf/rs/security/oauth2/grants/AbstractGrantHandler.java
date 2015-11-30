@@ -84,7 +84,7 @@ public abstract class AbstractGrantHandler implements AccessTokenGrantHandler {
         }
     }
     
-    private String getSingleGrantType() {
+    protected String getSingleGrantType() {
         if (supportedGrants.size() > 1) {
             String errorMessage = "Request grant type must be specified";
             LOG.warning(errorMessage);
@@ -108,8 +108,7 @@ public abstract class AbstractGrantHandler implements AccessTokenGrantHandler {
                                                     UserSubject subject,
                                                     List<String> requestedScope) {
         
-        return doCreateAccessToken(client, subject, getSingleGrantType(), requestedScope, 
-                                   null, null);
+        return doCreateAccessToken(client, subject, getSingleGrantType(), requestedScope);
     }
     
     protected ServerAccessToken doCreateAccessToken(Client client,
@@ -118,22 +117,23 @@ public abstract class AbstractGrantHandler implements AccessTokenGrantHandler {
                                                     List<String> approvedScope,
                                                     String audience) {
         
-        return doCreateAccessToken(client, subject, getSingleGrantType(), requestedScope, approvedScope, audience);
+        return doCreateAccessToken(client, subject, getSingleGrantType(), requestedScope, 
+                                   approvedScope, audience, null);
     }
     
     protected ServerAccessToken doCreateAccessToken(Client client,
                                                     UserSubject subject,
                                                     String requestedGrant,
                                                     List<String> requestedScope) {
-        return doCreateAccessToken(client, subject, requestedGrant, requestedScope, null, null);
+        return doCreateAccessToken(client, subject, requestedGrant, requestedScope, null, null, null);
     }
-    
     protected ServerAccessToken doCreateAccessToken(Client client,
                                                     UserSubject subject,
                                                     String requestedGrant,
                                                     List<String> requestedScope,
                                                     List<String> approvedScope,
-                                                    String audience) {
+                                                    String audience,
+                                                    String codeVerifier) {
         if (!OAuthUtils.validateScopes(requestedScope, client.getRegisteredScopes(), 
                                        partialMatchScopeValidation)) {
             throw new OAuthServiceException(new OAuthError(OAuthConstants.INVALID_SCOPE));     
@@ -160,7 +160,7 @@ public abstract class AbstractGrantHandler implements AccessTokenGrantHandler {
         }
         reg.setApprovedScope(approvedScope);
         reg.setAudience(audience);
-        
+        reg.setClientCodeVerifier(codeVerifier);
         return dataProvider.createAccessToken(reg);
     }
     

@@ -55,9 +55,16 @@ public class LinkBuilderImpl implements Builder {
     }
 
     private URI getResolvedUri(Object... values) {
+        if (ub == null) {
+            ub = new UriBuilderImpl();
+            if (baseUri != null) {
+                ub.uri(baseUri);    
+            }
+            
+        }
         URI uri = ub.build(values);
                 
-        if (!uri.isAbsolute() && baseUri != null) {
+        if (!uri.isAbsolute() && baseUri != null && baseUri.isAbsolute()) {
             UriBuilder linkUriBuilder = UriBuilder.fromUri(baseUri);
             return HttpUtils.resolve(linkUriBuilder, uri);    
         } else {

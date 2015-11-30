@@ -16,34 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.rs.security.jose.jwk;
 
-import org.apache.cxf.jaxrs.json.basic.JsonMapObjectReaderWriter;
+package org.apache.cxf.sts.token.realm;
 
+import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 
-
-
-
-public class DefaultJwkReaderWriter extends JsonMapObjectReaderWriter
-    implements JwkReaderWriter {
-    @Override
-    public String jwkSetToJson(JsonWebKeys jwks) {
-        return toJson(jwks);
-    }
-    @Override
-    public JsonWebKeys jsonToJwkSet(String jwksJson) {
-        JsonWebKeys jwks = new JsonWebKeys();
-        fromJson(jwks, jwksJson);
-        return jwks;
-    }
-    @Override
-    public String jwkToJson(JsonWebKey jwk) {
-        return toJson(jwk);
-    }
-    @Override
-    public JsonWebKey jsonToJwk(String jwkJson) {
-        JsonWebKey jwk = new JsonWebKey();
-        fromJson(jwk, jwkJson);
-        return jwk;
-    }
+/**
+ * This interface defines a pluggable way to return a realm associated with a JWT Token.
+ */
+public interface JWTRealmCodec {
+    
+    /**
+     * Get the realm associated with the JwtToken parameter
+     * @param token a JwtToken Object
+     * @return the realm associated with the JwtToken parameter
+     */
+    String getRealmFromToken(JwtToken token);
+    
 }

@@ -134,7 +134,7 @@ public class UserSubject implements Serializable {
         return am;
     }
 
-    public void setAthenticationMethod(AuthenticationMethod method) {
+    public void setAuthenticationMethod(AuthenticationMethod method) {
         this.am = method;
     }
     

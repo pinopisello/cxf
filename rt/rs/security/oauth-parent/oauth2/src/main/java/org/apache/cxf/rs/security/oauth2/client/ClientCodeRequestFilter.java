@@ -36,17 +36,19 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.cxf.common.util.Base64UrlUtility;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.utils.ExceptionUtils;
 import org.apache.cxf.jaxrs.utils.FormUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
-import org.apache.cxf.rs.security.oauth2.common.AccessTokenGrant;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
 import org.apache.cxf.rs.security.oauth2.grants.code.AuthorizationCodeGrant;
+import org.apache.cxf.rs.security.oauth2.grants.code.CodeVerifierTransformer;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
+import org.apache.cxf.rt.security.crypto.CryptoUtils;
 
 @PreMatching
 @Priority(Priorities.AUTHENTICATION + 1)
@@ -68,6 +70,7 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
     private boolean setFormPostResponseMode;
     private boolean faultAccessDeniedResponses;
     private boolean applicationCanHandleAccessDenied;
+    private CodeVerifierTransformer codeVerifierTransformer;
         
     @Override
     public void filter(ContainerRequestContext rc) throws IOException {
@@ -115,10 +118,10 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
         if (sc == null || sc.getUserPrincipal() == null) {
             if (codeParam == null 
                 && requestParams.containsKey(OAuthConstants.ERROR_KEY)
-                && OAuthConstants.ACCESS_DENIED.equals(requestParams.getFirst(OAuthConstants.ERROR_KEY))
                 && !faultAccessDeniedResponses) {
                 if (!applicationCanHandleAccessDenied) {
-                    rc.abortWith(Response.ok(new AccessDeniedResponse()).build());    
+                    String error = requestParams.getFirst(OAuthConstants.ERROR_KEY);
+                    rc.abortWith(Response.ok(new AccessDeniedResponse(error)).build());    
                 }
             } else {
                 throw ExceptionUtils.toNotAuthorizedException(null, null);
@@ -136,19 +139,33 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
                                              getAbsoluteRedirectUri(ui).toString(), 
                                              theState, 
                                              theScope);
+        setFormPostResponseMode(ub, redirectState);
+        setCodeVerifier(ub, redirectState);
         setAdditionalCodeRequestParams(ub, redirectState);
         URI uri = ub.build();
         return Response.seeOther(uri).build();
     }
 
-    protected void setAdditionalCodeRequestParams(UriBuilder ub, MultivaluedMap<String, String> redirectState) {
+    protected void setFormPostResponseMode(UriBuilder ub, MultivaluedMap<String, String> redirectState) {
         if (setFormPostResponseMode) {
             // This property is described in OIDC OAuth 2.0 Form Post Response Mode which is technically
             // can be used without OIDC hence this is set in this filter as opposed to the OIDC specific one.
             ub.queryParam("response_mode", "form_post");
         }
     }
-
+    protected void setCodeVerifier(UriBuilder ub, MultivaluedMap<String, String> redirectState) {
+        if (codeVerifierTransformer != null) {
+            String codeVerifier = redirectState.getFirst(OAuthConstants.AUTHORIZATION_CODE_VERIFIER);
+            ub.queryParam(OAuthConstants.AUTHORIZATION_CODE_CHALLENGE, 
+                          codeVerifierTransformer.transformCodeVerifier(codeVerifier));
+            ub.queryParam(OAuthConstants.AUTHORIZATION_CODE_CHALLENGE_METHOD, 
+                          codeVerifierTransformer.getChallengeMethod());
+        }
+    }
+    protected void setAdditionalCodeRequestParams(UriBuilder ub, MultivaluedMap<String, String> redirectState) {
+    }
+    
+    
     private URI getAbsoluteRedirectUri(UriInfo ui) {
         if (redirectUri != null) {
             return URI.create(redirectUri);
@@ -163,13 +180,19 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
                                        UriInfo ui,
                                        MultivaluedMap<String, String> requestParams) {
         
+        MultivaluedMap<String, String> state = null;
+        if (clientStateManager != null) {
+            state = clientStateManager.fromRedirectState(mc, requestParams);
+        }
+        
         String codeParam = requestParams.getFirst(OAuthConstants.AUTHORIZATION_CODE_VALUE);
         ClientAccessToken at = null;
         if (codeParam != null) {
-            AccessTokenGrant grant = new AuthorizationCodeGrant(codeParam, getAbsoluteRedirectUri(ui));
+            AuthorizationCodeGrant grant = new AuthorizationCodeGrant(codeParam, getAbsoluteRedirectUri(ui));
+            grant.setCodeVerifier(state.getFirst(OAuthConstants.AUTHORIZATION_CODE_VERIFIER));
             at = OAuthClientUtils.getAccessToken(accessTokenServiceClient, consumer, grant);
         }
-        ClientTokenContext tokenContext = initializeClientTokenContext(rc, at, requestParams);
+        ClientTokenContext tokenContext = initializeClientTokenContext(rc, at, state);
         if (at != null && clientTokenContextManager != null) {
             clientTokenContextManager.setClientTokenContext(mc, tokenContext);
         }
@@ -178,11 +201,7 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
     
     protected ClientTokenContext initializeClientTokenContext(ContainerRequestContext rc, 
                                                               ClientAccessToken at, 
-                                                              MultivaluedMap<String, String> params) {
-        MultivaluedMap<String, String> state = null;
-        if (clientStateManager != null) {
-            state = clientStateManager.fromRedirectState(mc, params);
-        }
+                                                              MultivaluedMap<String, String> state) {
         ClientTokenContext tokenContext = createTokenContext(rc, at, state);
         ((ClientTokenContextImpl)tokenContext).setToken(at);
         ((ClientTokenContextImpl)tokenContext).setState(state);
@@ -202,13 +221,28 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
 
     protected MultivaluedMap<String, String> createRedirectState(ContainerRequestContext rc, UriInfo ui) {
         if (clientStateManager == null) {
-            return null;
+            return new MetadataMap<String, String>();
         }
-        return clientStateManager.toRedirectState(mc, 
-                                                  toCodeRequestState(rc, ui));
+        String codeVerifier = null;
+        MultivaluedMap<String, String> codeRequestState = toCodeRequestState(rc, ui);
+        if (codeVerifierTransformer != null) {
+            codeVerifier = Base64UrlUtility.encode(CryptoUtils.generateSecureRandomBytes(32));
+            codeRequestState.putSingle(OAuthConstants.AUTHORIZATION_CODE_VERIFIER, 
+                                       codeVerifier);
+        }
+        MultivaluedMap<String, String> redirectState = 
+            clientStateManager.toRedirectState(mc, codeRequestState);
+        if (codeVerifier != null) {
+            redirectState.putSingle(OAuthConstants.AUTHORIZATION_CODE_VERIFIER, codeVerifier);
+        }
+        return redirectState;
     }
     protected MultivaluedMap<String, String> toCodeRequestState(ContainerRequestContext rc, UriInfo ui) {
-        return toRequestState(rc, ui);
+        MultivaluedMap<String, String> state = toRequestState(rc, ui);
+        if (state == null) {
+            state = new MetadataMap<String, String>();
+        }
+        return state;
     }
     protected MultivaluedMap<String, String> toRequestState(ContainerRequestContext rc, UriInfo ui) {
         MultivaluedMap<String, String> requestState = new MetadataMap<String, String>();
@@ -276,10 +310,8 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
             if (ctx != null) {
                 ClientAccessToken newAt = refreshAccessTokenIfExpired(ctx.getToken());
                 if (newAt != null) {
-                    clientTokenContextManager.removeClientTokenContext(mc);
-                    ClientTokenContext newCtx = initializeClientTokenContext(rc, newAt, ctx.getState());            
-                    clientTokenContextManager.setClientTokenContext(mc, newCtx);
-                    ctx = newCtx;
+                    ((ClientTokenContextImpl)ctx).setToken(newAt);           
+                    clientTokenContextManager.setClientTokenContext(mc, ctx);
                 }
             }
         }
@@ -314,5 +346,9 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
 
     public void setApplicationCanHandleAccessDenied(boolean applicationCanHandleAccessDenied) {
         this.applicationCanHandleAccessDenied = applicationCanHandleAccessDenied;
+    }
+
+    public void setCodeVerifierTransformer(CodeVerifierTransformer codeVerifierTransformer) {
+        this.codeVerifierTransformer = codeVerifierTransformer;
     }
 }
