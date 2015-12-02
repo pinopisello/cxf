@@ -16,25 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.rs.security.oauth2.client;
+package org.apache.cxf.jaxrs.swagger;
 
-import java.util.HashSet;
-import java.util.Set;
+import io.swagger.models.parameters.AbstractSerializableParameter;
 
-public class Consumers {
-    
-    private Set<Consumer> consumers = new HashSet<Consumer>();
-    public Consumers() {
-        
-    }
-    public Consumers(Consumers consumers) {
-        this(consumers.getConsumers());
-    }
-    public Consumers(Set<Consumer> consumers) {
-        this.consumers = consumers;
-    }
+public class MatrixParameter extends AbstractSerializableParameter<MatrixParameter> {
 
-    public Set<Consumer> getConsumers() {
-        return consumers;
+    public MatrixParameter() {
+        super.setIn("matrix");
     }
 }
