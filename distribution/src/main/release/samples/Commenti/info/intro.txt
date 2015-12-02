@@ -2,6 +2,7 @@ In questo folder "samples" ci sono tutti gli esempi forniti da CXF.
 
 Ogni progetto su cui ho fatto prove/ho studiato ha un file "leggime.txt"
 
+====================  Argomenti importanti:  ===============================
 
 Inizializzazione Spring =>wsdl_first/Spring-bean-setup.txt  
 
@@ -18,6 +19,22 @@ Server:Non Spring jetty transport   [-Pserver]
 Client:Non Spring standard transport    [-Pclient]
 	   Non Spring netty                 [-Pclient-netty]
 	   Spring jetty standard transport  [-Pclient-spring]
+
+
+
+=============		java_first_jaxws    ==================
+Come , a partire da una interfaccia SIE demo.hw.server.HelloWorld.java, costruire server e client .
+
+Server:Non Spring jetty transport   [-Pserver]
+	   Tomcat 7                     [tomcat7:run]
+	   
+	   
+Client:Non Spring standard transport    [-Pclient] 
+Il client non usa wsdl, justo la SEI compilata HelloWorld.class per capire come generare il SOAP.
+
+
+
+
 
 
 
