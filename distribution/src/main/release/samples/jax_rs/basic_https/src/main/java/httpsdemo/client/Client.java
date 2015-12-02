@@ -74,6 +74,7 @@ public final class Client {
          *  not using certificates.
          */
         System.out.println("\n\nSending HTTPS PUT to update customer name");
+                                       //Target endpoint, spring-config-file
         WebClient wc = WebClient.create(BASE_SERVICE_URL, CLIENT_CONFIG_FILE);
         Customer customer = new Customer();
         customer.setId(123);

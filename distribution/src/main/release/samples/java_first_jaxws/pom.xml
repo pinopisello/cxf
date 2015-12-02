@@ -49,6 +49,7 @@
                     <server>myTomcat</server>
                     <url>http://localhost:8080/manager/text</url>
                     <path>/${project.build.finalName}</path>
+                    <port>9000</port>
                 </configuration>
             </plugin>
         </plugins>

@@ -281,7 +281,7 @@
                                         <extensionArg>-Xjavadoc</extensionArg>
                                     </extensionArgs>
                                 </xsdOption>
-                                <xsdOption>
+                                 <xsdOption>
                                     <xsd>${basedir}/src/main/resources/schemas/wsdl/ws-addr.xsd</xsd>
                                     <packagename>org.apache.cxf.ws.addressing</packagename>
                                     <extensionArgs>
@@ -324,7 +324,7 @@
                                         <extensionArg>-npa</extensionArg>
                                     </extensionArgs>
                                 </xsdOption>
-                            </xsdOptions>
+                            </xsdOptions> 
                         </configuration>
                     </execution>
                 </executions>

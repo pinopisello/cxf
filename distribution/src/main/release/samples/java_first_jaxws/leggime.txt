@@ -1,0 +1,44 @@
+
+=============  Lanciare Server ===========
+
+1)demo.hw.server.Server.java  usa javax.xml.ws.Endpoint.publish(address, implementor) per lanciare il server. 
+Nessun codice generato.
+
+http://localhost:9000/helloWorld?wsdl e' prodotto a partire dalle annotazioni in HelloWorld e HelloWorldImpl
+
+Non Spring jetty transport cxf-rt-transports-http-jetty 
+
+mvn -Pserver
+
+
+2)Tomcat 7 (cxf-servlet.xml/web.xml) [http://localhost:9000/java_first_jaxws/services/hello_world?wsdl]
+
+web.xml
+     org.apache.cxf.transport.servlet.CXFServlet
+     org.springframework.web.context.request.RequestContextListener
+     
+
+cxf-servlet.xml
+ <jaxws:endpoint id="helloWorld" implementor="demo.hw.server.HelloWorldImpl" address="/hello_world"/>
+
+
+mvn tomcat7:run
+
+
+
+============== Lanciare Client   =====================
+Client usa javax.xml.ws.Service.create(QName serviceName) per ottenere istanza javax.xml.ws.Service 
+
+HelloWorld hw = service.getPort(HelloWorld.class) ottiene un proxy al servizio lato server.
+
+I dettagli su come invocare il servizio sono ottenuti dalla SEI stessa cmpilata (HelloWorld.class) !!Quindi wsdl non e' usato affatto dal client
+
+A quanto posso vedere spring non e' coinvolto....
+
+
+
+
+
+
+
+
