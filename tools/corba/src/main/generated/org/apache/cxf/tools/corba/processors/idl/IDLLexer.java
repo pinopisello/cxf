@@ -1,5 +1,3 @@
-// $ANTLR 2.7.4: "idl.g" -> "IDLLexer.java"$
-// Generated
 package org.apache.cxf.tools.corba.processors.idl;
 
 import java.io.*;

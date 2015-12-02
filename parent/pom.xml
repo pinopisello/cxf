@@ -280,7 +280,7 @@
                         <outputDirectory>${cxf.eclipse.outputDirectory}</outputDirectory>
                         <buildcommands>
                             <java.lang.String>org.eclipse.jdt.core.javabuilder</java.lang.String>
-                            <java.lang.String>net.sf.eclipsecs.core.CheckstyleBuilder</java.lang.String>
+                             <java.lang.String>net.sf.eclipsecs.core.CheckstyleBuilder</java.lang.String>
                             <java.lang.String>net.sourceforge.pmd.eclipse.plugin.pmdBuilder</java.lang.String>
                         </buildcommands>
                         <projectnatures>

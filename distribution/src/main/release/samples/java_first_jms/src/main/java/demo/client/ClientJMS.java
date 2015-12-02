@@ -45,6 +45,7 @@ public final class ClientJMS {
     }
 
     public static void main(String[] args) throws Exception {
+        //String dd = 4;
         boolean jaxws = false;
         for (String arg : args) {
             if ("-jaxws".equals(arg)) {

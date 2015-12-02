@@ -204,11 +204,11 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>com.example.customerservice.client.CustomerServiceClient</mainClass>
-                                   <!-- niente argomenti punta il cliente verso tomcat -->  
-                                   <!--
+                                   <!-- niente argomenti punta il cliente verso tomcat  
+                                   
                                    <arguments>
                                         <argument>src/main/resources/CustomerService.wsdl</argument>
-                                    </arguments>-->
+                                    </arguments> -->
                                 </configuration>
                             </execution>
                         </executions>

@@ -2,6 +2,11 @@ Per cominciare ex novo:
 
 1)In GitHub forka https://github.com/apache/cxf.git  [https://github.com/pinopisello/cxf.git]
 
+1b) Installa m2e-checkstyle connector: Eclipse->preferences->maven ->discovey cerca per m2e-checkstyle.
+
+Altrimenti avrai una marea di erroi Plugin execution not covered by lifecycle configuration:
+org.apache.maven.plugins:maven-checkstyle-plugin:2.15:checkstyle (execution: validate, phase: validate)) quando visualizzi i poggetti in Eclipse.
+
 2)Crea un workspace ovunque (CXF_Distro per esempio)
 
 3)Lancia Eclipse puntandolo

@@ -47,7 +47,7 @@ import org.springframework.web.context.WebApplicationContext;
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode= ScopedProxyMode.TARGET_CLASS)
 public class CustomerServiceImpl implements CustomerService {
     
-    
+     
     /**
      * The WebServiceContext can be used to retrieve special attributes like the 
      * user principal. Normally it is not needed
@@ -56,7 +56,7 @@ public class CustomerServiceImpl implements CustomerService {
     WebServiceContext wsContext;
 
      
-    @Inject
+    //@Inject
     pippo pippo;
     
 
@@ -97,9 +97,9 @@ public class CustomerServiceImpl implements CustomerService {
     @WebMethod(exclude=false)
     public String  updateCustomer(Customer customer) {
         
-        MessageContext ctx = wsContext.getMessageContext();
-        QName operation = (QName) ctx.get(Message.WSDL_OPERATION);
-        System.out.println("The operation name is " + operation);
+       // MessageContext ctx = wsContext.getMessageContext();
+       // QName operation = (QName) ctx.get(Message.WSDL_OPERATION);
+        //System.out.println("The operation name is " + operation);
         
         if(pippo!=null)pippo.chiamapippo();
         //System.out.println("update request was received");
