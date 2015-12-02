@@ -18,20 +18,12 @@
  */
 package org.apache.cxf.rs.security.oauth2.provider;
 
-import java.util.Properties;
-
-import javax.crypto.SecretKey;
-
-import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
-import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
-import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.rs.security.jose.jwe.JweDecryptionProvider;
-import org.apache.cxf.rs.security.jose.jwe.JweUtils;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
-import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 import org.apache.cxf.rs.security.jose.jwt.AbstractJoseJwtConsumer;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
-import org.apache.cxf.rt.security.crypto.CryptoUtils;
+import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 
 public abstract class AbstractOAuthJoseJwtConsumer extends AbstractJoseJwtConsumer {
    
@@ -45,25 +37,18 @@ public abstract class AbstractOAuthJoseJwtConsumer extends AbstractJoseJwtConsum
     }
     
     protected JwsSignatureVerifier getInitializedSignatureVerifier(String clientSecret) {
-        if (verifyWithClientSecret) {
-            Properties props = JwsUtils.loadSignatureInProperties(false);
-            SignatureAlgorithm sigAlgo = JwsUtils.getSignatureAlgorithm(props, SignatureAlgorithm.HS256);
-            if (AlgorithmUtils.isHmacSign(sigAlgo)) {
-                return JwsUtils.getHmacSignatureVerifier(clientSecret, sigAlgo);
-            }
+        if (verifyWithClientSecret && !StringUtils.isEmpty(clientSecret)) {
+            return OAuthUtils.getClientSecretSignatureVerifier(clientSecret);
+        } else {
+            return null;
         }
-        return null;
     }
     protected JweDecryptionProvider getInitializedDecryptionProvider(String clientSecret) {
-        JweDecryptionProvider theDecryptionProvider = null;
-        if (decryptWithClientSecret) {
-            SecretKey key = CryptoUtils.decodeSecretKey(clientSecret);
-            Properties props = JweUtils.loadEncryptionInProperties(false);
-            ContentAlgorithm ctAlgo = JweUtils.getContentEncryptionAlgorithm(props, ContentAlgorithm.A128GCM);
-            theDecryptionProvider = JweUtils.getDirectKeyJweDecryption(key, ctAlgo);
+        if (decryptWithClientSecret && !StringUtils.isEmpty(clientSecret)) {
+            return OAuthUtils.getClientSecretDecryptionProvider(clientSecret);
+        } else {
+            return null;
         }
-        return theDecryptionProvider;
-        
     }
 
     public void setDecryptWithClientSecret(boolean decryptWithClientSecret) {

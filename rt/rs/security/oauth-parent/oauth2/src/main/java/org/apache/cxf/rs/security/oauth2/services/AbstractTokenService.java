@@ -65,12 +65,12 @@ public class AbstractTokenService extends AbstractOAuthService {
                 client = getAndValidateClientFromIdAndSecret(clientId,
                                               params.getFirst(OAuthConstants.CLIENT_SECRET));
             }
-        } else if (principal.getName() != null) {
-            client = getClient(principal.getName());
         } else {
             String clientId = retrieveClientId(params);
             if (clientId != null) {
                 client = getClient(clientId);
+            } else if (principal.getName() != null) {
+                client = getClient(principal.getName());
             } 
         }
         if (client == null) {
@@ -110,14 +110,14 @@ public class AbstractTokenService extends AbstractOAuthService {
     protected Client getAndValidateClientFromIdAndSecret(String clientId, String providedClientSecret) {
         Client client = getClient(clientId);
         if (!client.getClientId().equals(clientId)) {
-            throw ExceptionUtils.toNotAuthorizedException(null, null);
+            reportInvalidClient();
         }
         if (isValidPublicClient(client, clientId, providedClientSecret)) {
             return client;
         }
         if (!client.isConfidential()
             || !isConfidenatialClientSecretValid(client, providedClientSecret)) {
-            throw ExceptionUtils.toNotAuthorizedException(null, null);
+            reportInvalidClient();
         }
         return client;
     }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.servlet.http.HttpSession;
@@ -34,6 +35,15 @@ import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.model.URITemplate;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
+import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
+import org.apache.cxf.rs.security.jose.jwe.JweDecryptionProvider;
+import org.apache.cxf.rs.security.jose.jwe.JweEncryptionProvider;
+import org.apache.cxf.rs.security.jose.jwe.JweUtils;
+import org.apache.cxf.rs.security.jose.jws.JwsSignatureProvider;
+import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
+import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 import org.apache.cxf.rs.security.oauth2.common.AuthenticationMethod;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
@@ -111,7 +121,7 @@ public final class OAuthUtils {
         UserSubject subject = new UserSubject(securityContext.getUserPrincipal().getName(), roleNames);
         Message m = JAXRSUtils.getCurrentMessage();
         if (m != null && m.get(AuthenticationMethod.class) != null) {
-            subject.setAthenticationMethod(m.get(AuthenticationMethod.class));
+            subject.setAuthenticationMethod(m.get(AuthenticationMethod.class));
         }
         return subject;
     }
@@ -173,7 +183,7 @@ public final class OAuthUtils {
     }
     
     public static boolean isExpired(Long issuedAt, Long lifetime) {
-        return lifetime != -1
+        return lifetime != 0L
             && issuedAt + lifetime < System.currentTimeMillis() / 1000;
     }
     
@@ -253,5 +263,41 @@ public final class OAuthUtils {
         return clientToken;
     }
 
+    public static JwsSignatureProvider getClientSecretSignatureProvider(String clientSecret) {
+        return JwsUtils.getHmacSignatureProvider(clientSecret, getClientSecretSignatureAlgorithm());
+    }
+    public static JwsSignatureVerifier getClientSecretSignatureVerifier(String clientSecret) {
+        return JwsUtils.getHmacSignatureVerifier(clientSecret, getClientSecretSignatureAlgorithm());
+    }
     
+    public static JweDecryptionProvider getClientSecretDecryptionProvider(String clientSecret) {
+        byte[] key = StringUtils.toBytesUTF8(clientSecret);
+        return JweUtils.getDirectKeyJweDecryption(key, getClientSecretContentAlgorithm());
+    }
+    
+    public static JweEncryptionProvider getClientSecretEncryptionProvider(String clientSecret) {
+        byte[] key = StringUtils.toBytesUTF8(clientSecret);
+        return JweUtils.getDirectKeyJweEncryption(key, getClientSecretContentAlgorithm());
+    }
+    
+    private static ContentAlgorithm getClientSecretContentAlgorithm() {
+        Properties props = JweUtils.loadEncryptionInProperties(false);
+        ContentAlgorithm ctAlgo = ContentAlgorithm.getAlgorithm(
+            props.getProperty(OAuthConstants.CLIENT_SECRET_CONTENT_ENCRYPTION_ALGORITHM));
+        ctAlgo = ctAlgo != null ? ctAlgo : ContentAlgorithm.A128GCM;
+        return ctAlgo;
+    }
+    
+    private static SignatureAlgorithm getClientSecretSignatureAlgorithm() {
+        Properties sigProps = JwsUtils.loadSignatureOutProperties(false);
+        SignatureAlgorithm sigAlgo = SignatureAlgorithm.getAlgorithm(
+        sigProps.getProperty(OAuthConstants.CLIENT_SECRET_SIGNATURE_ALGORITHM));
+        sigAlgo = sigAlgo != null ? sigAlgo : SignatureAlgorithm.HS256;
+        if (!AlgorithmUtils.isHmacSign(sigAlgo)) {
+         // Must be HS-based for the symmetric signature
+            throw new OAuthServiceException(OAuthConstants.SERVER_ERROR);
+        } else {
+            return sigAlgo;
+        }
+    }
 }

@@ -31,6 +31,8 @@ public class AccessTokenRegistration {
     private String grantType;
     private UserSubject subject;
     private String audience;
+    private String nonce;
+    private String clientCodeVerifier;
     
     /**
      * Sets the {@link Client} instance
@@ -119,6 +121,22 @@ public class AccessTokenRegistration {
 
     public void setAudience(String audience) {
         this.audience = audience;
+    }
+
+    public String getClientCodeVerifier() {
+        return clientCodeVerifier;
+    }
+
+    public void setClientCodeVerifier(String clientCodeVerifier) {
+        this.clientCodeVerifier = clientCodeVerifier;
+    }
+
+    public String getNonce() {
+        return nonce;
+    }
+
+    public void setNonce(String nonce) {
+        this.nonce = nonce;
     }
     
 }

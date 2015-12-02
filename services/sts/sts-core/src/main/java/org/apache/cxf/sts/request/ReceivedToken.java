@@ -33,7 +33,7 @@ import org.apache.cxf.ws.security.sts.provider.STSException;
 
 /**
  * This class contains values that have been extracted from a received Token. The Token can be a
- * JAXB UsernameTokenType/BinarySecurityTokenType or a DOM Element.
+ * JAXB UsernameTokenType/BinarySecurityTokenType, a DOM Element or a String.
  */
 public class ReceivedToken {
     

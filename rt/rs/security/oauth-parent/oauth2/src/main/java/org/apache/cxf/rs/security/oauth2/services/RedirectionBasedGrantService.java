@@ -211,6 +211,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
         secData.setState(params.getFirst(OAuthConstants.STATE));
         secData.setRedirectUri(redirectUri);
         secData.setAudience(params.getFirst(OAuthConstants.CLIENT_AUDIENCE));
+        secData.setNonce(params.getFirst(OAuthConstants.NONCE));
         secData.setClientId(client.getClientId());
         secData.setProposedScope(params.getFirst(OAuthConstants.SCOPE));
         if (!authorizationCanBeSkipped) {
@@ -247,6 +248,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
             state.setAudience(params.getFirst(OAuthConstants.CLIENT_AUDIENCE));
             state.setProposedScope(params.getFirst(OAuthConstants.SCOPE));
             state.setState(params.getFirst(OAuthConstants.STATE));
+            state.setNonce(params.getFirst(OAuthConstants.NONCE));
         }
         return state;
     }
@@ -271,7 +273,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
             sessionTokenParamName = OAuthConstants.SESSION_AUTHENTICITY_TOKEN;
         }
         String sessionToken = params.getFirst(sessionTokenParamName);
-        if (!compareRequestAndSessionTokens(sessionToken, params, userSubject)) {
+        if (sessionToken == null || !compareRequestAndSessionTokens(sessionToken, params, userSubject)) {
             throw ExceptionUtils.toBadRequestException(null, null);     
         }
         
@@ -364,7 +366,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
         List<String> uris = client.getRedirectUris();
         if (redirectUri != null) {
             if (!uris.contains(redirectUri)) {
-                redirectUri = null;
+                reportInvalidRequestError("Client Redirect Uri is invalid");
             } 
         } else if (uris.size() == 1 && useRegisteredRedirectUriIfPossible) {
             redirectUri = uris.get(0);
