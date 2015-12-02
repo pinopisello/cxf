@@ -1,6 +1,6 @@
-JAX-RS Basic Demo With HTTPS communications
+JAX-RS Basic Demo With HTTPS communications 
 ===========================================
-
+ 
 This demo takes the JAX-RS basic demo a step further 
 by doing the communication using HTTPS.
 
