@@ -129,6 +129,9 @@ public final class OAuthUtils {
     public static String convertPermissionsToScope(List<OAuthPermission> perms) {
         StringBuilder sb = new StringBuilder();
         for (OAuthPermission perm : perms) {
+            if (perm.isInvisibleToClient()) {
+                continue;
+            }
             if (sb.length() > 0) {
                 sb.append(" ");
             }
@@ -179,12 +182,12 @@ public final class OAuthUtils {
     }
     
     public static long getIssuedAt() {
-        return System.currentTimeMillis() / 1000;
+        return System.currentTimeMillis() / 1000L;
     }
     
     public static boolean isExpired(Long issuedAt, Long lifetime) {
         return lifetime != 0L
-            && issuedAt + lifetime < System.currentTimeMillis() / 1000;
+            && issuedAt + lifetime < System.currentTimeMillis() / 1000L;
     }
     
     public static boolean validateAudience(String audience, List<String> audiences) {
@@ -255,8 +258,9 @@ public final class OAuthUtils {
         if (supportOptionalParams) {
             clientToken.setExpiresIn(serverToken.getExpiresIn());
             List<OAuthPermission> perms = serverToken.getScopes();
-            if (!perms.isEmpty()) {
-                clientToken.setApprovedScope(OAuthUtils.convertPermissionsToScope(perms));    
+            String scopeString = OAuthUtils.convertPermissionsToScope(perms);
+            if (!StringUtils.isEmpty(scopeString)) {
+                clientToken.setApprovedScope(scopeString);    
             }
             clientToken.setParameters(serverToken.getParameters());
         }

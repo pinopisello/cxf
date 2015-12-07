@@ -16,19 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.rs.security.oidc.common;
+package org.apache.cxf.tools.fortest.headers;
 
-import java.util.Map;
 
-import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
+import javax.jws.WebResult;
+import javax.jws.WebService;
 
-public class UserInfo extends AbstractUserInfo {
-    public UserInfo() {
-    }
-    public UserInfo(JwtClaims claims) {
-        this(claims.asMap());
-    }
-    public UserInfo(Map<String, Object> claims) {
-        super(claims);
-    }
+@WebService(targetNamespace = "http://apache.org/cxf/test", name = "SomeHeaders")
+public interface SomeHeaders {
+
+    // using four parameters where two being headers
+    @WebMethod()
+    @WebResult (name = "someHeadersResponse") 
+    String hello(
+                 @WebParam(name = "body1") String body1,
+                 @WebParam(name = "body2") String body2,
+                 @WebParam(header = true, name = "header1") String header1,
+                 @WebParam(header = true, name = "header2") String header2);
+
 }

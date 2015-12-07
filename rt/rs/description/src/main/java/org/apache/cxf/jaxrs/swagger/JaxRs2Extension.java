@@ -21,9 +21,18 @@ package org.apache.cxf.jaxrs.swagger;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.MatrixParam;
 
@@ -37,6 +46,7 @@ import io.swagger.converter.ModelConverters;
 import io.swagger.jaxrs.ext.AbstractSwaggerExtension;
 import io.swagger.jaxrs.ext.SwaggerExtension;
 import io.swagger.jaxrs.ext.SwaggerExtensions;
+import io.swagger.models.parameters.AbstractSerializableParameter;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.properties.ArrayProperty;
 import io.swagger.models.properties.Property;
@@ -70,6 +80,7 @@ public class JaxRs2Extension extends AbstractSwaggerExtension {
                 if (schema != null) {
                     mp.setProperty(schema);
                 }
+                applyBeanValidatorAnnotations(mp, annotations);
                 parameters.add(mp);
             } else if (annotation instanceof BeanParam) {
                 // Use Jackson's logic for processing Beans
@@ -115,6 +126,7 @@ public class JaxRs2Extension extends AbstractSwaggerExtension {
                     // since downstream processors won't know how to introspect @BeanParam, process here
                     for (Parameter param : extracted) {
                         if (ParameterProcessor.applyAnnotations(null, param, paramType, paramAnnotations) != null) {
+                            applyBeanValidatorAnnotations(param, paramAnnotations);
                             parameters.add(param);
                         }
                     }
@@ -130,11 +142,11 @@ public class JaxRs2Extension extends AbstractSwaggerExtension {
         return parameters;
     }
 
-    private Property createProperty(Type type) {
+    private Property createProperty(final Type type) {
         return enforcePrimitive(ModelConverters.getInstance().readAsProperty(type), 0);
     }
 
-    private Property enforcePrimitive(Property in, int level) {
+    private Property enforcePrimitive(final Property in, final int level) {
         if (in instanceof RefProperty) {
             return new StringProperty();
         }
@@ -148,4 +160,66 @@ public class JaxRs2Extension extends AbstractSwaggerExtension {
         }
         return in;
     }
+
+    /**
+     * This is essentially a duplicate of {@link io.swagger.jackson.ModelResolver.applyBeanValidatorAnnotations}.
+     *
+     * @param parameter
+     * @param annotations
+     */
+    private void applyBeanValidatorAnnotations(final Parameter parameter, final List<Annotation> annotations) {
+        Map<String, Annotation> annos = new HashMap<>();
+        if (annotations != null) {
+            for (Annotation annotation : annotations) {
+                annos.put(annotation.annotationType().getName(), annotation);
+            }
+        }
+
+        if (annos.containsKey(NotNull.class.getName())) {
+            parameter.setRequired(true);
+        }
+
+        if (parameter instanceof AbstractSerializableParameter) {
+            AbstractSerializableParameter<?> serializable = (AbstractSerializableParameter<?>) parameter;
+
+            if (annos.containsKey(Min.class.getName())) {
+                Min min = (Min) annos.get(Min.class.getName());
+                serializable.setMinimum(new Double(min.value()));
+            }
+            if (annos.containsKey(Max.class.getName())) {
+                Max max = (Max) annos.get(Max.class.getName());
+                serializable.setMaximum(new Double(max.value()));
+            }
+            if (annos.containsKey(Size.class.getName())) {
+                Size size = (Size) annos.get(Size.class.getName());
+
+                serializable.setMinimum(new Double(size.min()));
+                serializable.setMaximum(new Double(size.max()));
+
+                serializable.setMinItems(size.min());
+                serializable.setMaxItems(size.max());
+            }
+            if (annos.containsKey(DecimalMin.class.getName())) {
+                DecimalMin min = (DecimalMin) annos.get(DecimalMin.class.getName());
+                if (min.inclusive()) {
+                    serializable.setMinimum(new Double(min.value()));
+                } else {
+                    serializable.setExclusiveMinimum(!min.inclusive());
+                }
+            }
+            if (annos.containsKey(DecimalMax.class.getName())) {
+                DecimalMax max = (DecimalMax) annos.get(DecimalMax.class.getName());
+                if (max.inclusive()) {
+                    serializable.setMaximum(new Double(max.value()));
+                } else {
+                    serializable.setExclusiveMaximum(!max.inclusive());
+                }
+            }
+            if (annos.containsKey(Pattern.class.getName())) {
+                Pattern pattern = (Pattern) annos.get(Pattern.class.getName());
+                serializable.setPattern(pattern.regexp());
+            }
+        }
+    }
+
 }

@@ -16,19 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.rs.security.oidc.common;
 
-import java.util.Map;
 
-import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+package org.apache.cxf.jaxrs.resources;
 
-public class UserInfo extends AbstractUserInfo {
-    public UserInfo() {
-    }
-    public UserInfo(JwtClaims claims) {
-        this(claims.asMap());
-    }
-    public UserInfo(Map<String, Object> claims) {
-        super(claims);
+import javax.ws.rs.Path;
+
+@Path("/bookstore/")
+public class BookStoreConstructor extends BookStore {
+
+    public BookStoreConstructor(String id) {
     }
 }
+
+

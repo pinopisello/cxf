@@ -16,19 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.rs.security.oidc.common;
+package org.apache.cxf.rs.security.oidc.idp;
 
-import java.util.Map;
+import org.apache.cxf.rs.security.oauth2.common.UserSubject;
+import org.apache.cxf.rs.security.oidc.common.IdToken;
 
-import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+public class OidcUserSubject extends UserSubject {
+    
+    private static final long serialVersionUID = 8806727177012442229L;
+    private IdToken idToken;
+    
+    public OidcUserSubject() {
+        
+    }
+    
+    public OidcUserSubject(UserSubject sub) {
+        super(sub);
+    }
+    
+    public IdToken getIdToken() {
+        return idToken;
+    }
+    public void setIdToken(IdToken idToken) {
+        this.idToken = idToken;
+    }
 
-public class UserInfo extends AbstractUserInfo {
-    public UserInfo() {
-    }
-    public UserInfo(JwtClaims claims) {
-        this(claims.asMap());
-    }
-    public UserInfo(Map<String, Object> claims) {
-        super(claims);
-    }
 }

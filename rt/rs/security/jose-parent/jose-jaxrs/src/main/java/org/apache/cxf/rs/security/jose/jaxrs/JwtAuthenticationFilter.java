@@ -73,7 +73,8 @@ public class JwtAuthenticationFilter extends AbstractJoseJwtConsumer implements 
         
         // The token must be signed/verified with a public key to set up the security context, 
         // unless we directly configure otherwise
-        if (isVerifiedWithAPublicKey(jwt) || enableUnsignedJwt) {
+        if (jwt.getClaims().getSubject() != null 
+            && (isVerifiedWithAPublicKey(jwt) || enableUnsignedJwt)) {
             return new JwtTokenSecurityContext(jwt, roleClaim);
         }
         return null;
@@ -96,7 +97,7 @@ public class JwtAuthenticationFilter extends AbstractJoseJwtConsumer implements 
     
     @Override
     protected void validateToken(JwtToken jwt) {
-        JwtUtils.validateTokenClaims(jwt.getClaims(), ttl, clockOffset);
+        JwtUtils.validateTokenClaims(jwt.getClaims(), ttl, clockOffset, true);
     }
 
     public int getClockOffset() {

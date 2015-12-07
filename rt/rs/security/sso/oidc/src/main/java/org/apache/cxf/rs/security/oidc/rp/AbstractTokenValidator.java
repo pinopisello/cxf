@@ -18,8 +18,10 @@
  */
 package org.apache.cxf.rs.security.oidc.rp;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
@@ -66,8 +68,9 @@ public abstract class AbstractTokenValidator extends AbstractOAuthJoseJwtConsume
                 throw new SecurityException("Invalid subject");
             }
             // validate audience
-            String aud = claims.getAudience();
-            if (aud == null && validateClaimsAlways || aud != null && !clientId.equals(aud)) {
+            List<String> audiences = claims.getAudiences();
+            if (StringUtils.isEmpty(audiences) && validateClaimsAlways 
+                || !StringUtils.isEmpty(audiences) && !audiences.contains(clientId)) {
                 throw new SecurityException("Invalid audience");
             }
     
