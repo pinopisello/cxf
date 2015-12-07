@@ -204,11 +204,11 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>com.example.customerservice.client.CustomerServiceClient</mainClass>
-                                   <!-- niente argomenti punta il cliente verso tomcat  
-                                   
+                                   <!-- niente argomenti punta il cliente verso tomcat 8080 -->
+                                   <!-- lancia il client verso porta 9090 
                                    <arguments>
-                                        <argument>src/main/resources/CustomerService.wsdl</argument>
-                                    </arguments> -->
+                                        <argument>src/main/resources/CustomerService.wsdl</argument> 
+                                    </arguments>  -->
                                 </configuration>
                             </execution>
                         </executions>

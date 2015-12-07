@@ -12,7 +12,7 @@ Handler.parse() ritorna la BeanDefinition
 
 Per esempio per <jaxws:endpoint l ' handler e' org.apache.cxf.jaxws.spring.NamespaceHandler [vedi /cxf-rt-frontend-jaxws/src/main/resources/META-INF/spring.handlers]
 
-Questo handler have una map di Pareser.Per "endpoint" e' EndpointDefinitionParser
+Questo handler have una map di Parser.Per "endpoint" e' EndpointDefinitionParser
 
 handler invoca il parser registrato per quell element.
 

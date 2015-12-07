@@ -11,7 +11,7 @@ Inizializzazione Spring =>wsdl_first/Spring-bean-setup.txt
 Come , a partire da un wsdl, costruire server e client , Spring e non spring based, con diversi transports.
 
 Server:Non Spring jetty transport   [-Pserver]         usa javax.xml.ws.Endpoint.publish(implementor)
-	   Spring  jetty                [-Pserver-spring]
+	   Spring  jetty                [-Pserver-spring]  usa server-applicationContext.xml
 	   Non Spring netty             [-Pserver-netty]
 	   Tomcat 7                     [tomcat7:run]
 	   
