@@ -42,6 +42,7 @@ mvn tomcat7:run
 mvn -Pclient
 
 PS:Ad ogni modo internamente Spring viene usato da cxf guts ... quindi Spring e' sempre usato comunque. 
+OSS:Spring e' inizializzato comunque in SpringBusFactory.createApplicationContext()!!
 
 
 2)Non Spring netty transport cxf-rt-transports-http-netty-client [CustomerServiceClient.java chiamata da command line]
