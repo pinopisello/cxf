@@ -6,9 +6,15 @@ AbstractApplicationContext.refresh()  =>  beanFactory = obtainFreshBeanFactory()
 
 Lo spring configuration xml e' parsato in DefaultBeanDefinitionDocumentReader.parseBeanDefinitions()
 
-Per ogni elemento incontrato, viene estratto il namespace e trovato il matching NamespaceHandler .
+Per ogni namespace incontrato, viene estratto il namespace e trovato il matching NamespaceHandler .
 
-Handler.parse() ritorna la BeanDefinition  
+Per namespace http://cxf.apache.org/jaxws l'handler e' org.apache.cxf.jaxws.spring.NamespaceHandler il quale registra vari parsers in init():
+
+        registerBeanDefinitionParser("client", new JaxWsProxyFactoryBeanDefinitionParser());
+        registerBeanDefinitionParser("endpoint", new EndpointDefinitionParser())
+        
+        
+NamespaceHandler.parse() viene poi chiamato da Spring e ritorna la BeanDefinition  del bean associato a quel dato tag.
 
 Per esempio per <jaxws:endpoint l ' handler e' org.apache.cxf.jaxws.spring.NamespaceHandler [vedi /cxf-rt-frontend-jaxws/src/main/resources/META-INF/spring.handlers]
 
@@ -16,7 +22,8 @@ Questo handler have una map di Parser.Per "endpoint" e' EndpointDefinitionParser
 
 handler invoca il parser registrato per quell element.
 
-EndpointDefinitionParser.doParse() gira ,parsa la definizione xml e alla fine registra la BeanDefinition in context.registry [registerBeanDefinition(holder, parserContext.getRegistry());]
+EndpointDefinitionParser.doParse() gira ,parsa la definizione xml e alla fine registra la BeanDefinition in context.registry [AbstractBeanDefinitionParser.registerBeanDefinition(holder, parserContext.getRegistry());]
+dove bean e' org.apache.cxf.jaxws.spring.EndpointDefinitionParser$SpringEndpointImpl
 
 
 
@@ -25,13 +32,20 @@ AbstractApplicationContext.refresh()  =>  AbstractApplicationContext.finishBeanF
 
 
 Per esempio <jaxws:endpoint xmlns:customer="http://customerservice.example.com/" id="CustomerServiceHTTP"...>
-DefaultListableBeanFactory.preInstantiateSingletons() itera tutti in beans e per i singletons invoca getBean(beanName)
+DefaultListableBeanFactory.preInstantiateSingletons() itera tutti in beans e per i singletons invoca getBean(beanName) [beanName = CustomerServiceHTTP per il caso in questione]
 
 
 L' inizializzazione del bean avviene in  org.apache.cxf.jaxws.spring.EndpointDefinitionParser$SpringEndpointImpl.doPublish(String addr).
 Questo perche in EndpointDefinitionParser c'e'  bean.setInitMethodName("publish"); porco cazzo!!
+
+publish() costruisce un istanza org.apache.cxf.endpoint.ServerImpl e la lancia [start()].
+
 Il server e' org.apache.cxf.endpoint.ServerImpl e viene startato in start().
+
+
 Il server jetty viene startato in JettyHTTPDestination.activate()
+
+
 
 
 

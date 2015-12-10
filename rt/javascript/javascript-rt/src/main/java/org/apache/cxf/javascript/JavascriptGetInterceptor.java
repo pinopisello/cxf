@@ -26,7 +26,6 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.cxf.binding.soap.interceptor.EndpointSelectionInterceptor;
@@ -37,9 +36,7 @@ import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.interceptor.Interceptor;
-import org.apache.cxf.interceptor.MessageSenderInterceptor;
 import org.apache.cxf.interceptor.OutgoingChainInterceptor;
-import org.apache.cxf.interceptor.StaxOutInterceptor;
 import org.apache.cxf.javascript.service.ServiceJavascriptBuilder;
 import org.apache.cxf.javascript.types.SchemaJavascriptBuilder;
 import org.apache.cxf.message.Message;
@@ -50,7 +47,6 @@ import org.apache.cxf.service.model.EndpointInfo;
 import org.apache.cxf.service.model.SchemaInfo;
 import org.apache.cxf.service.model.ServiceInfo;
 import org.apache.cxf.transport.Conduit;
-import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 
 public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> {
     public static final Interceptor<? extends Message> INSTANCE = new JavascriptGetInterceptor();

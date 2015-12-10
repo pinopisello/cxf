@@ -76,7 +76,7 @@ Il payload e' inviato in MessageSenderEndingInterceptor.handleMessage(Message me
 
 Inizializzazione:
 
-CXFNonSpringServlet.init()=> CXFNonSpringServlet.loadBus(ServletConfig servletConfig).createSpringContext() =>EndpointImpl.publish()+> JaxWsServerFactoryBean.create()=>
+CXFNonSpringServlet.init()=> CXFNonSpringServlet.loadBus(ServletConfig servletConfig).createSpringContext() =>EndpointImpl.publish()=> JaxWsServerFactoryBean.create()=>
 
 org.apache.cxf.transport.http.HTTPTransportFactory.getDestination(EndpointInfo endpointInfo, Bus bus)
 
@@ -85,7 +85,20 @@ HttpDestinationFactory jettyFactory = bus.getExtension(HttpDestinationFactory.cl
 Allora :
  factory = new ServletDestinationFactory();
  
- ServletDestinationFactory e' deinita in cxf-rt-transports-http 
+ ServletDestinationFactory e' definita in cxf-rt-transports-http 
+ 
+ 
+ BUS: in CXFServlet.createSpringContext()  classpath:/META-INF/cxf/cxf.xml e jndi:/localhost/wsdl_first/WEB-INF/cxf-servlet.xml vengono settati
+ come AbstractApplicationContext.configlocations.
+ Quando AbstractApplicationContext.refresh() viene invocato,  AbstractBeanDefinitionReader.loadBeanDefinitions(location) va a caricare le beandefinition
+ dei beans definiti in WEB-INF/cxf-servlet.xml e META-INF/cxf/cxf.xml [in quest ultimo c'e' la definizione di SpringBus]  .
+ La definizione del bean viene letta e il BeanHolder e' registrato in DefaultBeanDefinitionDocumentReader.processBeanDefinition(0
+ 
+ cxf.xml e' definito  cxf-core aggiunto nel classpath.
+ 
+ Il bus e' inizializzato in AbstractApplicationContext.finishBeanFactoryInitialization().
+ 
+ 
  
 Processamento request:
 

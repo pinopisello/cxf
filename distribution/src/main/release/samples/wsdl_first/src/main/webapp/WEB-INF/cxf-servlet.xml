@@ -37,6 +37,7 @@
 		address="/CustomerServicePort" serviceName="customer:CustomerServiceService" endpointName="customer:CustomerServicePort"
 		implementor="#CustomerServiceImplementor">
 		<!--jaxws:properties> <entry key="schema-validation-enabled" value="true" /> </jaxws:properties-->
+		
 	</jaxws:endpoint>
 	
 	<bean id="transportContext" class="org.apache.cxf.jaxws.context.WebServiceContextImpl"  scope="request">

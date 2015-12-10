@@ -52,8 +52,8 @@ public class CustomerServiceImpl implements CustomerService {
      * The WebServiceContext can be used to retrieve special attributes like the 
      * user principal. Normally it is not needed
      */
-    @Inject
-    WebServiceContext wsContext;
+    //@Inject
+   // WebServiceContext wsContext;
 
      
     //@Inject

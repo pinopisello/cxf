@@ -15,7 +15,9 @@ Il codice generato e' in :wsdl_first/src/main/generated
 
 1)Non Spring jetty transport cxf-rt-transports-http-jetty [http://localhost:9090/CustomerServicePort]
 
-mvn -Pserver
+mvn -Pserver 
+
+OSS:Spring e' inizializzato comunque in SpringBusFactory.createApplicationContext()!!
 
 
 2)Spring (server-applicationContext.xml) jetty transport cxf-rt-transports-http-jetty [http://localhost:9090/CustomerServicePort]  

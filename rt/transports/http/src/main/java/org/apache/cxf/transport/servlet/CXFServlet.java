@@ -47,6 +47,8 @@ public class CXFServlet extends CXFNonSpringServlet
     private XmlWebApplicationContext createdContext; 
     
     public CXFServlet() {
+        
+
     }
 
     @Override

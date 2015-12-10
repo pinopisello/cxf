@@ -20,6 +20,7 @@ package com.example.customerservice.client;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLClassLoader;
 
 import com.example.customerservice.CustomerService;
 import com.example.customerservice.CustomerServiceService;
@@ -30,6 +31,18 @@ public class CustomerServiceClient {
     }
     
     public static void main(String args[]) throws Exception {
+        
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        
+        URLClassLoader ucl = (URLClassLoader)cl;
+        
+        URL[] urls = ucl.getURLs();
+
+        for(URL url: urls){
+                System.out.println(url.getFile());
+        }
+        
+        
         CustomerServiceService customerServiceService;
         if (args.length != 0 && args[0].length() != 0) {
             File wsdlFile = new File(args[0]);
