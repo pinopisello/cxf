@@ -31,7 +31,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
 @Path("/customerservice-secured/")
-@Produces("application/json")
+@Produces("application/xml")
 public abstract class AbstractCustomerServiceSecured implements CustomerServiceSecured {
     
     protected long currentId = 123;

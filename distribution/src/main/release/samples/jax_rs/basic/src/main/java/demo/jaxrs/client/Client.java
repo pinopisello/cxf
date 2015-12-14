@@ -28,7 +28,6 @@ import org.apache.commons.httpclient.methods.FileRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
-
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.resource.URIResolver;
@@ -60,10 +59,10 @@ public final class Client {
         // Sent HTTP GET request to query sub resource product info
         System.out.println("\n");
         System.out.println("Sent HTTP GET request to query sub resource product info");
-        url = new URL("http://localhost:9000/customerservice/orders/123/products/323");
+        url = new URL("http://localhost:9000/customerservice/orders/223/products/323");
         in = url.openStream();
         System.out.println(getStringFromInputStream(in));
-/*
+
         // Sent HTTP PUT request to update customer info
         System.out.println("\n");
         System.out.println("Sent HTTP PUT request to update customer info");
@@ -112,7 +111,7 @@ public final class Client {
 
         System.out.println("\n");
         System.exit(0);
-        */
+        
     }
 
     private static String getStringFromInputStream(InputStream in) throws Exception {

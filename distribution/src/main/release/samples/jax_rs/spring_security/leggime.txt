@@ -1,5 +1,10 @@
+jaxrs server che gira su tomcat e jetty che protegge metodi esposti con basic-auth configurata sia con @Secured [spring-security-core]
+che con <security:global-method-security> in beans.xml
+Output application/xml.
 
-=========================  Server Jaxrx( server profile pom.xml)   ==============================
+
+
+=========================  Server Jaxrs( server profile pom.xml)   ==============================
 
 
 demo.jaxrs.servlet.Server.java Istanzia un jetty server programmaticamente sulla port a 9002 e vi installa il war
@@ -10,20 +15,23 @@ Quinde a bootstrap tale lister viene lanciato e va a configurare spring leggendo
 
 DefaultBeanDefinitionDocumentReader.parseBeanDefinitions() e' dove per ogni elemento definito in  beans.xml viene cercato l handler e il beandefinition registrata in Spring.
 
-http://cxf.apache.org/docs/jaxrs-services-configuration.html  dettagli configurazione jaxrs
-
-<jaxrs:server id="bookservice" address="/">         ==>  Definisce il server e lo configura per risponder a tutte le requests
-
-<jaxrs:serviceBeans> <ref bean="customerservice"/>  ==>  registra 
-
-
-
-
+org.apache.cxf.jaxrs.spring.NamespaceHandler.java definisce i parsers per <jaxrs:server>
+In particolare JAXRSServerFactoryBeanDefinitionParser definisce come parsare <jaxrs:server > e i suoi childern.
 
 Tutte le requests passano per CXFServlet.
 
 
-JAXRSServerFactoryBeanDefinitionParser
+http://cxf.apache.org/docs/jaxrs-services-configuration.html  dettagli configurazione jaxrs
+
+<jaxrs:server id="bookservice" address=""/jaxrs">         ==>  Definisce il server e lo configura per risponder a tutte le requests dirette verso //jaxrs
+
+<jaxrs:serviceBeans>
+	<ref bean="customerservice"/>           =>CustomerServiceImpl implements CustomerService annotata jaxrs                     @Path("/customerservice/")             @Produces("application/xml")    gestione authorizzazioni con <security:global-method-security >  in beans.xml
+	<ref bean="customerservice-secured"/>   =>CustomerServiceSecuredImpl extends AbstractCustomerServiceSecured  annotata jaxrs @Path("/customerservice-secured/")     @Produces("application/xml")   
+                                                                                                                 implements CustomerServiceSecured                     gestione authorizzazioni con @Secured in CustomerServiceSecured.java
+
+
+
 
 
 ========================  Server Security configuration   ==============================================

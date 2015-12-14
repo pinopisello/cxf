@@ -1,3 +1,12 @@
+Si parte da demo.hw.server.HelloWorld.java che e' la SEI interfaccia annotata jax-ws.
+Poi si costruisce  demo.hw.server.HelloWorldImpl.java che implementa HelloWorld
+
+A questo punto si puo' lanciare il server dando in pasto la HelloWorldImpl.
+Il wsdl e' generato a partire dai compilati annotati.
+Nessuna classe e' generata da generate-sources!!
+
+
+
 
 =============  Lanciare Server ===========
 

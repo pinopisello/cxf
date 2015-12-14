@@ -24,9 +24,11 @@ Client:Non Spring standard transport    [-Pclient]
 
 =============		java_first_jaxws    ==================
 Come , a partire da una interfaccia SIE demo.hw.server.HelloWorld.java, costruire server e client .
+Nessuna classe e' generata da generate-sources!!
+
 
 Server:Non Spring jetty transport   [-Pserver]
-	   Tomcat 7                     [tomcat7:run]
+	   Tomcat 7                     [tomcat7:run]  http://localhost:9000/java_first_jaxws/services/hello_world?wsdl
 	   
 	   
 Client:Non Spring standard transport    [-Pclient] 
@@ -37,19 +39,32 @@ Il client non usa wsdl, justo la SEI compilata HelloWorld.class per capire come 
 
 
 
-
-
-=============		jax_rs_basic    ==================
-Implementa un server  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean.
+=============		jax_rs_basic  [output = xml]  ==================
+Implementa un endpoint demo.jaxrs.server.CustomerService.java   annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean.
 L'esempio implementa jax-rs sub-resource-locator [vedi http://localhost:9000/customerservice/orders/223/products/323]
 Client usa apache http-client 
 Ambo client e server non sono configurati con Spring.
 
 
 
-Server:[-Pserver]
+Server:[-Pserver]   No war!!Non gira in Tomcat. Server lanciato usando JAXRSServerFactoryBean
 
-Client:[-Pclient]
+Client:[-Pclient]   Usa httpclient per generare le requests.
+
+
+=============		jax_rs_spring_security    ==================
+Jax-rs server che gira su tomcat7 e jetty configurato con Spring <jaxrs:server> con  metodi annotati jax-rs ed esposti con basic-auth configurata sia con @Secured [spring-security-core]
+che con <security:global-method-security> in beans.xml
+
+Output e' appliction/xml
+
+
+Server:[-Pserver]   
+
+Client:[-Pclient] Usa httpclient per generare le requests.
+
+
+
 
 =============		jax_rs_https    ==================
 Implementa un server  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean ma con Spring configration

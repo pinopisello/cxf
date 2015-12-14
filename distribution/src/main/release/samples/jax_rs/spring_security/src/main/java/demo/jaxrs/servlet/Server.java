@@ -38,7 +38,7 @@ public class Server {
         org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server(9002);
 
         WebAppContext webappcontext = new WebAppContext();
-        webappcontext.setContextPath("/");
+        webappcontext.setContextPath("/jax_rs_spring_security");
 
         webappcontext.setWar("target/JAXRSSpringSecurity.war");
 

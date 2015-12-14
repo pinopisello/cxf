@@ -43,9 +43,9 @@
 		<bean class="demo.jaxrs.service.SecurityExceptionMapper"/>
 		<!--<ref bean="jsonProvider"/>	-->	
 	</jaxrs:providers>
-		<jaxrs:features>
-			<cxf:logging/>
-		</jaxrs:features>
+	<jaxrs:features>
+		<cxf:logging/>
+	</jaxrs:features>
 	</jaxrs:server>
 	<bean id="customerservice" class="demo.jaxrs.service.CustomerServiceImpl"/>                <!-- La gestione authorizzazioni con <security:global-method-security-->
 	<bean id="customerservice-secured" class="demo.jaxrs.service.CustomerServiceSecuredImpl"/> <!-- La gestione authorizzazioni con @Secured in CustomerServiceSecured.java -->

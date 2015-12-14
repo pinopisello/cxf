@@ -12,6 +12,6 @@ Poi tale order e' usato per cercare l inner product 323 [JAXRSInvoker.invoke]
 
 
 
-Vedi jax_rs_spring_security per un esempio Jetty+Spring <jaxrs:server
+Vedi jax_rs_spring_security per un esempio Jetty+Spring <jaxrs:server....> 
 
 
