@@ -53,8 +53,10 @@ Client:[-Pclient]   Usa httpclient per generare le requests.
 
 
 =============		jax_rs_spring_security    ==================
-Jax-rs server che gira su tomcat7 e jetty configurato con Spring <jaxrs:server> con  metodi annotati jax-rs ed esposti con basic-auth configurata sia con @Secured [spring-security-core]
-che con <security:global-method-security> in beans.xml
+Jax-rs server che gira su tomcat7 e jetty configurato con Spring <jaxrs:server> con  metodi annotati jax-rs ed esposti 
+con basic-auth configurata sia con @Secured [spring-security-core] che con <security:global-method-security> in beans.xml
+Server gira sy jetty e tomcat7:run.
+
 
 Output e' appliction/xml
 
@@ -66,18 +68,28 @@ Client:[-Pclient] Usa httpclient per generare le requests.
 
 
 
-=============		jax_rs_https    ==================
+=============		jax_rs_basic_https    ==================
 Implementa un server  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean ma con Spring configration
 ServerConfig.xml configura keyManagers,trustManagers,port del transport jetty con tags <httpj:engine-factory> e <httpj:engine> imponendo l autenticazione del client certificate
 
 Client usa org.apache.cxf.jaxrs.client.WebClient.java [cxf-rt-rs-client] configurando con ClientConfig.xml con tag <http:conduit> il keystore da usare.
 
-Server:[-Pserver]
+Server:[-Pserver]  Lanciato come JAXRSServerFactoryBean, configurato con   <httpj:engine-factory > in ServerConfig.xml
 
-Client:[-Pclient]
+Client:[-Pclient]   org.apache.cxf.jaxrs.client.WebClient configurato con ClientConfig.xml 
+
+Consente di scegliere client authentication, quale certificato usare serverside, quali certificati client autorizzare,etc
 
 
 
+=============	java_first_jms	    ==================
+
+
+
+Server:[-Pserver]  Lancia ActiveMQ broker su tcp://localhost:61616 e poi pubblica JaxWsServerFactoryBean il server che consuma: 
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616  
+
+Client:[-Pclient]   
 
 
 

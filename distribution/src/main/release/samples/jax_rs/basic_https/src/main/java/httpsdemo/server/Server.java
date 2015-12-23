@@ -28,9 +28,6 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 public class Server {
 
     static {
-        
-        System.setProperty("java.util.logging.config.file","/Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/jax_rs/basic_https/src/main/java/logging.properties");
-        // set the configuration file
         SpringBusFactory factory = new SpringBusFactory();
         Bus bus = factory.createBus("ServerConfig.xml");
         BusFactory.setDefaultBus(bus);
@@ -41,15 +38,13 @@ public class Server {
         sf.setResourceClasses(CustomerServiceImpl.class);
         sf.setResourceProvider(CustomerServiceImpl.class, 
             new SingletonResourceProvider(new CustomerServiceImpl()));
-        sf.setAddress("https://localhost:9000/");
-
+        sf.setAddress("https://localhost:9002/");
         sf.create();
     }
 
     public static void main(String args[]) throws Exception {
         new Server();
         System.out.println("Server ready...");
-
         Thread.sleep(5 * 60 * 100000);
         System.out.println("Server exiting");
         System.exit(0);

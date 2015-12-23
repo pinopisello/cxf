@@ -1,0 +1,55 @@
+======================  Logging in CXF code   ==========================
+
+
+CXF cerca quale log framework usare in org.apache.cxf.common.logging.LogUtils nello static block:
+
+
+Cerca per :
+
+1) System.getProperty("org.apache.cxf.Logger");
+
+2)file META-INF/cxf/org.apache.cxf.Logger
+
+
+Se trova uno o l'altro usa la classe indicata come logger.
+
+Per log4j settare -Dorg.apache.cxf.Logger=org.apache.cxf.common.logging.Log4jLogger
+
+Vedi jax_rs_basic_https/pom.xml profile server.
+
+
+Ricordarsi di aggiungere dependency log4j:
+
+
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+		</dependency>s
+
+======================  Logging in jetty code   ==========================
+
+Attenzione: alcune dependencies usano altri log frameworks che richiedono ulteriore configurazione.
+
+Per esempio jax_rs_basic_https usa jetty.io e  org.eclipse.jetty.io.ssl.SslConnection usa org.eclipse.jetty.util.log.Logger che e' interface.
+
+L'istanza viene settata in org.slf4j.LoggerFactory  getLogger(String name)
+
+Quindi , in questo esempio, se si vuole loggare con log4j occorre includere slf4j-log4j12 come dependency:
+
+
+<dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-log4j12</artifactId>
+	<version>1.7.13</version>
+</dependency>
+
+======================  Logging ssl code   ==========================
+
+
+-Djavax.net.debub=all
+
+
+
+
+
+

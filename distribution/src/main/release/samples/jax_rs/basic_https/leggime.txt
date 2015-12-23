@@ -5,8 +5,8 @@ Sono usate le jax-rs annotations, ma non server e' lanciato da JAXRSServerFactor
 Client deve authenticarsi col server fornendo un certificato.
 Tale certificato deve esere validato dal server.
 
-Endpoint:   https://localhost:9000/customerservice/customers/123    @Get e @Delete
-			https://localhost:9000/customerservice/customers        @Put e @Post
+Endpoint:   https://localhost:9002/customerservice/customers/123    @Get e @Delete
+			https://localhost:9002/customerservice/customers        @Put e @Post
 			
 ================   Client  ==========================
 Usa :
@@ -32,17 +32,75 @@ Spring:     /src/main/resources/ServerConfig.xml
 
 Trasporto cxf-rt-transports-http-jetty
 ServerConfig.xml configura transport jetty con tags <httpj:engine-factory> e <httpj:engine> imponendo l autenticazione del client certificate
-Il namespace http e' http://cxf.apache.org/transports/http-jetty/configuration che e' handled da org.apache.cxf.transport.http_jetty.spring.NamespaceHandler
+Il namespace http e' http://cxf.apache.org/transports/http-jetty/configuration che e' handled da org.apache.cxf.transport.http_jetty.spring.NamespaceHandler.
+JettyHTTPServerEngineBeanDefinitionParser.java parsa <httpj:engine>  inlusi  <sec:keyManagers> e <sec:trustManagers>.
+In particolare keyManagers e trustManagers vengono istanziati in TLSParameterBase.java 
+
 Cio' che viene configurato e' org.eclipse.jetty.util.ssl.SslContextFactory._context  in JettyHTTPServerEngine.createSSLContext()
 
 Ad ogni request SslConnectionFactory.newConnection() e' invocato e di nuovo org.eclipse.jetty.util.ssl.SslContextFactory._context.createSSLEngine() viene invocato.
-Questo engine [che e' ottenuto da _context configurato da ServerConfig.xml] e' usato in org.eclipse.jetty.io.ssl.SslConnection.fill()   
+Questo engine [che e' ottenuto da _context configurato da ServerConfig.xml] e' usato in org.eclipse.jetty.io.ssl.SslConnection$DecryptedEndPoint.fill()   
 
-In caso di un client con failed handshake un SSLHandshakeException e' lanciata in SslConnection.fill(ByteBuffer buffer) linea 516.
+In caso di un client con failed handshake una javax.net.ssl.SSLException: Received fatal alert: certificate_unknown  e' lanciata in SslConnection$DecryptedEndPoint.fill(ByteBuffer buffer) linea 509.
+
+Attenzione:per vedere l'eccezione occorre avere -Djavax.net.debub=all !!
 
 In caso di successo, i bytes decriptati sono ritornati da return unwrapResult.bytesProduced();.
 
 
+========================   trustore/keystore ======================
+
+  Client:
+
+keyStore = truststore = clientKeystore.jks  contiene 
+
+1) myservicekey : trustedCertEntry
+2) myclientkey  : PrivateKeyEntry
+
+
+  Server:
+ 
+keyStore = truststore = serviceKeystore.jks  contiene 
+  
+1) myservicekey : PrivateKeyEntry
+2) myclientkey  : trustedCertEntry
+  
+PrivateKeyEntry contiene sempre la relativa public key...
+Quindi il server accetta myclientkey:trustedCertEntry e il client accetta myclientkey:trustedCertEntry
+
+
+Listare certificati nel kestore e trustore:
+
+keytool -list -v -keystore /Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/jax_rs/basic_https/src/main/config/clientKeystore.jks
+keytool -list -v -keystore /Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/jax_rs/basic_https/src/main/config/serviceKeystore.jks
+
+
+Vedere dettagli certificato in kestore e trustore:
+
+keytool -list -v -keystore /Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/jax_rs/basic_https/src/main/config/serviceKeystore.jks -alias myservicekey
+kestore pwd=sspass
+
+
+Esportare server private-key [myservicekey] in pem format per decriptare con wireshrk:
+
+1)Convertire il keystore in formato PKCS12
+keytool -importkeystore -srckeystore /Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/jax_rs/basic_https/src/main/config/serviceKeystore.jks -destkeystore serviceKeystore.p12 -deststoretype PKCS12 -srcalias myservicekey -srcstorepass sspass -srckeypass skpass -deststorepass sspass  -destkeypass sspass 
+
+2a)Convertire la pk myservicekey in formato RSA non cryptato:
+openssl pkcs12 -in serviceKeystore.p12 -out myservicekey.pem -nocerts -nodes
+password:sspass
+
+
+2b)Convertire la pk myservicekey e relativo certificato in formato RSA non cryptato:
+openssl pkcs12 -in serviceKeystore.p12 -out myservicekey-and-cert.pem  -nodes
+
+
+3a)Convertire la pk myservicekey in formato RSA:
+openssl rsa -in myservicekey.pem -out myservicekey_rsa.pem
+
+
+3b)Convertire la pk myservicekey e relativo certificato in formato RSA:
+openssl rsa -in myservicekey-and-cert_dsa.pem -out myservicekey-and-cert_dsa.pem
 
 
 

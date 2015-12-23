@@ -28,16 +28,18 @@ under the License.
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"/>
     <!-- -->
     <!-- HTTP/S configuration for proxy & web clients -->
-    <!-- Vedi cxf-rt-transports-http/src/main/resources/META-INF/spring.handlers e -->
+    <!-- Vedi cxf-rt-transports-http/src/main/resources/META-INF/spring.handlers  -->
     <http:conduit name="https://localhost:.*/customerservice/.*">
         <http:client ConnectionTimeout="30000000" ReceiveTimeout="30000000"/>
         <http:tlsClientParameters>
+        
+         <sec:cipherSuites><sec:cipherSuite>TLS_RSA_WITH_AES_128_GCM_SHA256</sec:cipherSuite></sec:cipherSuites>
             <sec:keyManagers keyPassword="ckpass">
                 <sec:keyStore file="src/main/config/clientKeystore.jks" password="cspass" type="JKS"/>
             </sec:keyManagers>
             <sec:trustManagers>
                 <sec:keyStore file="src/main/config/clientKeystore.jks" password="cspass" type="JKS"/>
-            </sec:trustManagers>
+            </sec:trustManagers> 
         </http:tlsClientParameters>
     </http:conduit>
 </beans>

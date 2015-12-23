@@ -38,7 +38,7 @@ import httpsdemo.common.CustomerService;
 public final class Client {
 
     private static final String CLIENT_CONFIG_FILE = "ClientConfig.xml";
-    private static final String BASE_SERVICE_URL =  "https://localhost:9000/customerservice/customers";
+    private static final String BASE_SERVICE_URL =  "https://localhost:9002/customerservice/customers";
     
     private Client() {
     }
@@ -54,7 +54,7 @@ public final class Client {
          * object from Apache HttpComponents
          */
         SSLSocketFactory sf = new SSLSocketFactory(keyStore, "ckpass", keyStore); 
-        Scheme httpsScheme = new Scheme("https", 9000, sf);
+        Scheme httpsScheme = new Scheme("https", 9002, sf);
 
         System.out.println("Sending HTTPS GET request to query customer info");
         DefaultHttpClient httpclient = new DefaultHttpClient();
