@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.rs.security.oauth2.grants.code;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Set;
 
 import javax.crypto.SecretKey;
 
+import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.provider.DefaultEncryptingOAuthDataProvider;
 import org.apache.cxf.rs.security.oauth2.provider.OAuthServiceException;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
@@ -45,6 +47,18 @@ public class DefaultEncryptingCodeDataProvider extends DefaultEncryptingOAuthDat
         super(key);
     }
     @Override
+    public Client removeClient(String clientId) {
+        Client c = super.removeClient(clientId);
+        removeClientCodeGrants(c);
+        return c;
+    }
+    
+    protected void removeClientCodeGrants(Client c) {
+        for (ServerAuthorizationCodeGrant grant : getCodeGrants(c)) {
+            removeCodeGrant(grant.getCode());
+        }
+    }
+    @Override
     public ServerAuthorizationCodeGrant createCodeGrant(AuthorizationCodeRegistration reg)
         throws OAuthServiceException {
         ServerAuthorizationCodeGrant grant = doCreateCodeGrant(reg);
@@ -52,10 +66,30 @@ public class DefaultEncryptingCodeDataProvider extends DefaultEncryptingOAuthDat
         return grant;
     }
 
+    public List<ServerAuthorizationCodeGrant> getCodeGrants(Client c) {
+        List<ServerAuthorizationCodeGrant> list = 
+            new ArrayList<ServerAuthorizationCodeGrant>(grants.size());
+        for (String key : grants) {
+            ServerAuthorizationCodeGrant grant = getCodeGrant(key);
+            if (grant.getClient().getClientId().equals(c.getClientId())) {
+                list.add(grant);
+            }
+        }
+        return list;
+    }
+    
     @Override
     public ServerAuthorizationCodeGrant removeCodeGrant(String code) throws OAuthServiceException {
         grants.remove(code);
         return ModelEncryptionSupport.decryptCodeGrant(this, code, key);
+    }
+    public ServerAuthorizationCodeGrant getCodeGrant(String code) throws OAuthServiceException {
+        
+        ServerAuthorizationCodeGrant grant = ModelEncryptionSupport.decryptCodeGrant(this, code, key);
+        if (grant != null) {
+            grants.remove(code);
+        }
+        return grant;
     }
     
     protected ServerAuthorizationCodeGrant doCreateCodeGrant(AuthorizationCodeRegistration reg)

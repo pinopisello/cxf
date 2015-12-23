@@ -18,17 +18,19 @@
  */
 package org.apache.cxf.rs.security.oidc.common;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
 
 public class UserInfo extends AbstractUserInfo {
+    private static final long serialVersionUID = 6712696583010801033L;
     public UserInfo() {
     }
     public UserInfo(JwtClaims claims) {
         this(claims.asMap());
     }
     public UserInfo(Map<String, Object> claims) {
-        super(claims);
+        super(new LinkedHashMap<String, Object>(claims));
     }
 }

@@ -201,4 +201,5 @@ public class OAuthAuthorizationData extends OAuthRedirectionState implements Ser
     public void setImplicitFlow(boolean implicitFlow) {
         this.implicitFlow = implicitFlow;
     }
+
 }
