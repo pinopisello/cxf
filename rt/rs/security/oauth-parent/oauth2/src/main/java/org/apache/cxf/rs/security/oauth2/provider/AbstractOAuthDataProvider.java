@@ -72,17 +72,17 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
     
     @Override
-    public void removeAccessToken(ServerAccessToken token) throws OAuthServiceException {
-        revokeAccessToken(token.getTokenKey());
-    }
-    
-    @Override
     public ServerAccessToken refreshAccessToken(Client client, String refreshTokenKey,
                                                 List<String> restrictedScopes) throws OAuthServiceException {
         RefreshToken currentRefreshToken = recycleRefreshTokens 
             ? revokeRefreshToken(refreshTokenKey) : getRefreshToken(refreshTokenKey);
-        if (currentRefreshToken == null 
-            || OAuthUtils.isExpired(currentRefreshToken.getIssuedAt(), currentRefreshToken.getExpiresIn())) {
+        if (currentRefreshToken == null) { 
+            throw new OAuthServiceException(OAuthConstants.ACCESS_DENIED);
+        }
+        if (OAuthUtils.isExpired(currentRefreshToken.getIssuedAt(), currentRefreshToken.getExpiresIn())) {
+            if (!recycleRefreshTokens) {
+                revokeRefreshToken(refreshTokenKey);
+            }
             throw new OAuthServiceException(OAuthConstants.ACCESS_DENIED);
         }
         if (recycleRefreshTokens) {
@@ -282,8 +282,6 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     protected abstract void saveAccessToken(ServerAccessToken serverToken);
     protected abstract void saveRefreshToken(ServerAccessToken at, RefreshToken refreshToken);
     protected abstract ServerAccessToken revokeAccessToken(String accessTokenKey);
-    protected abstract List<ServerAccessToken> getAccessTokens(Client c);
-    protected abstract List<RefreshToken> getRefreshTokens(Client c);
     protected abstract RefreshToken revokeRefreshToken(String refreshTokenKey);
     protected abstract RefreshToken getRefreshToken(String refreshTokenKey);
 

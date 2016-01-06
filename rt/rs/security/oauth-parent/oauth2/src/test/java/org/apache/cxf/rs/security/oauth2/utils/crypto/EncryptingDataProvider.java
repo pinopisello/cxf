@@ -88,11 +88,6 @@ public class EncryptingDataProvider implements OAuthDataProvider {
     }
 
     @Override
-    public void removeAccessToken(ServerAccessToken accessToken) throws OAuthServiceException {
-        tokens.remove(accessToken.getTokenKey());
-    }
-
-    @Override
     public void revokeToken(Client client, String token, String tokenTypeHint)
         throws OAuthServiceException {
         // the fast way: if it is the refresh token then there will be a matching value for it
@@ -146,5 +141,17 @@ public class EncryptingDataProvider implements OAuthDataProvider {
         
         String encryptedRefreshToken = ModelEncryptionSupport.encryptRefreshToken(refreshToken, key);
         token.setRefreshToken(encryptedRefreshToken);
+    }
+
+    @Override
+    public List<ServerAccessToken> getAccessTokens(Client client) throws OAuthServiceException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<RefreshToken> getRefreshTokens(Client client) throws OAuthServiceException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
