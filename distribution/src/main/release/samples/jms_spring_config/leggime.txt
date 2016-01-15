@@ -1,11 +1,34 @@
-Il ws e' definito in jms_spring_config/src/main/config/CustomerService.wsdl
+SOAP over JMS a partire dal WSDL [/jms_spring_config/src/main/config/CustomerService.wsdl] usando Spring configuration
+ per client e server.
+ Genera interfaccia annotata JAX-WS
+ Spring usa <jaxws:client> e <jaxws:endpoint> per configurare WS server e client.
+Il server non lancia ActiveMQ, semplicemente si connette ad esso.
+
+
+[phase generate-sources]legge  jms_spring_config/src/main/config/CustomerService.wsdl
 cxf-codegen-plugin e' usato per generare jaxb e SEI interface in target/generated-sources
+com.example.customerservice.CustomerService.java
 
-jms.broker => lancia ActiveMQ
+[-Pjms.broker] => lancia ActiveMQ invocando activemq-maven-plugin:run  BrokerMojo.execute() in activemq-maven-plugin-5.8.0.jar
+Il broker e' istanza org.apache.activemq.broker.BrokerService.java in activemq-broker-5.12.0.jar
+Si puo evitare di lanciare il broker se si lancia activemq installato localmente.
 
-server => esegue polling dei messaggi sulla queue jms:queue:test.queue
+[-Pserver] => esegue polling dei messaggi sulla queue jms:queue:test.queue.
+CustomerServiceSpringServer.java usa ClassPathXmlApplicationContext per lanciare  server-applicationContext.xml
+I singletons sono nestati:  ActiveMQConnectionFactory => PooledConnectionFactory => ConnectionFactoryFeature => jaxws:endpoint
 
-client =>  invia SOAP over JMS messages verso la queue 
+
+
+
+[-Pclient] =>  invia SOAP over JMS messages verso la queue 
+CustomerServiceSpringClient.java usa ClassPathXmlApplicationContext per lanciare client-applicationContext.xml.
+I singletons sono nestati:  ActiveMQConnectionFactory => PooledConnectionFactory => jmsConfig =>JMSConfigFeature => ConnectionFactoryFeature => <jaxws:client>
+Il client invia header replyDestination per indicare al server dove inviare le risposte.
+A quel punto estrae CustomerServiceTester da Spring context che e' iniettato col proxy  <jaxws:client> per invocare i metodi (invio jms payload) dal server.
+Il client invia il messaggio con header Reply To=queue://endpoint-out-queue e ascolta x un  certo timeout per il messggio di risposta su tale queue.
+Se il timeout scade :java.lang.RuntimeException: Timeout receiving message with correlationId 11f3f0f934794e08931dd87bcd7f2b400000000000000001
+	at org.apache.cxf.transport.jms.JMSConduit.sendAndReceiveMessage(JMSConduit.java:236)
+
 
 
 3 profili in pom.xml
@@ -41,7 +64,7 @@ CustomerServiceImpl implementa CustomerService generato da cxf-codegen-plugin a 
 cxf-codegen-plugin e' eseguito nella generate-source phase ad ogni build
 
 RICEZIONE MESSAGGI:
-PollingMessageListenerContainer [cxf-rt-transports-jms]  nel run() metodo crea una session ed un consumer.
+PollingMessageListenerContainer [cxf-rt-transports-jms]  nel Poller.run() metodo crea una session ed un consumer.
 Invoca il consumer.receive(1000) ossia attende un messaggio per 1 sec .
 Se un messaggio e' ricevuto invoca  listenerHandler.onMessage(message);
 listenerHandler e' istanza JMSDestination [cxf-rt-transports-jms]
@@ -97,6 +120,24 @@ Vedi: http://cxf.apache.org/docs/using-the-jmsconfigfeature.html
 I jms inviati avranno un JMS Header: Reply To = queue://endpoint-out-queue e tale queue verra' creata in automatico.
 
 Altri parametri settabili in jmsConfig vedi http://cxf.apache.org/docs/using-the-jmsconfigfeature.html
+
+Il client setta un listener per ricevere la risposta dal server in JMSConduit.setupReplyDestination().
+MessageListenerContainer viene creato puntando sulla queue di risposta [queue://endpoint-out-queue]  e con listener JMSConduit stesso
+e con un selector JMSCorrelationID LIKE 'c85966d058354e7a8b5f843c4aa0cf15%' ossia si cerca solo il messaggio in endpoint-out-queue con  
+JMSCorrelationID simile (che inizi con gli stessi caratteri JMSCorrelationID messggio iniziale) del messaggio inviato.
+Infatti JMSConduit implementa interfaccia MessageListener e definisce metodo onMessage().
+Una volta inviato il messaggio in JMSConduit.sendAndReceiveMessage(), il thread si pausa per il timeout configurato [ exchange.wait(jmsConfig.getReceiveTimeout());]
+Quando la risposta arriva,su un altro thread,  JMSConduit.onMessage() => JMSConduit.processReplyMessage()  mette la response in exchange e sblocca il thread in wait chiamado   exchange.notifyAll();
+Ora si hanno 2 treads che sono relativi alla chiamata del ws!!
+Il PRIMO si fermera' di nuovo in ClientImpl.waitResponse() se exchange.get(FINISHED) = false.
+Sempre in JMSConduit.processReplyMessage(), JMSConduit ha un incomingObserver=org.apache.cxf.endpoint.ClientImpl.
+
+Il SECONDO thread viene eseguito in ClientImpl.onMessage() definisce una PhaseInterceptorChain che processa la risposta.
+In particolare il jaxb parsing della response avviene in DocLiteralInInterceptor.handleMessage() [Object wrappedObject = dr.read(mpi, xmlReader);]
+WrapperClassInInterceptor estrae gli oggetti di interesse e li mette in Message.content con formato List.class[ message.setContent(List.class, newParams);]
+Il secondo thread finisce di processare la response e sveglia il primo alla fine di ClientImpl.onMessage()  [ message.getExchange().notifyAll();]
+
+A questo punto il PRIMO thread continua e va a prendere gli oggetti da ritornare al caller in ClientImpl.processResult() [ resList = CastUtils.cast(inMsg.getContent(List.class));]
 
 
 

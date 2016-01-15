@@ -1,4 +1,18 @@
 Piuttosto banale.
+Nessuna configurazione Spring.
+
+
+2 profili POM:
+
+
+[-Pserver]Implementa un endpoint CustomerService  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean 
+
+
+[-Pclient]Lancia client che usa apache HttpClient per effettuare GETs verso l endpoint settando header "Accept" sia application/xml
+che application/json
+
+Solo il type definito in CustomerService [@Produces("")] funziona.Se l'header inviato dal client non matcha quello del @Produces
+il server ritorna error 6.
 
 Vedi README.txt
 

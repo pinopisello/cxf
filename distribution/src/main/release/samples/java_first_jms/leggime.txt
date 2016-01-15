@@ -1,27 +1,36 @@
 SOAP over JMS usando ActiveMQ
-A partire da interfaccia java annotatata JAX-WS demo.service.HelloWorld, genera hello.wsdl 
+A partire da interfaccia java annotatata JAX-WS demo.service.HelloWorld, genera hello.wsdl .
+Nessuna configurazione Spring!!
 
 
 pom.xml espone 3 profiles:
 
 
-========  java2ws 
-Genera il wsdl a partire da SEI  
+========  java2ws ===================
+Genera il wsdl hello.wsdl a partire da SEI  demo.service.HelloWorld
 
 
 
-========  server [pubblica il ws definito in HelloWorldImpl ]
-lancia ActiveMQ in ascolto su tcp  61616 
-JaxWsServerFactoryBean e' usato per pubblicare l endpoint test.cxf.jmstransport.queue
+========  server [pubblica il ws definito in HelloWorldImpl ]   ==================
+Lancia ActiveMQ in ascolto su tcp  61616 
+JaxWsServerFactoryBean e' usato per pubblicare l endpoint HelloWorldImpl.java in ascolto sulla queue :
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
+
+========  client  ========================
+
+JaxWsServerFactoryBean e' usato per creare un proxy client e per inviare il messagio jms alla queue :
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
 
 
-========  client
+================  Decodifica endpoint URI e ascolto sulla destination queue ============================
+Il costruttore org.apache.cxf.transport.jms.uri.JMSEndpoint(EndpointInfo ei, String endpointUri)  riceve la uri sopra , la spezzetta e configura le properties  in JMSEndpoint.configureProperties()
+Queste properties vengono poi usate in org.apache.cxf.transport.jms.JMSConfigFactory.createFromEndpoint() per rienpire un oggetto JMSConfiguration che viene usato per costruire una org.apache.cxf.transport.jms.JMSDestination
+che viene salvata in org.apache.cxf.endpoint.ServerImpl.destination.
 
-JaxWsProxyFactoryBean e' usato per creare il client
-Il client e' un proxy per inviare il lessagio jms al server.
-
-
-
-
+Una connessione alla queue e' effettuata in ServerImpl.start()=>SoapBindingFactory.addListener()=>AbstractBindingFactory.addListener()=>AbstractObservable.setMessageObserver()=>
+  JMSDestination.activate()=>JMSDestination.createTargetDestinationListener()
+In questo ultimo metodo Destination.jmsConfig , contenente tutti i dettagli della queue uri, viene usato per creare una ActiveMQConnection [JMSFactory.createConnection(jmsConfig)]
+Qui un PollingMessageListenerContainer viene istanziato con un Consumer in  ascolto su ActiveMQConnection in un loop infinito che scorre ogni secondo.
+Quando un messggio e' ricevuto, viene passato a JMSDestination.onMessage() =>ChainInitiationObserver.onMessage() =>PhaseInterceptorChain.doIntercept()
 
 

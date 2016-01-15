@@ -57,6 +57,10 @@ Jax-rs server che gira su tomcat7 e jetty configurato con Spring <jaxrs:server> 
 con basic-auth configurata sia con @Secured [spring-security-core] che con <security:global-method-security> in beans.xml
 Server gira sy jetty e tomcat7:run.
 
+Ogni request ha assegnato un header "Authorization" con valore "Basic " + base64Encode(name + ":" + password)
+Lato server user/pwd sono associati ad un role in beans.xml.
+Ogni metodo e' autorizzato per uno o piu ruoli o in beans.xml con <global-method-security > oppure nell' SEI interface con annotazioni CustomerServiceSecured.
+
 
 Output e' appliction/xml
 
@@ -83,19 +87,74 @@ Consente di scegliere client authentication, quale certificato usare serverside,
 
 
 =============	java_first_jms	    ==================
+SOAP over JMS usando ActiveMQ senza usare configurazione Spring.
+A partire da interfaccia java annotatata JAX-WS demo.service.HelloWorld, genera hello.wsdl .
+Per partire dal, wsdl vedi jms_spring_config.
+
+java2ws:[-Pserver]
+Genera il wsdl hello.wsdl a partire da SEI  demo.service.HelloWorld
 
 
-
-Server:[-Pserver]  Lancia ActiveMQ broker su tcp://localhost:61616 e poi pubblica JaxWsServerFactoryBean il server che consuma: 
-jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616  
+Server:[-Pserver]   
+Lancia ActiveMQ in ascolto su tcp  61616 
+JaxWsServerFactoryBean e' usato per pubblicare l endpoint HelloWorldImpl.java in ascolto sulla queue :
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
 
 Client:[-Pclient]   
+JaxWsServerFactoryBean e' usato per creare un proxy client e per inviare il messagio jms alla queue :
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
+
+
+=============	jax_rs_content_negotiation	    ==================
+Implementa un server  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean
+Nessuna configurazione Spring.
+
+
+2 profili POM:
+
+
+[-Pserver]Implementa un endpoint CustomerService  annotato jax-rs 2.0  [@Path,@Produces] lanciato con JAXRSServerFactoryBean 
+
+
+[-Pclient]Lancia client che usa apache HttpClient per effettuare GETs verso l endpoint settando header "Accept" sia application/xml
+che application/json
+
+Solo il type definito in CustomerService [@Produces("")] funziona.Se l'header inviato dal client non matcha quello del @Produces
+il server ritorna error 6.
+
+
+
+=============	jms_spring_config	    ==================
+SOAP over JMS a partire dal WSDL [/jms_spring_config/src/main/config/CustomerService.wsdl] usando Spring configuration
+ per client e server.
+ Genera interfaccia annotata JAX-WS
+ Spring usa <jaxws:client> e <jaxws:endpoint> per configurare WS server e client.
+Il server non lancia ActiveMQ, semplicemente si connette ad esso.
+
+
+[phase generate-sources]legge  jms_spring_config/src/main/config/CustomerService.wsdl
+cxf-codegen-plugin e' usato per generare jaxb e SEI interface in target/generated-sources
+com.example.customerservice.CustomerService.java
+
+[-Pjms.broker] => lancia ActiveMQ invocando activemq-maven-plugin:run  BrokerMojo.execute() in activemq-maven-plugin-5.8.0.jar
+Il broker e' istanza org.apache.activemq.broker.BrokerService.java in activemq-broker-5.12.0.jar
+Si puo evitare di lanciare il broker se si lancia activemq installato localmente.
+
+[-Pserver] => esegue polling dei messaggi sulla queue jms:queue:test.queue.
+CustomerServiceSpringServer.java usa ClassPathXmlApplicationContext per lanciare  server-applicationContext.xml
+I singletons sono nestati:  ActiveMQConnectionFactory => PooledConnectionFactory => ConnectionFactoryFeature => jaxws:endpoint
 
 
 
 
-
-
+[-Pclient] =>  invia SOAP over JMS messages verso la queue 
+CustomerServiceSpringClient.java usa ClassPathXmlApplicationContext per lanciare client-applicationContext.xml.
+I singletons sono nestati:  ActiveMQConnectionFactory => PooledConnectionFactory => jmsConfig =>JMSConfigFeature => ConnectionFactoryFeature => <jaxws:client>
+Il client invia header replyDestination per indicare al server dove inviare le risposte.
+A quel punto estrae CustomerServiceTester da Spring context che e' iniettato col proxy  <jaxws:client> per invocare i metodi (invio jms payload) dal server.
+Il client invia il messaggio con header Reply To=queue://endpoint-out-queue e ascolta x un  certo timeout per il messggio di risposta su tale queue.
+Se il timeout scade :java.lang.RuntimeException: Timeout receiving message with correlationId 11f3f0f934794e08931dd87bcd7f2b400000000000000001
+	at org.apache.cxf.transport.jms.JMSConduit.sendAndReceiveMessage(JMSConduit.java:236)
 
 
 
