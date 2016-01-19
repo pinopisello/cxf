@@ -76,10 +76,6 @@ public class AccessTokenValidatorService extends AbstractAccessTokenValidator {
         this.blockUnsecureRequests = blockUnsecureRequests;
     }
 
-    public boolean isBlockUnauthorizedRequests() {
-        return blockUnauthorizedRequests;
-    }
-
     public void setBlockUnauthorizedRequests(boolean blockUnauthorizedRequests) {
         this.blockUnauthorizedRequests = blockUnauthorizedRequests;
     }

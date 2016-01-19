@@ -41,6 +41,9 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     private boolean recycleRefreshTokens = true;
     private Map<String, OAuthPermission> permissionMap = new HashMap<String, OAuthPermission>();
     private MessageContext messageContext;
+    private List<String> defaultScopes;
+    private List<String> requiredScopes;
+    private List<String> invisibleToClientScopes;
     
     
     protected AbstractOAuthDataProvider() {
@@ -151,6 +154,9 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     
     @Override
     public List<OAuthPermission> convertScopeToPermissions(Client client, List<String> requestedScopes) {
+        if (requiredScopes != null && !requestedScopes.containsAll(requiredScopes)) {
+            throw new OAuthServiceException("Required scopes are missing");
+        }
         if (requestedScopes.isEmpty()) {
             return Collections.emptyList();
         } else if (!permissionMap.isEmpty()) {
@@ -242,6 +248,14 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
     
     public void init() {
+        for (OAuthPermission perm : permissionMap.values()) {
+            if (defaultScopes != null && defaultScopes.contains(perm.getPermission())) {
+                perm.setDefault(true);
+            }
+            if (invisibleToClientScopes != null && invisibleToClientScopes.contains(perm.getPermission())) {
+                perm.setInvisibleToClient(true);
+            }
+        }
     }
     
     public void close() {
@@ -255,7 +269,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
         this.permissionMap = permissionMap;
     }
     
-    public void setScopes(Map<String, String> scopes) {
+    public void setSupportedScopes(Map<String, String> scopes) {
         for (Map.Entry<String, String> entry : scopes.entrySet()) {
             OAuthPermission permission = new OAuthPermission(entry.getKey(), entry.getValue());
             permissionMap.put(entry.getKey(), permission);
@@ -284,5 +298,29 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     protected abstract ServerAccessToken revokeAccessToken(String accessTokenKey);
     protected abstract RefreshToken revokeRefreshToken(String refreshTokenKey);
     protected abstract RefreshToken getRefreshToken(String refreshTokenKey);
+
+    public List<String> getDefaultScopes() {
+        return defaultScopes;
+    }
+
+    public void setDefaultScopes(List<String> defaultScopes) {
+        this.defaultScopes = defaultScopes;
+    }
+
+    public List<String> getRequiredScopes() {
+        return requiredScopes;
+    }
+
+    public void setRequiredScopes(List<String> requiredScopes) {
+        this.requiredScopes = requiredScopes;
+    }
+
+    public List<String> getInvisibleToClientScopes() {
+        return invisibleToClientScopes;
+    }
+
+    public void setInvisibleToClientScopes(List<String> invisibleToClientScopes) {
+        this.invisibleToClientScopes = invisibleToClientScopes;
+    }
 
 }

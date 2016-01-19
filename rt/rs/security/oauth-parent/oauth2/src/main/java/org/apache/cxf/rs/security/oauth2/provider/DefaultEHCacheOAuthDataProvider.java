@@ -83,8 +83,12 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     @Override
     public Client removeClient(String clientId) {
         Client c = getClient(clientId);
-        clientCache.remove(clientId);
+        return doRemoveClient(c);
+    }
+    
+    protected Client doRemoveClient(Client c) {
         removeClientTokens(c);
+        clientCache.remove(c.getClientId());
         return c;
     }
 
@@ -109,7 +113,7 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
         List<ServerAccessToken> tokens = new ArrayList<ServerAccessToken>(keys.size());
         for (String key : keys) {
             ServerAccessToken token = getAccessToken(key);
-            if (token.getClient().getClientId().equals(c.getClientId())) {
+            if (c == null || token.getClient().getClientId().equals(c.getClientId())) {
                 tokens.add(token);
             }
         }
@@ -122,7 +126,7 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
         List<RefreshToken> tokens = new ArrayList<RefreshToken>(keys.size());
         for (String key : keys) {
             RefreshToken token = getRefreshToken(key);
-            if (token.getClient().getClientId().equals(c.getClientId())) {
+            if (c == null || token.getClient().getClientId().equals(c.getClientId())) {
                 tokens.add(token);
             }
         }
