@@ -20,6 +20,7 @@
 package org.apache.cxf.rs.security.oauth2.services;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.jaxrs.utils.HttpUtils;
+import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.rs.security.oauth2.common.AccessTokenRegistration;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
@@ -77,12 +79,15 @@ public abstract class AbstractImplicitGrantService extends RedirectionBasedGrant
                 } else {
                     reg.setApprovedScope(approvedScope);
                 }
-                reg.setAudience(state.getAudience());
+                reg.setAudiences(Collections.singletonList(state.getAudience()));
                 reg.setNonce(state.getNonce());
                 token = getDataProvider().createAccessToken(reg);
             }
         } else {
             token = preAuthorizedToken;
+            if (state.getNonce() != null) {
+                JAXRSUtils.getCurrentMessage().getExchange().put(OAuthConstants.NONCE, state.getNonce());
+            }
         }
         
         ClientAccessToken clientToken = null;

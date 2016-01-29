@@ -36,6 +36,7 @@ public class OAuthContext {
     private boolean isClientConfidential;
     private String tokenKey;
     private String tokenAudience;
+    private String tokenIssuer;
     private String[] tokenRequestParts;
     
     public OAuthContext(UserSubject resourceOwnerSubject,
@@ -117,10 +118,10 @@ public class OAuthContext {
         return tokenAudience;
     }
 
-    public void setTokenAudience(String tokenAudience) {
-        this.tokenAudience = tokenAudience;
+    public void setTokenAudience(String audience) {
+        this.tokenAudience = audience;
     }
-
+    
     public String[] getTokenRequestParts() {
         return tokenRequestParts;
     }
@@ -133,5 +134,13 @@ public class OAuthContext {
     }
     public void setClientConfidential(boolean isConfidential) {
         this.isClientConfidential = isConfidential;
+    }
+
+    public String getTokenIssuer() {
+        return tokenIssuer;
+    }
+
+    public void setTokenIssuer(String tokenIssuer) {
+        this.tokenIssuer = tokenIssuer;
     }
 }

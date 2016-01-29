@@ -68,12 +68,12 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
                                                              MultivaluedMap<String, String> params,
                                                              String redirectUri,
                                                              UserSubject subject,
-                                                             List<String> requestedScopes,
-                                                             List<OAuthPermission> perms,
+                                                             List<OAuthPermission> requestedPerms,
+                                                             List<OAuthPermission> alreadyAuthorizedPerms,
                                                              boolean authorizationCanBeSkipped) {
         OAuthAuthorizationData data = 
             super.createAuthorizationData(client, params, redirectUri, subject, 
-                                          requestedScopes, perms, authorizationCanBeSkipped);
+                                          requestedPerms, alreadyAuthorizedPerms, authorizationCanBeSkipped);
         setCodeQualifier(data, params);
         return data;
     }
@@ -103,7 +103,7 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
         // in this flow the code is still created, the preauthorized token
         // will be retrieved by the authorization code grant handler
         AuthorizationCodeRegistration codeReg = new AuthorizationCodeRegistration(); 
-        
+        codeReg.setPreauthorizedTokenAvailable(preauthorizedToken != null);
         codeReg.setClient(client);
         codeReg.setRedirectUri(state.getRedirectUri());
         codeReg.setRequestedScope(requestedScope);

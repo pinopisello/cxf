@@ -20,9 +20,11 @@
 package org.apache.cxf.rs.security.oauth2.grants.code;
 
 import java.util.Collections;
+import java.util.List;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.rs.security.oauth2.common.AccessTokenRegistration;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.ServerAccessToken;
@@ -80,18 +82,46 @@ public class AuthorizationCodeGrantHandler extends AbstractGrantHandler {
         if (!compareCodeVerifierWithChallenge(client, clientCodeVerifier, clientCodeChallenge)) {
             throw new OAuthServiceException(OAuthConstants.INVALID_GRANT);
         }
-        
-        return doCreateAccessToken(client, grant, getSingleGrantType(), clientCodeVerifier);
+        List<String> audiences = getAudiences(client, params, grant.getAudience());
+        return doCreateAccessToken(client, grant, getSingleGrantType(), clientCodeVerifier, audiences);
     }
     
+    protected List<String> getAudiences(Client client, MultivaluedMap<String, String> params, 
+                                        String grantAudience) {
+        String clientAudience = params.getFirst(OAuthConstants.CLIENT_AUDIENCE);
+        if (client.getRegisteredAudiences().isEmpty() && clientAudience == null && grantAudience == null) {
+            return Collections.emptyList();
+        }
+        // if the audience was approved at the grant creation time and the audience is also 
+        // sent to the token endpoint then both values must match
+        if (grantAudience != null && clientAudience != null && !grantAudience.equals(clientAudience)) {
+            throw new OAuthServiceException(OAuthConstants.INVALID_REQUEST);
+        }
+        return getAudiences(client, clientAudience == null ? grantAudience : clientAudience);
+    }
+
     private ServerAccessToken doCreateAccessToken(Client client,
                                                   ServerAuthorizationCodeGrant grant,
                                                   String requestedGrant,
-                                                  String codeVerifier) {
-        ServerAccessToken token = getPreAuthorizedToken(client, grant.getSubject(), requestedGrant,
-                                                        grant.getRequestedScopes(), grant.getAudience());
-        if (token != null) {
-            return token;
+                                                  String codeVerifier,
+                                                  List<String> audiences) {
+        if (grant.isPreauthorizedTokenAvailable()) {
+            ServerAccessToken token = getPreAuthorizedToken(client, 
+                                                            grant.getSubject(), 
+                                                            requestedGrant,
+                                                            grant.getRequestedScopes(), 
+                                                            getAudiences(client, grant.getAudience()));
+            if (token != null) {
+                if (grant.getNonce() != null) {
+                    JAXRSUtils.getCurrentMessage().getExchange().put(OAuthConstants.NONCE, grant.getNonce());
+                }
+                return token;
+            } else {
+                // the grant was issued based on the authorization time check confirming the
+                // token was available but it has expired by now or been removed then
+                // creating a completely new token can be wrong - though this needs to be reviewed 
+                throw new OAuthServiceException(OAuthConstants.INVALID_GRANT);
+            }
         }
         
         // Delegate to the data provider to create the one
@@ -106,7 +136,7 @@ public class AuthorizationCodeGrantHandler extends AbstractGrantHandler {
         } else {
             reg.setApprovedScope(Collections.emptyList());
         }
-        reg.setAudience(grant.getAudience());
+        reg.setAudiences(audiences);
         reg.setClientCodeVerifier(codeVerifier);
         return getDataProvider().createAccessToken(reg);
     }

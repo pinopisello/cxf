@@ -46,14 +46,16 @@ public abstract class AbstractCodeDataProvider extends AbstractOAuthDataProvider
         this.codeLifetime = codeLifetime;
     }
     protected void removeClientCodeGrants(Client c) {
-        for (ServerAuthorizationCodeGrant grant : getCodeGrants(c)) {
+        for (ServerAuthorizationCodeGrant grant : getCodeGrants(c, null)) {
             removeCodeGrant(grant.getCode());
         }
     }
-    public static ServerAuthorizationCodeGrant initCodeGrant(AuthorizationCodeRegistration reg, long lifetime) {
+    public static ServerAuthorizationCodeGrant initCodeGrant(AuthorizationCodeRegistration reg, 
+                                                             long lifetime) {
         ServerAuthorizationCodeGrant grant = new ServerAuthorizationCodeGrant(reg.getClient(), lifetime);
         grant.setRedirectUri(reg.getRedirectUri());
         grant.setSubject(reg.getSubject());
+        grant.setPreauthorizedTokenAvailable(reg.isPreauthorizedTokenAvailable());
         grant.setRequestedScopes(reg.getRequestedScope());
         grant.setApprovedScopes(reg.getApprovedScope());
         grant.setAudience(reg.getAudience());

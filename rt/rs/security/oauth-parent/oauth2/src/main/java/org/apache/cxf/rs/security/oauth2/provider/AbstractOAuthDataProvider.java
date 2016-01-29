@@ -44,6 +44,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     private List<String> defaultScopes;
     private List<String> requiredScopes;
     private List<String> invisibleToClientScopes;
+    private boolean supportPreauthorizedTokens;
     
     
     protected AbstractOAuthDataProvider() {
@@ -60,17 +61,17 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
         return at;
     }
     
-    protected ServerAccessToken doCreateAccessToken(AccessTokenRegistration accessToken) {
-        ServerAccessToken at = createNewAccessToken(accessToken.getClient());
-        at.setAudience(accessToken.getAudience());
-        at.setGrantType(accessToken.getGrantType());
-        List<String> theScopes = accessToken.getApprovedScope();
+    protected ServerAccessToken doCreateAccessToken(AccessTokenRegistration atReg) {
+        ServerAccessToken at = createNewAccessToken(atReg.getClient());
+        at.setAudiences(atReg.getAudiences());
+        at.setGrantType(atReg.getGrantType());
+        List<String> theScopes = atReg.getApprovedScope();
         List<OAuthPermission> thePermissions = 
-            convertScopeToPermissions(accessToken.getClient(), theScopes);
+            convertScopeToPermissions(atReg.getClient(), theScopes);
         at.setScopes(thePermissions);
-        at.setSubject(accessToken.getSubject());
-        at.setClientCodeVerifier(accessToken.getClientCodeVerifier());
-        at.setNonce(accessToken.getNonce());
+        at.setSubject(atReg.getSubject());
+        at.setClientCodeVerifier(atReg.getClientCodeVerifier());
+        at.setNonce(atReg.getNonce());
         return at;
     }
     
@@ -175,10 +176,30 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
 
     @Override
-    public ServerAccessToken getPreauthorizedToken(Client client, List<String> requestedScopes,
-                                                   UserSubject subject, String grantType)
-        throws OAuthServiceException {
-        return null;
+    public ServerAccessToken getPreauthorizedToken(Client client, 
+                                                   List<String> requestedScopes,
+                                                   UserSubject sub, 
+                                                   String grantType) throws OAuthServiceException {
+        if (!isSupportPreauthorizedTokens()) {
+            return null;
+        }
+
+        ServerAccessToken token = null;
+        for (ServerAccessToken at : getAccessTokens(client, sub)) {
+            if (at.getClient().getClientId().equals(client.getClientId())
+                && at.getGrantType().equals(grantType)
+                && (sub == null || at.getSubject().getLogin().equals(sub.getLogin()))) {
+                token = at;
+                break;
+            }
+        }
+        if (token != null 
+            && OAuthUtils.isExpired(token.getIssuedAt(), token.getExpiresIn())) {
+            revokeToken(client, token.getTokenKey(), OAuthConstants.ACCESS_TOKEN);
+            token = null;
+        }
+        return token;
+        
     }
     
     protected boolean isRefreshTokenSupported(List<String> theScopes) {
@@ -201,7 +222,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
     protected RefreshToken doCreateNewRefreshToken(ServerAccessToken at) {
         RefreshToken rt = new RefreshToken(at.getClient(), refreshTokenLifetime);
-        rt.setAudience(at.getAudience());
+        rt.setAudiences(at.getAudiences());
         rt.setGrantType(at.getGrantType());
         rt.setScopes(at.getScopes());
         rt.setSubject(at.getSubject());
@@ -219,7 +240,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
                                                      RefreshToken oldRefreshToken, 
                                                      List<String> restrictedScopes) {
         ServerAccessToken at = createNewAccessToken(client);
-        at.setAudience(oldRefreshToken.getAudience());
+        at.setAudiences(oldRefreshToken.getAudiences());
         at.setGrantType(oldRefreshToken.getGrantType());
         at.setSubject(oldRefreshToken.getSubject());
         if (restrictedScopes.isEmpty()) {
@@ -285,10 +306,10 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
     
     protected void removeClientTokens(Client c) {
-        for (RefreshToken rt : getRefreshTokens(c)) {
+        for (RefreshToken rt : getRefreshTokens(c, null)) {
             revokeRefreshToken(rt.getTokenKey());
         }
-        for (ServerAccessToken at : getAccessTokens(c)) {
+        for (ServerAccessToken at : getAccessTokens(c, null)) {
             revokeAccessToken(at.getTokenKey());
         }
     }
@@ -322,5 +343,15 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     public void setInvisibleToClientScopes(List<String> invisibleToClientScopes) {
         this.invisibleToClientScopes = invisibleToClientScopes;
     }
+
+    public boolean isSupportPreauthorizedTokens() {
+        return supportPreauthorizedTokens;
+    }
+
+    public void setSupportPreauthorizedTokens(boolean supportPreauthorizedTokens) {
+        this.supportPreauthorizedTokens = supportPreauthorizedTokens;
+    }
+
+    
 
 }
