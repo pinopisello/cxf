@@ -16,30 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cxf.systest.sts.realms;
+package org.apache.cxf.throttling;
 
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.cxf.sts.RealmParser;
-import org.apache.cxf.ws.security.sts.provider.STSException;
-
-/**
- * A test implementation of RealmParser which returns a realm depending on a String contained
- * in the URL of the service request.
- */
-public class URLRealmParser implements RealmParser {
-
-    public String parseRealm(Map<String, Object> messageContext) throws STSException {
-        String url = (String)messageContext.get("org.apache.cxf.request.url");
-        if (url.contains("realmA")) {
-            return "A";
-        } else if (url.contains("realmB")) {
-            return "B";
-        } else if (url.contains("realmC")) {
-            return "C";
-        }
-        
-        return null;
+public class ThrottlingCounter {
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    public int incrementAndGet() {
+        return COUNTER.incrementAndGet();
     }
-    
+    public int decrementAndGet() {
+        return COUNTER.decrementAndGet();
+    }
+
 }
