@@ -27,14 +27,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.xml.namespace.QName;
+import javax.xml.ws.AsyncHandler;
 import javax.xml.ws.Response;
 
+import org.apache.cxf.annotations.UseAsyncMethod;
 import org.apache.hello_world_async_soap_http.GreeterAsync;
 import org.apache.hello_world_async_soap_http.SOAPService;
 import org.apache.hello_world_async_soap_http.types.GreetMeSometimeResponse;
 
 public final class Client {
-static String TOMCAT_URL="http://127.0.0.1:8080/jaxws_async/services/CustomerServicePort?wsdl";
+static String TOMCAT_URL="http://127.0.0.1:8080/jaxws_async/services/SoapContext?wsdl";
     
     private static final QName SERVICE_NAME 
         = new QName("http://apache.org/hello_world_async_soap_http", "SOAPService");
@@ -49,6 +51,8 @@ static String TOMCAT_URL="http://127.0.0.1:8080/jaxws_async/services/CustomerSer
             System.out.println("please specify wsdl");
             System.exit(1); 
         }
+        
+ /*
         URL url = null;
         File wsdl = new File(args[0]);
         if (wsdl.exists() && wsdl.isFile()) {
@@ -56,17 +60,29 @@ static String TOMCAT_URL="http://127.0.0.1:8080/jaxws_async/services/CustomerSer
         } else {
             url = new URL(args[0]);
         }
+*/
+        URL url = new URL(TOMCAT_URL);
         
+
         SOAPService ss = new SOAPService(url, SERVICE_NAME);
         ExecutorService executor = Executors.newFixedThreadPool(5);
-        ss.setExecutor(executor);
-        GreeterAsync port = ss.getSoapPort();
+        ss.setExecutor(executor);   //The executor is used for all asynchronous invocations that require callbacks
+        GreeterAsync port = ss.getSoapPort();//Il proxy con metodi sincroni e asincroni.
         String resp; 
+        
+        
+        //Chiamata classica sincrona cioe' il thread si blocca finche la risposta non e' ritornata.
+        //Se  String greetMeSometime(String me)  e'annotato @UseAsyncMethod, chiama  Future<?> greetMeSometimeAsync(final String me,   final AsyncHandler<GreetMeSometimeResponse> asyncHandler) 
+        //Fai la rimuovendo @UseAsyncMethod in GreeterImpl.java e verifica che il metodo standard e' invocato.
+        port.greetMeSometime("sincrona");
+        
+        
+        
         
         // callback method
         TestAsyncHandler testAsyncHandler = new TestAsyncHandler();
         System.out.println("Invoking greetMeSometimeAsync using callback object...");
-        Future<?> response = port.greetMeSometimeAsync(System.getProperty("user.name"), testAsyncHandler);
+        Future<?> response = port.greetMeSometimeAsync("stocazzo", testAsyncHandler);
         while (!response.isDone()) {
             Thread.sleep(100);
         }  

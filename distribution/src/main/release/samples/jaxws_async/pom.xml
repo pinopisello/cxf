@@ -33,7 +33,15 @@
         <wsdl.location>${basedir}/wsdl/hello_world_async.wsdl</wsdl.location>
     </properties>
     <build>
+    <finalName>jaxws_async</finalName>
         <plugins>
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                    <webXml>src/main/webapp/WEB-INF/web.xml</webXml>
+                </configuration>
+            </plugin>
             <plugin>
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
@@ -59,7 +67,7 @@
                                     <extraargs>
                                         <extraarg>-b</extraarg>
                                         <extraarg>${basedir}/wsdl/async_binding.xml</extraarg>
-                                    </extraargs>
+                                    </extraargs> 
                                 </wsdlOption>
                             </wsdlOptions>
                         </configuration>

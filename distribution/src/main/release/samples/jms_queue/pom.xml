@@ -73,9 +73,12 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>demo.jms_greeter.server.Server</mainClass>
+                                   <!-- Non server dato che locazione wsdl e' indicata in GreeterJMSImpl.java nell annotazione 
+                                       javax.jws.WebService(wsdlLocation)
+                                   
                                     <arguments>
                                         <argument>${wsdl.file}</argument>
-                                    </arguments>
+                                    </arguments> -->
                                 </configuration>
                             </execution>
                         </executions>

@@ -120,10 +120,11 @@
         </wsdl:operation>
     </wsdl:binding>
     <wsdl:service name="JMSGreeterService">
-        <wsdl:port binding="tns:JMSGreeterPortBinding" name="GreeterPort">
+        <wsdl:port binding="tns:JMSGreeterPortBinding" name="GreeterPort"> <!-- http://tools.ietf.org/id/draft-merrick-jms-uri-06.txt -->
         	<soap:address location="jms:queue:test.cxf.jmstransport.queue"/>
+        	<soapjms:replyToName>test.cxf.jmstransport.queue_return</soapjms:replyToName>
         	<soapjms:jndiConnectionFactoryName>ConnectionFactory</soapjms:jndiConnectionFactoryName>
-            <soapjms:jndiInitialContextFactory>org.apache.activemq.jndi.ActiveMQInitialContextFactory</soapjms:jndiInitialContextFactory>
+            <soapjms:jndiInitialContextFactory>org.apache.activemq.jndi.ActiveMQInitialContextFactory</soapjms:jndiInitialContextFactory>	
  			<soapjms:jndiURL>tcp://localhost:61616</soapjms:jndiURL>
         </wsdl:port>
     </wsdl:service>

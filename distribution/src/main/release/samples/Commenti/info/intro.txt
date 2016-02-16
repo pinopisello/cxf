@@ -86,23 +86,6 @@ Consente di scegliere client authentication, quale certificato usare serverside,
 
 
 
-=============	java_first_jms	    ==================
-SOAP over JMS usando ActiveMQ senza usare configurazione Spring.
-A partire da interfaccia java annotatata JAX-WS demo.service.HelloWorld, genera hello.wsdl .
-Per partire dal, wsdl vedi jms_spring_config.
-
-java2ws:[-Pserver]
-Genera il wsdl hello.wsdl a partire da SEI  demo.service.HelloWorld
-
-
-Server:[-Pserver]   
-Lancia ActiveMQ in ascolto su tcp  61616 
-JaxWsServerFactoryBean e' usato per pubblicare l endpoint HelloWorldImpl.java in ascolto sulla queue :
-jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
-
-Client:[-Pclient]   
-JaxWsServerFactoryBean e' usato per creare un proxy client e per inviare il messagio jms alla queue :
-jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
 
 
 =============	jax_rs_content_negotiation	    ==================
@@ -123,6 +106,25 @@ Solo il type definito in CustomerService [@Produces("")] funziona.Se l'header in
 il server ritorna error 6.
 
 
+=============	java_first_jms	    ==================
+SOAP over JMS usando ActiveMQ senza usare configurazione Spring.
+A partire da interfaccia java annotatata JAX-WS demo.service.HelloWorld, genera hello.wsdl .
+Per partire dal, wsdl vedi jms_spring_config.
+
+java2ws:[-Pserver]
+Genera il wsdl hello.wsdl a partire da SEI  demo.service.HelloWorld
+
+
+Server:[-Pserver]   
+Lancia ActiveMQ in ascolto su tcp  61616 
+JaxWsServerFactoryBean e' usato per pubblicare l endpoint HelloWorldImpl.java in ascolto sulla queue :
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
+
+Client:[-Pclient]   
+JaxWsServerFactoryBean e' usato per creare un proxy client e per inviare il messagio jms alla queue :
+jms:queue:test.cxf.jmstransport.queue?timeToLive=1000&jndiConnectionFactoryName=ConnectionFactory&jndiInitialContextFactory=org.apache.activemq.jndi.ActiveMQInitialContextFactory&jndiURL=tcp://localhost:61616
+
+
 
 =============	jms_spring_config	    ==================
 SOAP over JMS a partire dal WSDL [/jms_spring_config/src/main/config/CustomerService.wsdl] usando Spring configuration
@@ -138,7 +140,7 @@ com.example.customerservice.CustomerService.java
 
 [-Pjms.broker] => lancia ActiveMQ invocando activemq-maven-plugin:run  BrokerMojo.execute() in activemq-maven-plugin-5.8.0.jar
 Il broker e' istanza org.apache.activemq.broker.BrokerService.java in activemq-broker-5.12.0.jar
-Si puo evitare di lanciare il broker se si lancia activemq installato localmente.
+Si puo evitare di lanciare il broker se si lancia activemq installato localmente [startmq/stopmq in .bash_profile].
 
 [-Pserver] => esegue polling dei messaggi sulla queue jms:queue:test.queue.
 CustomerServiceSpringServer.java usa ClassPathXmlApplicationContext per lanciare  server-applicationContext.xml
@@ -155,6 +157,173 @@ A quel punto estrae CustomerServiceTester da Spring context che e' iniettato col
 Il client invia il messaggio con header Reply To=queue://endpoint-out-queue e ascolta x un  certo timeout per il messggio di risposta su tale queue.
 Se il timeout scade :java.lang.RuntimeException: Timeout receiving message with correlationId 11f3f0f934794e08931dd87bcd7f2b400000000000000001
 	at org.apache.cxf.transport.jms.JMSConduit.sendAndReceiveMessage(JMSConduit.java:236)
+
+
+=============	jms_queue	    ==================
+SOAP over JMS a partire dal WSDL [jms_queue/src/main/config/jms_greeter.wsdl] 
+SENZA usare Spring configuration per client e server.
+Quindi come jms_spring_config ma senza configurazione Spring.
+Genera interfaccia annotata JAX-WS (org.apache.cxf.jms_greeter.JMSGreeterPortType.java) in target/generated-sources/cxf
+
+Queue usata per outbound e' test.cxf.jmstransport.queue
+Queue inbound test.cxf.jmstransport.queue_return
+
+
+Il server non lancia ActiveMQ, semplicemente si connette ad esso.
+
+Dove sono definiti tutti i parametri della queue in, out, etc etc?
+Sono in jms_greeter.wsdl nela sezione  <wsdl:port>.
+
+        <wsdl:port binding="tns:JMSGreeterPortBinding" name="GreeterPort">
+        	<soap:address location="jms:queue:test.cxf.jmstransport.queue"/>
+        	<soapjms:jndiConnectionFactoryName>ConnectionFactory</soapjms:jndiConnectionFactoryName>
+            <soapjms:jndiInitialContextFactory>org.apache.activemq.jndi.ActiveMQInitialContextFactory</soapjms:jndiInitialContextFactory>
+ 			<soapjms:jndiURL>tcp://localhost:61616</soapjms:jndiURL>
+        </wsdl:port>
+        
+        
+Profili pom:
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy a partire al jms_greeter.wsdl in jms_queue/target/generated-sources/cxf.
+
+
+[-Pjms.broker] => lancia ActiveMQ invocando activemq-maven-plugin:run  BrokerMojo.execute() in activemq-maven-plugin-5.8.0.jar
+Il broker e' istanza org.apache.activemq.broker.BrokerService.java in activemq-broker-5.12.0.jar
+Si puo evitare di lanciare il broker se si lancia activemq installato localmente [startmq/stopmq in .bash_profile].
+
+
+[-Pserver] => lancia demo.jms_greeter.server.Server.java che istanzia GreeterJMSImpl e la pubblica Endpoint.publish(null, implementor);
+GreeterJMSImpl e' annotata @javax.jws.WebService(wsdlLocation = "file:./src/main/config/jms_greeter.wsdl")
+Durante il bootstrap, ReflectionServiceFactoryBean.buildServiceFromWSDL(url) parsa il wsdl e genera tutto il necessario.
+In particolare le informazioni riguardanti jms vengono caricati in JMSEndpoint.(EndpointInfo ei, String endpointUri).
+Altri parametri permessi ma non usati qui sono per esempio replyToName,priority,timeToLive (vedi http://tools.ietf.org/id/draft-merrick-jms-uri-06.txt)
+JMSEndpoint viene poi caricato in JMSConfiguration in JMSConfigFactory.createFromEndpoint() e poi in JMSDestination in JMSTransportFactory.getDestination().
+Questa JMSDestination viene storata in org.apache.cxf.endpoint.ServerImpl.
+Viene finalmente usata in JMSDestination.activate() dove  JMSDestination.createTargetDestinationListener()  crea PollingMessageListenerContainer viene istanziato e lanciato [ container.start();] .
+In PollingMessageListenerContainer.Poller.run() una jms session viene creata, un jms MessageConsumer loopa all infinito consumer.receive(1000).
+Quando il consumer riceve un messaggio lo passa listenerHandler ossia a  JMSDestination.onmessage() e da qui a ChainInitiationObserver.onMessage().
+Di qui una PhaseInterceptorChain viene creata e il messaggio viene processato da tutti i phase-interceptors incluso ServiceInvokerInterceptor
+che fa marshalling messaggio ed invoca metodo implementazione SEI GreeterJMSImpl.java
+Il risulato viene messo [per sayHi e' String] in Exchange.outmessgae.content e viene convertito in oggetto jaxb in WrapperClassOutInterceptor.handleMessage() [Object o2 = helper.createWrapperObject(objs);]
+Il risultato jaxb e' messo di nuovo Exchange.outmessgae.content e va a prendere il posto del precedente [String].
+Il messaggio con la risposta xml e'inviato alla response queue [temp queue creata dal client all invio request o secificata nel wsdl] in MessageSenderEndingInterceptor.handleMessage() => BackChannelConduit.sendExchange() => BackChannelConduit.send() 
+
+
+
+Client decide la replyToQueue in JMSConfiguration.getReplyDestination().
+A meno che una replyDestinationDest sia specificata new wsdl [<soap:address location="test.cxf.jmstransport.queue_return"/>], una temporary queue e' creata con  session.createTemporaryQueue().
+
+
+
+
+[-Pclient] =>lancia demo.jms_greeter.client.Client.java che usa org.apache.cxf.jms_greeter.JMSGreeterService.java [autogenerata e annotata @WebServiceClient]
+per ottenere instanza proxy che connette al server [JMSGreeterPortType] ed invoca i metodi remoti.
+Internamente un istanza org.apache.cxf.endpoint.ClientImpl e' cretata , la quale crea una PhaseInterceptorChain in doInvoke().
+Al solito PhaseInterceptorChain itera tutti gli interceptors ed invia il jms request in MessageSenderEndingInterceptor.handleMessage().
+Sempre nell esecuione questo metodo,JMSConduit.sendAndReceiveMessage() crea una javax.jms.Destination usando <soapjms:replyToName><soapjms:replyToName> nel wsdl, e instanzia un 
+MessageListenerContainer in ascolto su tale destination [test.cxf.jmstransport.queue_return].
+MessageListenerContainer.start() crea un Consumer su tale queue con un selector che cerca messaggi con JMSCorrelationID simile a quella del messaggio request [JMSCorrelationID LIKE 'ae68f9d399194f629a5b5d5169b617b5%']
+e setta JMSConduit come listener di tale consumer.
+Il resto e' lo stesso definito in jms_spring_config leggime.txt sezione INVIO-RICEZIONE MESSAGGI.
+Il processamento della response avviene in 2 thread coordinati.
+
+
+
+=============	jms_pubsub	    ==================
+
+SOAP over JMS a partire dal WSDL [jms_pubsub/src/main/config/jms_greeter.wsdl] 
+SENZA usare Spring configuration per client e server.
+Quindi come jms_spring_config ma senza configurazione Spring.
+Genera interfaccia annotata JAX-WS (org.apache.cxf.jms_greeter.JMSGreeterPortType.java) in target/generated-sources/cxf
+
+Dato che la request va su un topic con piu subscribers, tutti i metodi definiti in jms_greeter.wsdl sono "onenway" [greetMeOneWay()]. 
+Altrimenti non si saprebbe quale delle multiple response si dovrebbe usare ...
+
+Topic: jms:topic:test.cxf.jmstransport.topic
+
+
+Dove sono definiti tutti i parametri del topic ?
+Sono in jms_greeter.wsdl nela sezione  <wsdl:port>.
+
+        <wsdl:port binding="tns:JMSGreeterPortBinding" name="GreeterPort">
+        	<soap:address location="jms:topic:test.cxf.jmstransport.topic"/>
+        	<soapjms:jndiConnectionFactoryName>ConnectionFactory</soapjms:jndiConnectionFactoryName>
+            <soapjms:jndiInitialContextFactory>org.apache.activemq.jndi.ActiveMQInitialContextFactory</soapjms:jndiInitialContextFactory>
+ 			<soapjms:jndiURL>tcp://localhost:61616</soapjms:jndiURL>
+        </wsdl:port>
+        
+Profili pom:
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy a partire al jms_greeter.wsdl in jms_queue/target/generated-sources/cxf.
+
+
+[-Pserver] =>come per jms_queue , ma con la differenza che dopo ServiceInvokerInterceptor non c'e' ne WrapperClassOutInterceptor ne MessageSenderEndingInterceptor
+quindi una volta invocato l endpoint [GreeterJMSImpl], non si cerca di inviare nullo indietro al client.
+
+[-Pclient] => come per jms_queue , ma con la differenza che MessageSenderEndingInterceptor.handleMessage() =>JMSConduit.sendExchange() controlla se l'invocazione e'
+oneway [exchange.isOneWay()] ed in tal caso chiama  JMSConduit.sendMessage() INVECE di JMSConduit.sendAndReceiveMessage().
+In questo caso si genera un JMSSender che invia il messaggio, ma nessun consumer,listerners,phasechain, etc per processare la risposta.
+
+
+===============  jaxws_async   ====================
+SOAP over Http "asincrono" a partire dal WSDL [jaxws_async/wsdl/hello_world_async.wsdl] usando Spring configuration [<jaxws:endpoint] per il server.
+Lato client si usano le classi/proxy generate dal wsdl.
+ Genera interfaccia annotata JAX-WS
+Spring  <jaxws:endpoint> per configurare WS server .
+Proxy generato da cxf-codegen-plugin  [org.apache.hello_world_async_soap_http.SOAPService] per il client  client.
+
+wsdl:  http://127.0.0.1:8080/jaxws_async/services//SoapContext?wsdl
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy a partire dal jaxws_async/wsdl/hello_world_async.wsdl con il goal wsdl2java.
+Da notare che nel pom.xml il goal wsdl2java e' invocato con il parametro extra :-b ${basedir}/wsdl/async_binding.xml
+Se si lancia generate-sources senza tale extra param, gli extra/asynch methods nella SEI non vengono generati.
+
+
+
+[tomcat7-maven-plugin] => non usare -Pserver perche usa Endpoint.publish(address, implementor).
+Lancia CXFServlet che lancia Spring che legge WEB-INF/cxf-servlet.xml ed instanzia Spring [CXFServlet.createSpringContext() ]
+L'endpoint e' configurato come descritto da Spring-bean-setup.txt.
+
+
+[-Pclient]=>lancia demo.hw.client.Client.java il quale esegue i tre tipi di chiamata [sincrona, asinc-polling,asinc-callback] che
+ atterrano sullo stesso metodo lato server [String greetMeSometime(String me) ].
+
+===============  Throttling   ====================
+
+SOAP over http a partire da wsdl ma usando due features:
+
+cxf-rt-features-throttling => permette di ritardare (quindi diminuire il throughput) una request [ThrottlingInterceptor/ThrottlingManager]
+
+cxf-rt-features-metrics    => cattura metriche [endpoint/customers] che permettono di effettuare decisioni in ThrottlingManager .
+
+Le metriche sono pubblicate in jmx console [service:jmx:rmi:///jndi/rmi://localhost:9913/jmxrmi]
+
+Per ogni request una ThrottleResponse e' generata ed in base ad essa si setta sulla response:
+
+delay in ms
+responseCode
+errorMessage
+responseHeaders
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy in throttling/target/generated-sources/cxf a partire dal throttling/src/main/config/hello_world.wsdl con il goal wsdl2java.
+
+
+[-Pserver] => lancia demo.throttling.server.Server.java che usa  Endpoint.publish() per lanciare GreeterImpl.java endpoint su jetty.
+Da notare come CodahaleMetricsProvider.setupJMXReporter(b, registry) 
+
+[[-Pclient]=>lancia demo.throttling.client.Client.java il quale esegue su thread separati chiamate a raffica () con diverse authorizations (Tom,Rob,Vince,Malcolm)
+ atterrano sullo stesso metodo lato server [String greetMeSometime(String me) ] ma che sono throttled in diverso modo [PremiumCustomer,PreferredCustomer,RegularCustomer]
+
+
+
+===============  WS-Addressing   ====================
+
+
+
+
 
 
 

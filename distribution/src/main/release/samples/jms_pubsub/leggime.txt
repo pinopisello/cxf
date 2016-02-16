@@ -1,0 +1,34 @@
+SOAP over JMS a partire dal WSDL [jms_pubsub/src/main/config/jms_greeter.wsdl] 
+SENZA usare Spring configuration per client e server.
+Quindi come jms_spring_config ma senza configurazione Spring.
+Genera interfaccia annotata JAX-WS (org.apache.cxf.jms_greeter.JMSGreeterPortType.java) in target/generated-sources/cxf
+
+Dato che la request va su un topic con piu subscribers, tutti i metodi definiti in jms_greeter.wsdl sono "onenway" [greetMeOneWay()]. 
+Altrimenti non si saprebbe quale delle multiple response si dovrebbe usare ...
+
+Topic: jms:topic:test.cxf.jmstransport.topic
+
+
+Dove sono definiti tutti i parametri del topic ?
+Sono in jms_greeter.wsdl nela sezione  <wsdl:port>.
+
+        <wsdl:port binding="tns:JMSGreeterPortBinding" name="GreeterPort">
+        	<soap:address location="jms:topic:test.cxf.jmstransport.topic"/>
+        	<soapjms:jndiConnectionFactoryName>ConnectionFactory</soapjms:jndiConnectionFactoryName>
+            <soapjms:jndiInitialContextFactory>org.apache.activemq.jndi.ActiveMQInitialContextFactory</soapjms:jndiInitialContextFactory>
+ 			<soapjms:jndiURL>tcp://localhost:61616</soapjms:jndiURL>
+        </wsdl:port>
+        
+Profili pom:
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy a partire al jms_greeter.wsdl in jms_queue/target/generated-sources/cxf.
+
+
+[-Pserver] =>come per jms_queue , ma con la differenza che dopo ServiceInvokerInterceptor non c'e' ne WrapperClassOutInterceptor ne MessageSenderEndingInterceptor
+quindi una volta invocato l endpoint [GreeterJMSImpl], non si cerca di inviare nullo indietro al client.
+
+[-Pclient] => come per jms_queue , ma con la differenza che MessageSenderEndingInterceptor.handleMessage() =>JMSConduit.sendExchange() controlla se l'invocazione e'
+oneway [exchange.isOneWay()] ed in tal caso chiama  JMSConduit.sendMessage() INVECE di JMSConduit.sendAndReceiveMessage().
+In questo caso si genera un JMSSender che invia il messaggio, ma nessun consumer,listerners,phasechain, etc per processare la risposta.
+
+

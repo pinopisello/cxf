@@ -1,0 +1,194 @@
+SOAP over http a partire da wsdl [throttling/src/main/config/hello_world.wsdl].
+In questo esempio si usano due projects/features in particolare: cxf-rt-features-throttling e cxf-rt-features-metrics
+
+cxf-rt-features-throttling => permette di ritardare (quindi diminuire il throughput) una request [ThrottlingInterceptor/ThrottlingManager]
+
+cxf-rt-features-metrics    => cattura metriche [endpoint/customers] che permettono di effettuare decisioni in ThrottlingManager .
+							  Usa http://metrics.dropwizard.io/3.1.0/manual/
+
+Jconsole url:               service:jmx:rmi:///jndi/rmi://localhost:9913/jmxrmi
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy in throttling/target/generated-sources/cxf a partire dal throttling/src/main/config/hello_world.wsdl con il goal wsdl2java.
+
+
+[-Pserver] => lancia demo.throttling.server.Server.java che usa  Endpoint.publish() per lanciare GreeterImpl.java endpoint su jetty.
+Da notare come CodahaleMetricsProvider.setupJMXReporter(b, registry) 
+
+===== Inizializzazione jmx =====
+
+Fase 1) Caricamento bus extensions.
+
+Quando si lancia il Server, si inizializza il Bus [ Bus b = new CXFBusFactory().createBus(null, properties)].
+CXFBusFactory().createBus =>  new ExtensionManagerBus(e, properties) => ExtensionManagerImpl.load(META-INF/cxf/bus-extensions.txt)  
+per tutti i jars nel classpath che hanno  META-INF/cxf/bus-extensions.txt , tale file viene letto la prima riga
+e un Extension viene generato con Extension.classname=part[0] ,Extension.interfacename=part[1],Extension.deferred=part[2],Extension.optional=part[3]
+Questi Extensions vengono aggiunti a ExtensionManagerImpl.ordered .
+
+
+
+
+Fase 2)Instaziamento extension InstrumentationManagerImpl
+
+ CXFBusFactory().createBus => ExtensionManagerBus.initialize => CXFBusLifeCycleManager.initComplete => ExtensionManagerImpl.getBeansOfType(BusLifeCycleListener) 
+Qui si caricano e registrano tutti le Extensions [ExtensionManagerImpl.ordered] che implementano BusLifeCycleListener.java.
+InstrumentationManagerImpl implementa BusLifeCycleListener e viene invocato il suo costruttore.
+ExtensionManagerImpl.getBeansOfType(BusLifeCycleListener) => ExtensionManagerImpl.loadAndRegister(InstrumentationManagerImpl)=>Extension.load(InstrumentationManagerImpl)
+ => new InstrumentationManagerImpl(ExtensionManagerBus) => InstrumentationManagerImpl.readJMXProperties
+
+In Server.java  "bus.jmx.usePlatformMBeanServer" e "bus.jmx.enabled" sono settate a true quindi 
+InstrumentationManagerImpl.usePlatformMBeanServer=true,InstrumentationManagerImpl.enabled=true
+
+ExtensionManagerImpl.loadAndRegister() continua ed invoca =>  InstrumentationManagerImpl.init() =>
+
+           InstrumentationManagerImpl.mbs = new JmxMBeanServer() [ ManagementFactory.getPlatformMBeanServer();]
+		   InstrumentationManagerImpl.mcf =  new MBServerConnectorFactory [MBServerConnectorFactory.getInstance()]
+		   mcf.jmxServiceURL=service:jmx:rmi:///jndi/rmi://localhost:9913/jmxrmi
+           mcf.createConnector() =>starts rmi connector su porta 
+
+Per vedere gli Mbean esposto lancia jconsole e puntala verso "service:jmx:rmi:///jndi/rmi://localhost:9913/jmxrmi"
+Sono esposti un bean per il Bus ed uno per l'endpoint che usa il bus.
+
+
+3)Creazione del JMXReporter
+Le metrice vengono raccolte e registrate in MetricRegistry ed esportate in JMX da JmxReporter.
+Tutto avviene in CodahaleMetricsProvider.setupJMXReporter(b, registry); [Server.java]
+Un JmxReporter viene istanziato passando un MetricRegistry,MBeanServer,domain,ObjectNameFactory.
+Internamente a JmxReporter, c'e' un JmxListener che viene aggiunto a MetricRegistry.listener.
+Questo e' notificato ogni volta che una metrica in MetricRegistry viene aggiunta.
+MetricRegistry.onMetricAdded() => MetricRegistry.notifyListenerOfAddedMetric() => JmxListener.onTimerAdded() => JmxListener.registerMBean(new JmxTimer(timer...))
+
+Da notare che per ogni tipo di metrica c'e' un corrispettivo JMX bean che espone gli attributi che si vedono in JConsole:
+
+Timer : JmxTimer
+Meter : JmxMeter
+
+I metodi e attributi visibili in JMS sono quelli esposti dalla colonna dex ma essi effettuano chiamate verso oggetti colonna sin di cui sono wrappers.
+
+In JmxListener.registerMBean() la metrica "stessa" viene registrata  a MBeanServer [mBeanServer.registerMBean(mBean, objectName);]
+E' qui che la metrica viene esposta in JMX (e quindi visibile in jconsole!!)
+
+Per questa app le metriche pubblicate sono sono in due namespaces:
+
+Metriche Endpoint/operation:  org.apache.cxf:bus.id=cxf1513826170,type=Metrics.Server,service="{http://apache.org/hello_world_soap_http}SOAPService",port="SoapPort",Attribute=Totals"
+Metrice istance Customer:     demo.server:customer=Tom
+
+
+
+
+===========  Metriche ENDPOINT [MetricsMessageInInterceptor/MetricsMessageInPreInvokeInterceptor/MetricsMessageOutInterceptor/CountingInputStream/CountingOutputStream]:  ==================
+
+MetricsMessageInInterceptor e' registrato nella fase "receive"
+Per ogni request:
+1)crea istanza ExchangeMetrics e la mette in message.exchange.put(ExchangeMetrics.class, ctx);
+2)cerca in message.exchange.endpoint (e' un map <String,Object>) una key="org.apache.cxf.metrics.MetricsContext"
+	Non la trova [prima invocazione endpoint]
+	2/a/1)se non lo trova, cerca ogni bean tipo MetricsProvider.class e trova CodahaleMetricsProvider [vedi Server.java] AbstractMetricsInterceptor.createEndpointMetrics()
+	2/a/2)Crea MetricsContext invocando CodahaleMetricsProvider.createEndpointContext(final Endpoint endpoint, boolean isClient, String clientId) 
+	    Il basename di questo  CodahaleMetricsContext e' del tipo org.apache.cxf:bus.id=cxf1843540445,type=Metrics.Server,service="{http://apache.org/hello_world_soap_http}SOAPService",port="SoapPort"
+	2/a/3)mette MetricsContext in message.exchange.endpoint (e' un map <String,Object>) ed in message.exchange.ExchangeMetrics
+	
+	La trova [>1 invocazione endpoint]
+	2b/1)mette il MetricsContext trovato nell endpoint in message.exchange.ExchangeMetrics
+
+3)Instanzia un CountingInputStream da message.getContent(InputStream.class)
+ CountingInputStream contiene :
+  una reference al message.inputstream 
+  un counter dei bytes letti
+  un mark 
+ CountingInputStream.read() viene invocato dal StaxInInterceptor nella fase post-stream ed il count aggiornato dei bytes letti.
+ CountingInputStream viene aggiunto a message [message.setContent(InputStream.class, newIn)] e message.exchange[message.getExchange().put(CountingInputStream.class, newIn)]
+ 4) message.exchange.ExchangeMetrics.start() viene chiamato (setta ExchangeMetrics.startTime)e  message.exchange.endpoint.CodahaleMetricsContext.start()
+ In breve il exchange.endpoint.CodahaleMetricsContext.metrixcontext.inFlight +1 
+
+
+
+MetricsMessageInPreInvokeInterceptor e' registrato nella fase "pre-invoke"
+1) message.exchange.ExchangeMetrics e' estratta e passata in AbstractMetricsInterceptor.addOperationMetrics().
+2) message.exchange.BindingOperationInfo e' cercato sen non trovato creato.Poi boi.getProperty(MetricsContext.class.getName())
+Se trovato usato altrimenti un CodahaleMetricsContext [org.apache.cxf:bus.id=cxf1288806924,type=Metrics.Server,service="{http://apache.org/hello_world_soap_http}SOAPService",port="SoapPort",Operation=greetMe,] 
+e' creato in AbstractMetricsInterceptor.createMetricsContextForOperation().
+CodahaleMetricsContext e' aggiunto in message.exchange.ExchangeMetrics e in message.exchange.BindingOperationInfo
+
+
+CountingOutInterceptor  e' registrato nella fase "pre-invoke"
+Instanzia un CountingOutputStream da message.getContent(OutputStream.class)
+ CountingInputStream contiene :
+  una reference al message.outputstream 
+  un counter dei bytes scritti response
+  un mark 
+ CountingOutputStream.write() viene invocato dal BareOutInterceptor/StaxOutInterceptor nella fase marshal ed il count aggiornato dei bytes scritti.
+ CountingOutputStream viene aggiunto a message [message.setContent(OutputStream.class, newIn)] e message.exchange[message.getExchange().put(CountingOutputStream.class, newOut)]
+ 
+
+
+MetricsMessageInPostInvokeInterceptor non usato
+
+
+MetricsMessageOutInterceptor e' registrato nella fase "prepare-send-ending"
+MetricsMessageOutInterceptor.handleMessage() => MetricsMessageOutInterceptor.stop() => message.exchange.ExchangeMetrics.stop()
+Qui succedono le seguenti cose:
+
+int inSize = message.exchange.CountingInputStream.count
+int outSize = message.exchange.CountingOutputStream.count
+long l = System.nanoTime() - startTime;
+message.exchange.contexts.stop(l, inSize, outSize, exchange)  => Per is seguenti CodahaleMetricsContext :
+ 
+Endpoint  =>   org.apache.cxf:bus.id=cxf103341413,type=Metrics.Server,service="{http://apache.org/hello_world_soap_http}SOAPService",port="SoapPort",
+Operation =>   org.apache.cxf:bus.id=cxf103341413,type=Metrics.Server,service="{http://apache.org/hello_world_soap_http}SOAPService",port="SoapPort",Operation=greetMe,
+
+le seguenti variabili sono aggiornate:
+totals
+incomingData.mark(inSize);
+outgoingData.mark(outSize);
+checkedApplicationFaults
+uncheckedApplicationFaults
+runtimeFaults
+logicalRuntimeFaults
+inFlight
+
+
+
+
+===========  Metriche CUSTOMERS [CustomerMetricsInterceptor,ThrottlingInterceptor/ThrottlingManager,MetricsMessageOutInterceptor]  ==================
+
+Metriche Customer [CustomerMetricsInterceptor prima, ThrottlingInterceptor/ThrottlingManager dopo e MetricsMessageOutInterceptor per finire.]:
+CustomerMetricsInterceptor e' registrato nella fase "pre-stream"
+Obbiettivo di questo interceptor e' controllare che la request had un header "Authorization" con un user che matcha uno dei CustomerMetricsInterceptor.customers.
+A quel punto si estre 
+
+1/3)CustomerMetricsInterceptor esegue in handleMessage():
+		 1) Estrae ExchangeMetrics da message.exchange[message.getExchange().get(ExchangeMetrics.class)]
+         2) legge header Authorization dalla http request ed estrae nome customer dal valore header [base64 user:passwd] 
+         3) seleziona l'istanza Customer nella Map customers con nome uguale a quelo step 2.Se non la trova RuntimeException e stop!
+         4) cerca Customer.metrics e se non lo trova crea in Customer.metrics un CodahaleMetricsContext con 5 timers, un counter e due meters con nomi del tipo "demo.server:customer=Tom,type=Customer,"
+         5) aggiunge Customer.metrics #4 in  message.exchange.ExchangeMetrics del #1 e chiama Customer.metrics.start()
+         6) metto l'istanza Customer matchata in message.exchange
+         
+2/3)ThrottlingInterceptor e' registrato in pre-stream .
+Usa ThrottlingManager per estrarre ThrottleResponse.
+Estrae  istanza Customer da  message.exchange settata da #6 di CustomerMetricsInterceptor ed invoca Customer.throttle(r).
+Questo metodo in base allo stato Customer.metrics, ritorna una ThrottleResponse che eventualmente ritarda [in ThrottlingInterceptor],setta http response code o headers,
+la risposta.
+
+3/3)MetricsMessageOutInterceptor e' registrato in prepare-send-ending :
+Estrae ExchangeMetrics da message.exchange.get(ExchangeMetrics.class)  ed invoca ExchangeMetrics.stop() .
+Questo itera tutti i contexts in esso registrati [Customer.metrics incluso vedi #5] ed invoca stop su di essi.
+Customer.metrics.stop() fa l'update delle metriche ossia:
+Customer.metrics.totals
+Customer.metrics.incomingData
+Customer.metrics.outgoingData
+Customer.metrics.checkedApplicationFaults
+Customer.metrics.uncheckedApplicationFaults
+Customer.metrics.runtimeFaults
+
+
+
+[-Pclient]=>lancia demo.throttling.client.Client.java il quale esegue su thread separati chiamate a raffica () con diverse authorizations (Tom,Rob,Vince,Malcolm)
+ atterrano sullo stesso metodo lato server [String greetMeSometime(String me) ] ma che sono throttled in diverso modo [PremiumCustomer,PreferredCustomer,RegularCustomer]
+
+
+
+
+
+

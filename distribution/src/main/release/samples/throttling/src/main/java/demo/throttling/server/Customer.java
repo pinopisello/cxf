@@ -45,35 +45,42 @@ public abstract class Customer {
 
     public abstract void throttle(ThrottleResponse r);
     
-    
+    //Accesso illimitato!
     public static class PremiumCustomer extends Customer {
         public PremiumCustomer(String n) {
             super(n);
         }
         public void throttle(ThrottleResponse m) {
+            System.out.println("");
             //Premium customers are unthrottled
         }
     }
-    public static class PreferredCustomer extends Customer {
+    
+    
+    //Max  50 req/sec
+    public static class PreferredCustomer extends Customer { 
         public PreferredCustomer(String n) {
             super(n);
         }
         public void throttle(ThrottleResponse m) {
             //System.out.println("p  " + metrics.getTotals().getOneMinuteRate()
             // + "  " + metrics.getTotals().getCount());
-            //Preferred customers are unthrottled until they hit 100req/sec, then start delaying by .05 seconds
+            //Preferred customers are unthrottled until they hit 100req/sec, then start delaying by 20 msecs [throughput = 50 req/sec]
             //(drops to max of 50req/sec until below the 100req/sec rate)
             if (metrics.getTotals().getOneMinuteRate() > 100) {
                 m.setDelay(20);
             }
         }
     }
+    
+    //Max  4 req/sec
+    //Se 5minutes-rate>10 req/sec abbassa rate a 2 req/sec
     public static class RegularCustomer extends Customer {
         public RegularCustomer(String n) {
             super(n);
         }
         public void throttle(ThrottleResponse m) {
-            //Regular customers are unthrottled until they hit 25req/sec, then start delaying by 0.25 seconds 
+            //Regular customers are unthrottled until they hit 25req/sec, then start delaying by 250 ms [throughput = 4 req/sec]
             //(drops to max of 4req/sec until below the 25req/sec rate)
             if (metrics.getTotals().getOneMinuteRate() > 25) {
                 m.setDelay(250);
@@ -85,6 +92,11 @@ public abstract class Customer {
             }
         }
     }
+    
+    
+    //Max 10 req/sec
+    //Se 1minutes-rate>5 req/sec abbassa rate a 1 req/sec
+    //Se 5minutes-rate>1 req/sec abbassa rate a 0,5 req/sec
     public static class CheapCustomer extends Customer {
         public CheapCustomer(String n) {
             super(n);
@@ -106,6 +118,9 @@ public abstract class Customer {
         }
     }
 
+    
+    //Max 10 req/sec
+    //Dopo 10 req ritorna error 429.
     public static class TrialCustomer extends Customer {
         long lastTime = System.currentTimeMillis();
         public TrialCustomer(String n) {

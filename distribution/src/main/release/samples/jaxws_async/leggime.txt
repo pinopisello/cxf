@@ -1,0 +1,73 @@
+SOAP over Http "asincrono" a partire dal WSDL [jaxws_async/wsdl/hello_world_async.wsdl] usando Spring configuration [<jaxws:endpoint] per il server.
+Lato client si usano le classi/proxy generate dal wsdl.
+ Genera interfaccia annotata JAX-WS
+Spring  <jaxws:endpoint> per configurare WS server .
+Proxy generato da cxf-codegen-plugin  [org.apache.hello_world_async_soap_http.SOAPService] per il client  client.
+
+wsdl:  http://127.0.0.1:8080/jaxws_async/services//SoapContext?wsdl
+
+
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy a partire dal jaxws_async/wsdl/hello_world_async.wsdl con il goal wsdl2java.
+Da notare che nel pom.xml il goal wsdl2java e' invocato con il parametro extra :-b ${basedir}/wsdl/async_binding.xml
+Se si lancia generate-sources senza tale extra param, gli extra/asynch methods nella SEI non vengono generati.
+
+
+Cio' fa si che per ogni operation definita nel wsdl  sono prodotti 3 metodi nella SEI:
+
+1/3)standard         String greetMeSometime(String requestType)
+2/3)asynch polling   Response<GreetMeSometimeResponse> greetMeSometimeAsync(String requestType)
+3/3)asynch callbak   Future<?> greetMeSometimeAsync(String requestType,AsyncHandler<GreetMeSometimeResponse> asyncHandler);
+
+
+ATTENZIONE!! I metodi asincroni sono intesi ad uso del client.
+Li si possono anche implementare lato server [vedi @UseAsyncMethod per forzare il server ad usare implementazione asincrona invece della sincrona]
+ma la loro esistenza serve esclusinvamente a fornire al client iterfaccia asincrona.
+Cio vuol dire che lato server si puo/deve solo implementare il metodo sincrono [String greetMeSometime(String me) ].
+Se si annota String greetMeSometime(String me con @UseAsyncMethod, allora lato server verra invocato  
+Future<?> greetMeSometimeAsync(final String me,   final AsyncHandler<GreetMeSometimeResponse> asyncHandler) 
+
+
+
+
+[tomcat7-maven-plugin] => non usare -Pserver perche usa Endpoint.publish(address, implementor).
+Lancia CXFServlet che lancia Spring che legge WEB-INF/cxf-servlet.xml ed instanzia Spring [CXFServlet.createSpringContext() ]
+L'endpoint e' configurato come descritto da Spring-bean-setup.txt.
+
+
+[-Pclient]=>lancia demo.hw.client.Client.java il quale esegue i tre tipi di chiamata [sincrona, asinc-polling,asinc-callback] che
+ atterrano sullo stesso metodo lato server [String greetMeSometime(String me) ].
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -19,9 +19,7 @@
 
 package demo.throttling.server;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.xml.ws.Endpoint;
@@ -30,67 +28,63 @@ import com.codahale.metrics.MetricRegistry;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.bus.CXFBusFactory;
-import org.apache.cxf.message.Message;
 import org.apache.cxf.metrics.MetricsFeature;
 import org.apache.cxf.metrics.codahale.CodahaleMetricsProvider;
-import org.apache.cxf.phase.Phase;
-import org.apache.cxf.throttling.ThrottleResponse;
 import org.apache.cxf.throttling.ThrottlingFeature;
 import org.apache.cxf.throttling.ThrottlingManager;
 
 public class Server {
-    Map<String, Customer> customers = new HashMap<>();
+
     
     protected Server() throws Exception {
         System.out.println("Starting Server");
 
-        customers.put("Tom", new Customer.PremiumCustomer("Tom"));
-        customers.put("Rob", new Customer.PreferredCustomer("Rob"));
-        customers.put("Vince", new Customer.RegularCustomer("Vince"));
-        customers.put("Malcolm", new Customer.CheapCustomer("Malcolm"));
-        customers.put("Jonas", new Customer.TrialCustomer("Jonas"));
-        
+
+        //==========   JMX   ================
+        //abilito jmx [InstrumentationManagerImpl come una bus extension] e pubblia mbean per il bus e uno per l.endpoint SoapPort
         Map<String, Object> properties = new HashMap<>();
         properties.put("bus.jmx.usePlatformMBeanServer", Boolean.TRUE);
         properties.put("bus.jmx.enabled", Boolean.TRUE);
         Bus b = new CXFBusFactory().createBus(null, properties);
-        MetricRegistry registry = new MetricRegistry();
-        CodahaleMetricsProvider.setupJMXReporter(b, registry);
-        b.setExtension(registry, MetricRegistry.class);        
         
-        ThrottlingManager manager = new ThrottlingManager() {
-            @Override
-            public ThrottleResponse getThrottleResponse(String phase, Message m) {
-                ThrottleResponse r = new ThrottleResponse();
-                if (m.get("THROTTLED") != null) {
-                    return null;
-                }
-                m.put("THROTTLED", true);
-                Customer c = m.getExchange().get(Customer.class);
-                c.throttle(r);
-                return r;
-            }
-
-            @Override
-            public List<String> getDecisionPhases() {
-                return Collections.singletonList(Phase.PRE_STREAM);
-            }
-
-        };
-        b.getInInterceptors().add(new CustomerMetricsInterceptor(registry, customers));
+        
+        
+        //============== cxf-rt-features-metrics : Endpoint  metrics  =====================
+        //MetricRegistry contiene tutti le metriche che misurano l'applicazione [ Meters,Timers,Counters,Gauges,...]
+        //Contiene metriche Customer.metrics e sendpoint.metrics
+        MetricRegistry registry = new MetricRegistry();          //metrics-core.jar  https://dropwizard.github.io/metrics/3.1.0/
+        
+        
+        //CodahaleMetricsProvider setta un JmxReporter che pubblic le metriche su jmx 
+        CodahaleMetricsProvider.setupJMXReporter(b, registry);   //cxf-rt-features-metrics  [dipende da metrics-core.jar]
+        b.setExtension(registry, MetricRegistry.class);          //Setta MetricRegistry come bus extension.    
+        
+        
+        //============ cxf-rt-features-throttling  ====================
+        //ThrottlingManager e' una feature che si registra nella Phase.PRE_STREAM 
+        //Legge il Message m in arrivo ed estrae Customer.class da m.getExchange().get(Customer.class)
+        //E' l'istanza Customer che, in base al tipo [RegularCustomer,PreferredCustomer,PremiumCustomer] ritorna 
+        //una ThrottleResponse che influenza come/quando la response viene ritornata al client.
+        ThrottlingManager manager = new ThrottlingManagerImpl();  //cxf-rt-features-throttling
+            
+        //Aggiungo CustomerMetricsInterceptor al bus che eegue in PRE_STREAM
+        b.getInInterceptors().add(new CustomerMetricsInterceptor(registry));
+        
+        
+        
         
         Object implementor = new GreeterImpl();
-        String address = "http://localhost:9001/SoapContext/SoapPort";
+        String address = "http://localhost:9002/SoapContext/SoapPort";
         Endpoint.publish(address, implementor, 
                          new MetricsFeature(),
-                         new ThrottlingFeature(manager));
+                         new ThrottlingFeature(manager));  //cxf-rt-features-throttling
     }
 
     public static void main(String args[]) throws Exception {
         new Server();
         System.out.println("Server ready...");
 
-        Thread.sleep(5 * 60 * 1000);
+        Thread.sleep(5 * 60 * 100000);
         System.out.println("Server exiting");
         System.exit(0);
     }

@@ -55,7 +55,7 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
     private static final Charset UTF8 = Charset.forName("utf-8");
     private static final String NO_UTILS_QUERY_KEY = "nojsutils";
     private static final String CODE_QUERY_KEY = "js";
-    private static final String TRANSFORM_SKIP = "transform.skip";
+  //  private static final String TRANSFORM_SKIP = "transform.skip";
   //  private Interceptor<Message> wsdlGetOutInterceptor = new WSDLGetOutInterceptor();
     
     
@@ -106,7 +106,8 @@ public class JavascriptGetInterceptor extends AbstractPhaseInterceptor<Message> 
                 out.getInterceptorChain().remove(inInterceptor);
             }
         }*/
-        //Non occorre continuare con gli altri rimanenti.Altrimenti ServiceInvokerInterceptor cerca un endpoint per il js e fallisce.
+        //Non occorre continuare con gli altri rimanenti.Altrimenti ServiceInvokerInterceptor
+        //cerca un endpoint per il js e fallisce.
         message.getInterceptorChain().doInterceptStartingAt(
                 message,
                 OutgoingChainInterceptor.class.getName());

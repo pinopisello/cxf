@@ -73,14 +73,16 @@
                             <execution>
                                 <phase>test</phase>
                                 <goals>
-                                    <goal>exec</goal>
+                                    <goal>java</goal>
                                 </goals>
                                 <configuration>
                                     <executable>java</executable>
+                                    <mainClass>demo.throttling.server.Server</mainClass>
                                     <arguments>
-                                        <argument>-classpath</argument>
+                                    
+                                       <!--  <argument>-classpath</argument>
                                         <classpath />
-                                        <argument>demo.throttling.server.Server</argument>
+                                        <argument>demo.throttling.server.Server</argument>--> 
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -101,16 +103,19 @@
                             <execution>
                                 <phase>test</phase>
                                 <goals>
-                                    <goal>exec</goal>
+                                    <goal>java</goal>
                                 </goals>
                                 <configuration>
                                     <executable>java</executable>
+                                    <mainClass>demo.throttling.client.Client</mainClass>
                                     <arguments>
+                                     <!--     
                                         <argument>-classpath</argument>
                                         <classpath />
                                         <argument>demo.throttling.client.Client</argument>
+                                        -->
                                         <argument>${wsdl.location}</argument>
-                                    </arguments>
+                                    </arguments> 
                                 </configuration>
                             </execution>
                         </executions>

@@ -38,31 +38,38 @@ import org.apache.hello_world_async_soap_http.types.GreetMeSometimeResponse;
             targetNamespace = "http://apache.org/hello_world_async_soap_http")
                   
 public class GreeterImpl implements GreeterAsync {
-    private static final Logger LOG = 
-        Logger.getLogger(GreeterImpl.class.getPackage().getName());
+    private static final Logger LOG =  Logger.getLogger(GreeterImpl.class.getPackage().getName());
  
     /* (non-Javadoc)
      * @see org.apache.hello_world_soap_http.Greeter#greetMeSometime(java.lang.String)
      */
-    @UseAsyncMethod
+    //@UseAsyncMethod
     public String greetMeSometime(String me) {
         LOG.info("Executing operation greetMeSometime synchronously");
         System.out.println("Executing operation greetMeSometime synchronously\n");
+        try{
+            Thread.sleep(10000);
+        }catch(Exception e){}
         return "How are you " + me;
     }
     
-    public Future<?> greetMeSometimeAsync(final String me, 
-                                           final AsyncHandler<GreetMeSometimeResponse> asyncHandler) {
+    /**
+     *   Invocazione asincrona tipo "Callback" .
+     *   Server invoca AsyncHandler quando ha fatto e il client a quel punto riceve risposta.
+     */
+    public Future<?> greetMeSometimeAsync(final String me,   final AsyncHandler<GreetMeSometimeResponse> asyncHandler) {
         LOG.info("Executing operation greetMeSometimeAsync asynchronously");
         System.out.println("Executing operation greetMeSometimeAsync asynchronously\n");
-        final ServerAsyncResponse<GreetMeSometimeResponse> r 
-            = new ServerAsyncResponse<GreetMeSometimeResponse>();
+        final ServerAsyncResponse<GreetMeSometimeResponse> r   = new ServerAsyncResponse<GreetMeSometimeResponse>();
         new Thread() {
             public void run() {
                 GreetMeSometimeResponse resp = new GreetMeSometimeResponse();
                 resp.setResponseType("How are you " + me);
                 r.set(resp);
                 System.out.println("Responding on background thread\n");
+                try{
+                    Thread.sleep(15000);
+                }catch(Exception e){}
                 asyncHandler.handleResponse(r);
             }
         } .start();
@@ -70,7 +77,16 @@ public class GreeterImpl implements GreeterAsync {
         return r; 
     }
     
+    
+    /**
+     *   Invocazione asincrona tipo "Polling" Response.isDone() ...
+     */
+    
+
     public Response<GreetMeSometimeResponse> greetMeSometimeAsync(String requestType) {
+        try{
+            Thread.sleep(15000);
+        }catch(Exception e){}
         return null; 
         /*not called */
     }

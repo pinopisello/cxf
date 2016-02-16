@@ -47,28 +47,31 @@ public final class Client implements Runnable {
     private final String username;
     private final SOAPService service;
     private volatile boolean doStop;
+    private static int invocazioni_per_client=10000;
+    
     private Client(String name, SOAPService service) {
         this.username = name;
         this.service = service;
     }
     
     @Override
-    public void run() {
+    public void run() {//Invoca Greeter.greetMe() invocazioni_per_client volte a raffica!!!
         long start = System.currentTimeMillis();
         int x = 0;
         boolean exceeded = false;
-        try (Greeter port = service.getSoapPort(new MetricsFeature())) {
+        try (Greeter port = service.getSoapPort(new MetricsFeature())) { //Richiede un proxy del Greeter che supporti la MetricsFeature
             port.getRequestContext().put(MetricsProvider.CLIENT_ID, username);
             port.getRequestContext().put(BindingProvider.USERNAME_PROPERTY, username);
             port.getRequestContext().put(BindingProvider.PASSWORD_PROPERTY, "password");
             try {
                 do {
+                    System.out.println(x);
                     if (doStop) {
                         break;
                     }
-                    port.greetMe(username + "-" + x);
+                    port.greetMe(username + "-" + x); //Invoco il ws lato server !!
                     x++;
-                } while (x < 10000);
+                } while (x < invocazioni_per_client);
             } catch (javax.xml.ws.WebServiceException wse) {
                 if (wse.getCause().getMessage().contains("429")) {
                     //exceeded are allowable number of requests
@@ -77,6 +80,8 @@ public final class Client implements Runnable {
                     wse.printStackTrace();
                 }
             }
+            
+            //Le 10000 invocazioni sono finite o c'e' stata eccezzione.
             long end = System.currentTimeMillis();
             double rate = x * 1000 / (end - start);
             System.out.println(username + " finished " + x + " invocations: " + rate + " req/sec " 
@@ -92,6 +97,8 @@ public final class Client implements Runnable {
             e1.printStackTrace();
         }
     }
+    
+    
     public void stop() {
         doStop = true;
     }
@@ -121,22 +128,35 @@ public final class Client implements Runnable {
         SOAPService ss = new SOAPService(wsdlURL, SERVICE_NAME);
         List<Client> c = new ArrayList<Client>();
         Client client;
+        
+       
+        //Lancio server.greetMe("Tom") 10000 volte a raffica nel suo thread riservato.
+        
         client = new Client("Tom", ss);
         new Thread(client).start();
         c.add(client);
+       /*
+        //Lancio server.greetMe("Rob") 10000 volte a raffica nel suo thread riservato.
         client = new Client("Rob", ss);
         new Thread(client).start();
         c.add(client);
+        /*
+        //Lancio server.greetMe("Vince") 10000 volte a raffica nel suo thread riservato.
         client = new Client("Vince", ss);
         new Thread(client).start();
         c.add(client);
+        
+        //Lancio server.greetMe("Malcolm") 10000 volte a raffica nel suo thread riservato.
         client = new Client("Malcolm", ss);
         new Thread(client).start();
         c.add(client);
+        
+        
+        //Lancio server.greetMe("Jonas") 10000 volte a raffica nel suo thread riservato.
         client = new Client("Jonas", ss);
         new Thread(client).start();
         c.add(client);
-        
+        */
         System.out.println("Sleeping on main thread for 60 seconds");
         Thread.sleep(60000);
         for (Client c2 : c) {

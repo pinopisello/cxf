@@ -19,10 +19,12 @@
 
 package org.apache.cxf.metrics.codahale;
 
+import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import com.codahale.metrics.JmxReporter;
+import com.codahale.metrics.JmxReporter.Builder;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ObjectNameFactory;
 
@@ -59,11 +61,12 @@ public class CodahaleMetricsProvider implements MetricsProvider {
             setupJMXReporter(b, registry);
         }
 
-    }
+    } 
     
-    public static void setupJMXReporter(Bus b, MetricRegistry reg) {
+    public static void setupJMXReporter(Bus b, MetricRegistry reg) {    
         InstrumentationManager im = b.getExtension(InstrumentationManager.class);
         if (im != null) {
+            /*
             JmxReporter reporter = JmxReporter.forRegistry(reg).registerWith(im.getMBeanServer())
                 .inDomain("org.apache.cxf")
                 .createsObjectNamesWith(new ObjectNameFactory() {
@@ -76,6 +79,30 @@ public class CodahaleMetricsProvider implements MetricsProvider {
                     }
                 })
                 .build();
+            reporter.start();
+            */
+            
+            
+            //JmxReporter listens for new metrics and exposes them as namespaced MBeans
+            //Builder viene configurato com MetricRegistry,MBeanServer,domain,ObjectNameFactory per
+            //produrre un JmxReporter
+            
+            Builder builder = JmxReporter.forRegistry(reg); 
+            MBeanServer mbeanserver = im.getMBeanServer();
+            ObjectNameFactory objectNameFactory = new ObjectNameFactory() {
+                public ObjectName createName(String type, String domain, String name) {
+                    try {
+                        return new ObjectName(name);
+                    } catch (MalformedObjectNameException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            
+            builder = builder.registerWith(mbeanserver);
+            builder = builder.inDomain("org.apache.cxf");
+            builder = builder.createsObjectNamesWith(objectNameFactory);
+            JmxReporter reporter = builder.build();
             reporter.start();
         }
     }

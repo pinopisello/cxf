@@ -1,0 +1,78 @@
+SOAP over http a partire da wsdl [ws_addressing/src/main/resources/hello_world_addr.wsdl] usando WS-addressing [https://www.w3.org/Submission/ws-addressing/]
+
+Endpoint:  http://localhost:9000/SoapContext/SoapPort
+Wsdl:      http://localhost:9000/SoapContext/SoapPort?wsdl
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy in ws_addressing/target/generated-sources/cxf a partire dal ws_addressing/src/main/resources/hello_world_addr.wsdl con il goal wsdl2java.
+
+
+[-Pserver] => lancia demo.ws_addressing.server.Server.java che usa  Endpoint.publish() per lanciare GreeterImpl.java endpoint su jetty.
+Prima di lanciare il server , il Bus viene creato usando ws_addressing/src/main/resources/server.xml per configurare ws_addressing.
+
+[-Pclient] => lancia demo.ws_addressing.client.Client.java che usa  SOAPService (@WebClient generato da cxf-codegen-plugin) per ottenere un Greeter proxy 
+per invocare il webservice.
+Prima di lanciare il server , il Bus viene creato usando ws_addressing/src/main/resources/client.xml per configurare ws_addressing.
+Viene aggiunto il SOAP header: 
+
+<soap:Header>
+<Action xmlns="http://www.w3.org/2005/08/addressing">http://apache.org/hello_world_soap_http/Greeter/sayHiRequest</Action>
+<MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:78606155-6621-426a-af12-cd30dc94a0cd</MessageID>
+<To xmlns="http://www.w3.org/2005/08/addressing">http://localhost:9000/SoapContext/SoapPort</To>
+<ReplyTo xmlns="http://www.w3.org/2005/08/addressing"><Address>http://localhost:9990/decoupled_endpoint</Address></ReplyTo>
+</soap:Header>
+
+
+==================   Setup dello SpringBus con wsa:addressing    =====================
+
+Sia per server che per client, il cxf bus e' configurato con Bus bus = bf.createBus(busFile.toString()) dove busFile e':
+
+server  => ws_addressing/src/main/resources/server.xml
+client  => ws_addressing/src/main/resources/client.xml
+
+
+
+=================  Inizializzazione SpringBus e WSAddressing feature   ==================
+
+SpringBus estende ExtensionManagerBus che definisce Collection<Feature> features.
+Ma come vengono configurate?
+server.xml definisce la feature  <wsa:addressing/> per il bean <cxf:bus> definito in cxf-core/META-INF/cxf/cxf.xml come org.apache.cxf.bus.spring.SpringBus.
+<wsa:addressing> e' definito in cxf-rt-ws-addr/src/main/resources/schemas/ws-addr-conf.xsd quindi accetta attributi:
+
+           <xs:attribute name="allowDuplicates" type="xs:boolean"/>
+           <xs:attribute name="usingAddressingAdvisory" type="xs:boolean"/>
+           <xs:attribute name="addressingRequired" type="xs:boolean"/>
+           <xs:attribute name="messageIdCache" type="xs:string"/>
+
+Quando Spring bootstrappa, e l'elemento <cxf:bus> viene parsato, BeanDefinitionParserDelegate.parseCustomElement() cerca il 
+ NamespaceHandler per uri "http://cxf.apache.org/core" e lo trova in org.apache.cxf.bus.spring.NamespaceHandler [cxf-core].
+ Per "bus" il BusDefinitionParser e' definito.
+ BusDefinitionParser.doParse() => BusDefinitionParser.parseChildElements() => BeanDefinitionParserDelegate.parseListElement() => BeanDefinitionParserDelegate.parseNestedCustomElement()
+ 
+ Qui si parsa <was:addessing>  e il namespace "http://cxf.apache.org/ws/addressing" viene associato a org.apache.cxf.ws.addressing.spring.NamespaceHandler.
+ In questa class element "addressing" e' associato a AddressingBeanDefinitionParser.
+ org.apache.cxf.ws.addressing.spring.NamespaceHandler.parse() =>  NamespaceHandler.findParserForElement() => NamespaceHandler.parse() =>AddressingBeanDefinitionParser.parse() => 
+ AddressingBeanDefinitionParser.parseInternal() => AddressingBeanDefinitionParser.getBeanClass() Questo ritorna WSAddressingFeature
+ Una BeanDefinition contenente WSAddressingFeature viene e settata a BusDefinitionParser.propertyvaues.
+ 
+ Detto cio' SpringBus implementa ApplicationContextAware e setApplicationContext() viene invocato 
+ SpringBus.setApplicationContext() => SpringBus.initialize() => SpringBus.doInitializeInternal() => SpringBus.initializeFeatures() =>WSAddressingFeature.initialize() => WSAddressingFeature.initializeProvider() 
+    => AddressingFeatureApplier.initializeProvider()
+    
+ Qui finalmente si configura SpringBus :
+ 
+ 1)Creano un MAPCodec e un MAPAggregatorImpl con i parametri settati in <wsa:addressing> [allowDuplicates,usingAddressingAdvisory,etc]
+ 2)MAPCodec(pre-protocol) e un MAPAggregatorImpl(pre-logical) sono aggiunti SpringBus InInterceptors ,OutInterceptors,InFaultInterceptors,OutFaultInterceptors [SpringBus extemds AbstractBasicInterceptorProvider]
+
+ 
+ <= Inbound => 
+ MAPCodec : parsa il messaggio SOAP cercando tutti element appartenenti al namespace "http://www.w3.org/2006/05/addressing/wsdl" [vedi org.apache.cxf.ws.addressing.Names]
+ Crea un AddressingProperties contenente ti i WSAddressing soap headers contenuti nel messaggio inbound e li mette in Message sotto key "javax.xml.ws.addressing.context.inbound"
+ Trova BindingOperationInfo del exchange.getEndpoint().getEndpointInfo() che matcha valore soap header Action e lo mette in exchange.put(BindingOperationInfo.class, bindingOp) [SoapActionInInterceptor.getAndSetOperation()]
+ 
+ MAPAggregatorImpl: ripesca AddressingProperties settate da MAPCodec 
+
+
+
+
+
