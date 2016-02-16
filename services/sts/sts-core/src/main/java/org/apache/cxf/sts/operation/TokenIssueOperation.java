@@ -29,12 +29,8 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBElement;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.helpers.CastUtils;
-import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.sts.QNameConstants;
 import org.apache.cxf.sts.event.STSIssueFailureEvent;
 import org.apache.cxf.sts.event.STSIssueSuccessEvent;
@@ -281,21 +277,8 @@ public class TokenIssueOperation extends AbstractOperation implements IssueOpera
             QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityTokenType();
         JAXBElement<RequestedSecurityTokenType> requestedToken = 
             QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(requestedTokenType);
-        LOG.fine("Encrypting Issued Token: " + encryptIssuedToken);
-        if (encryptIssuedToken) {
-            requestedTokenType.setAny(tokenResponse.getToken());
-            response.getAny().add(requestedToken);
-        } else {
-            if (tokenResponse.getToken() instanceof String) {
-                Document doc = DOMUtils.newDocument();
-                Element tokenWrapper = doc.createElementNS(null, "TokenWrapper");
-                tokenWrapper.setTextContent((String)tokenResponse.getToken());
-                requestedTokenType.setAny(tokenWrapper);
-            } else {
-                requestedTokenType.setAny(tokenResponse.getToken());
-            }
-            response.getAny().add(requestedToken);
-        }
+        tokenWrapper.wrapToken(tokenResponse.getToken(), requestedTokenType);
+        response.getAny().add(requestedToken);
 
         if (returnReferences) {
             // RequestedAttachedReference

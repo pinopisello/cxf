@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.annotation.Priority;
+import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Context;
@@ -42,7 +44,7 @@ import org.apache.cxf.rs.security.oauth2.common.OAuthContext;
 import org.apache.cxf.rs.security.oauth2.common.OAuthPermission;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthContextUtils;
 
-
+@Priority(Priorities.AUTHENTICATION + 1)
 public class OAuthScopesFilter implements ContainerRequestFilter {
 
     private static final Logger LOG = LogUtils.getL7dLogger(OAuthScopesFilter.class);
@@ -144,6 +146,24 @@ public class OAuthScopesFilter implements ContainerRequestFilter {
             return method;
         }
         throw ExceptionUtils.toForbiddenException(null, null);
+    }
+
+    public void setScopesMap(Map<String, List<String>> scopesMap) {
+        this.scopesMap = scopesMap;
+    }
+
+    public void setScopesStringMap(Map<String, String> scopesStringMap) {
+        for (Map.Entry<String, String> entry : scopesStringMap.entrySet()) {
+            scopesMap.put(entry.getKey(), Arrays.asList(entry.getValue().split(" ")));
+        }
+    }
+    
+    public void setScopesMatchAllMap(Map<String, Boolean> scopesMatchAllMap) {
+        this.scopesMatchAllMap = scopesMatchAllMap;
+    }
+
+    public void setConfidentialClientMethods(Set<String> confidentialClientMethods) {
+        this.confidentialClientMethods = confidentialClientMethods;
     }
     
     

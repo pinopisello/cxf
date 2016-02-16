@@ -26,15 +26,17 @@ import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
+import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.OAuthContext;
-import org.apache.cxf.rs.security.oauth2.provider.AbstractOAuthServerJoseJwtProducer;
 import org.apache.cxf.rs.security.oauth2.provider.OAuthDataProvider;
+import org.apache.cxf.rs.security.oauth2.provider.OAuthServerJoseJwtProducer;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthContextUtils;
+import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
 import org.apache.cxf.rs.security.oidc.common.UserInfo;
 
 @Path("/userinfo")
-public class UserInfoService extends AbstractOAuthServerJoseJwtProducer {
+public class UserInfoService extends OAuthServerJoseJwtProducer {
     private UserInfoProvider userInfoProvider;
     private OAuthDataProvider oauthDataProvider;
     
@@ -46,9 +48,8 @@ public class UserInfoService extends AbstractOAuthServerJoseJwtProducer {
         OAuthContext oauth = OAuthContextUtils.getContext(mc);
         UserInfo userInfo = null;
         if (userInfoProvider != null) {
-            userInfo = userInfoProvider.getUserInfo(oauth.getClientId(), 
-                                         oauth.getSubject(), 
-                                         oauth.getPermissions());
+            userInfo = userInfoProvider.getUserInfo(oauth.getClientId(), oauth.getSubject(), 
+                OAuthUtils.convertPermissionsToScopeList(oauth.getPermissions()));
         } else if (oauth.getSubject() instanceof OidcUserSubject) {
             OidcUserSubject oidcUserSubject = (OidcUserSubject)oauth.getSubject();
             userInfo = oidcUserSubject.getUserInfo();
@@ -64,8 +65,11 @@ public class UserInfoService extends AbstractOAuthServerJoseJwtProducer {
         Object responseEntity = userInfo;
         // UserInfo may be returned in a clear form as JSON
         if (super.isJwsRequired() || super.isJweRequired()) {
-            responseEntity = super.processJwt(new JwtToken(userInfo),
-                                              oauthDataProvider.getClient(oauth.getClientId()));
+            Client client = null;
+            if (oauthDataProvider != null) {
+                client = oauthDataProvider.getClient(oauth.getClientId());
+            }
+            responseEntity = super.processJwt(new JwtToken(userInfo), client);
         }
         return Response.ok(responseEntity).build();
         

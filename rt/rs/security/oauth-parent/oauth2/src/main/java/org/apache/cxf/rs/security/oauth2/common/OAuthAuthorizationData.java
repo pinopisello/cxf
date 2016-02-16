@@ -256,4 +256,5 @@ public class OAuthAuthorizationData extends OAuthRedirectionState implements Ser
         }
         return allPerms;
     }
+
 }

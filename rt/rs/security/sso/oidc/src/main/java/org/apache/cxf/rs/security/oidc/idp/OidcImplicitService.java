@@ -25,14 +25,20 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import org.apache.cxf.rs.security.jose.jwt.JoseJwtProducer;
+import org.apache.cxf.rs.security.jose.jwt.JwtToken;
+import org.apache.cxf.rs.security.oauth2.common.AccessTokenRegistration;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.OAuthError;
 import org.apache.cxf.rs.security.oauth2.common.OAuthPermission;
 import org.apache.cxf.rs.security.oauth2.common.OAuthRedirectionState;
+import org.apache.cxf.rs.security.oauth2.common.ServerAccessToken;
 import org.apache.cxf.rs.security.oauth2.common.UserSubject;
 import org.apache.cxf.rs.security.oauth2.provider.OAuthServiceException;
 import org.apache.cxf.rs.security.oauth2.services.ImplicitGrantService;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
+import org.apache.cxf.rs.security.oidc.common.IdToken;
+import org.apache.cxf.rs.security.oidc.utils.OidcUtils;
 
 
 public class OidcImplicitService extends ImplicitGrantService {
@@ -40,6 +46,8 @@ public class OidcImplicitService extends ImplicitGrantService {
     private static final String ID_TOKEN_RESPONSE_TYPE = "id_token";
     private static final String ID_TOKEN_AND_AT_RESPONSE_TYPE = "id_token token";
     private boolean skipAuthorizationWithOidcScope;
+    private JoseJwtProducer idTokenHandler;
+    private IdTokenProvider idTokenProvider;
     
     public OidcImplicitService() {
         super(new HashSet<String>(Arrays.asList(ID_TOKEN_RESPONSE_TYPE,
@@ -47,11 +55,8 @@ public class OidcImplicitService extends ImplicitGrantService {
     }
     
     @Override
-    protected boolean canAccessTokenBeReturned(OAuthRedirectionState state, 
-                                               List<String> requestedScope, 
-                                               List<String> approvedScope) {
-        return state.getResponseType() != null 
-            && state.getResponseType().contains(ID_TOKEN_AND_AT_RESPONSE_TYPE);
+    protected boolean canAccessTokenBeReturned(String responseType) {
+        return ID_TOKEN_AND_AT_RESPONSE_TYPE.equals(responseType);
     }
     
     @Override
@@ -80,4 +85,78 @@ public class OidcImplicitService extends ImplicitGrantService {
         this.skipAuthorizationWithOidcScope = skipAuthorizationWithOidcScope;
     }
     
+    protected Response createGrant(OAuthRedirectionState state,
+                                   Client client,
+                                   List<String> requestedScope,
+                                   List<String> approvedScope,
+                                   UserSubject userSubject,
+                                   ServerAccessToken preAuthorizedToken) {
+        
+        if (canAccessTokenBeReturned(state.getResponseType())) {
+            return super.createGrant(state, client, requestedScope, approvedScope, userSubject, preAuthorizedToken);
+        }
+        // id_token response type processing
+        
+        StringBuilder sb = getUriWithFragment(state.getRedirectUri());
+        
+        String idToken = getProcessedIdToken(state, userSubject, 
+                                             getApprovedScope(requestedScope, approvedScope));
+        if (idToken != null) {
+            sb.append(OidcUtils.ID_TOKEN).append("=").append(idToken);
+        }
+        return finalizeResponse(sb, state);
+    }
+    
+    private String getProcessedIdToken(OAuthRedirectionState state, 
+                                       UserSubject subject,
+                                       List<String> scopes) {
+        if (subject.getProperties().containsKey(OidcUtils.ID_TOKEN)) {
+            return subject.getProperties().get(OidcUtils.ID_TOKEN);
+        } else if (idTokenProvider != null) {
+            IdToken idToken = idTokenProvider.getIdToken(state.getClientId(), subject, scopes);
+            idToken.setNonce(state.getNonce());
+            return processIdToken(idToken);
+        } else if (subject instanceof OidcUserSubject) {
+            OidcUserSubject sub = (OidcUserSubject)subject;
+            IdToken idToken = new IdToken(sub.getIdToken());
+            idToken.setAudience(state.getClientId());
+            idToken.setAuthorizedParty(state.getClientId());
+            idToken.setNonce(state.getNonce());
+            return processIdToken(idToken);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    protected OAuthRedirectionState recreateRedirectionStateFromParams(
+        MultivaluedMap<String, String> params) {
+        OAuthRedirectionState state = super.recreateRedirectionStateFromParams(params);
+        OidcUtils.setStateClaimsProperty(state, params);
+        return state;
+    }
+    
+    @Override
+    protected AccessTokenRegistration createTokenRegistration(OAuthRedirectionState state, 
+                                                              Client client, 
+                                                              List<String> requestedScope, 
+                                                              List<String> approvedScope, 
+                                                              UserSubject userSubject) {
+        AccessTokenRegistration reg = 
+            super.createTokenRegistration(state, client, requestedScope, approvedScope, userSubject);
+        reg.getExtraProperties().putAll(state.getExtraProperties());
+        return reg;
+    }
+    
+    protected String processIdToken(IdToken idToken) {
+        JoseJwtProducer processor = idTokenHandler == null ? new JoseJwtProducer() : idTokenHandler; 
+        return processor.processJwt(new JwtToken(idToken));
+    }
+
+    public void setIdTokenJoseHandler(JoseJwtProducer idTokenJoseHandler) {
+        this.idTokenHandler = idTokenJoseHandler;
+    }
+    public void setIdTokenProvider(IdTokenProvider idTokenProvider) {
+        this.idTokenProvider = idTokenProvider;
+    }
 }

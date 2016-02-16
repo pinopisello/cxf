@@ -38,13 +38,13 @@ import org.apache.cxf.ws.security.sts.provider.model.RequestSecurityTokenType;
 public interface RESTSecurityTokenService {
 
     enum Action {
-        ISSUE("issue"),
-        VALIDATE("validate"),
-        RENEW("renew"),
-        CANCEL("cancel");
+        issue("issue"),
+        validate("validate"),
+        renew("renew"),
+        cancel("cancel");
         private String value;
 
-        private Action(String value) {
+        Action(String value) {
             this.value = value;
         }
 
@@ -56,14 +56,30 @@ public interface RESTSecurityTokenService {
     /**
      * @return Issues required token type with default token settings.
      */
+    
     @GET
     @Path("{tokenType}")
-    @Produces({
-        MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON
-    })
-    Response getToken(@PathParam("tokenType") String tokenType, @QueryParam("keyType") String keyType,
-        @QueryParam("claim") List<String> requestedClaims);
-
+    @Produces(MediaType.APPLICATION_XML)
+    Response getXMLToken(@PathParam("tokenType") String tokenType, @QueryParam("keyType") String keyType,
+        @QueryParam("claim") List<String> requestedClaims,
+        @QueryParam("appliesTo") String appliesTo,
+        @QueryParam("wstrustResponse") @DefaultValue("false") boolean wstrustResponse);
+    
+    @GET
+    @Path("{tokenType}")
+    @Produces("application/json;qs=0.8")
+    Response getJSONToken(@PathParam("tokenType") @DefaultValue("jwt") String tokenType, 
+        @QueryParam("keyType") String keyType,
+        @QueryParam("claim") List<String> requestedClaims,
+        @QueryParam("appliesTo") String appliesTo);
+    
+    @GET
+    @Path("{tokenType}")
+    @Produces("text/plain;qs=0.9")
+    Response getPlainToken(@PathParam("tokenType") String tokenType, @QueryParam("keyType") String keyType,
+        @QueryParam("claim") List<String> requestedClaims,
+        @QueryParam("appliesTo") String appliesTo);
+    
     @POST
     @Produces({
         MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON

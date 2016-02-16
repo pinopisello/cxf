@@ -27,15 +27,15 @@ import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
 import org.apache.cxf.rs.security.oauth2.common.ServerAccessToken;
-import org.apache.cxf.rs.security.oauth2.provider.AbstractOAuthServerJoseJwtProducer;
 import org.apache.cxf.rs.security.oauth2.provider.AccessTokenResponseFilter;
+import org.apache.cxf.rs.security.oauth2.provider.OAuthServerJoseJwtProducer;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
 import org.apache.cxf.rs.security.oidc.utils.OidcUtils;
 
-public class IdTokenResponseFilter extends AbstractOAuthServerJoseJwtProducer implements AccessTokenResponseFilter {
-    private UserInfoProvider userInfoProvider;
+public class IdTokenResponseFilter extends OAuthServerJoseJwtProducer implements AccessTokenResponseFilter {
+    private IdTokenProvider idTokenProvider;
     @Override
     public void process(ClientAccessToken ct, ServerAccessToken st) {
         // Only add an IdToken if the client has the "openid" scope
@@ -49,9 +49,10 @@ public class IdTokenResponseFilter extends AbstractOAuthServerJoseJwtProducer im
         
     }
     private String getProcessedIdToken(ServerAccessToken st) {
-        if (userInfoProvider != null) {
+        if (idTokenProvider != null) {
             IdToken idToken = 
-                userInfoProvider.getIdToken(st.getClient().getClientId(), st.getSubject(), st.getScopes());
+                idTokenProvider.getIdToken(st.getClient().getClientId(), st.getSubject(), 
+                                           OAuthUtils.convertPermissionsToScopeList(st.getScopes()));
             setAtHashAndNonce(idToken, st);
             return super.processJwt(new JwtToken(idToken), st.getClient());
         } else if (st.getSubject().getProperties().containsKey(OidcUtils.ID_TOKEN)) {
@@ -59,6 +60,8 @@ public class IdTokenResponseFilter extends AbstractOAuthServerJoseJwtProducer im
         } else if (st.getSubject() instanceof OidcUserSubject) {
             OidcUserSubject sub = (OidcUserSubject)st.getSubject();
             IdToken idToken = new IdToken(sub.getIdToken());
+            idToken.setAudience(st.getClient().getClientId());
+            idToken.setAuthorizedParty(st.getClient().getClientId());
             // if this token was refreshed then the cloned IDToken might need to have its
             // issuedAt and expiry time properties adjusted if it proves to be necessary
             setAtHashAndNonce(idToken, st);
@@ -89,8 +92,8 @@ public class IdTokenResponseFilter extends AbstractOAuthServerJoseJwtProducer im
         }
         
     }
-    public void setUserInfoProvider(UserInfoProvider userInfoProvider) {
-        this.userInfoProvider = userInfoProvider;
+    public void setIdTokenProvider(IdTokenProvider idTokenProvider) {
+        this.idTokenProvider = idTokenProvider;
     }
     
 }

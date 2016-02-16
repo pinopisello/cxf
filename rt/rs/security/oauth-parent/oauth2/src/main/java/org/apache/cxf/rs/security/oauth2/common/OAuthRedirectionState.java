@@ -19,10 +19,13 @@
 package org.apache.cxf.rs.security.oauth2.common;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class OAuthRedirectionState implements Serializable {
     
     private static final long serialVersionUID = -661649302262699347L;
+    
     private String clientId;
     private String redirectUri;
     private String state;
@@ -31,11 +34,11 @@ public class OAuthRedirectionState implements Serializable {
     private String nonce;
     private String clientCodeChallenge;
     private String responseType;
+    private Map<String, String> extraProperties = new LinkedHashMap<String, String>();
     
     public OAuthRedirectionState() {
     }
 
-    
     /**
      * Sets the client id which needs to be retained in a hidden form field
      * @param clientId the client id
@@ -51,7 +54,7 @@ public class OAuthRedirectionState implements Serializable {
     public String getClientId() {
         return clientId;
     }
-
+    
     /**
      * Sets the redirect uri which needs to be retained in a hidden form field
      * @param redirectUri the redirect uri
@@ -134,4 +137,14 @@ public class OAuthRedirectionState implements Serializable {
     public void setResponseType(String responseType) {
         this.responseType = responseType;
     }
+
+    public Map<String, String> getExtraProperties() {
+        return extraProperties;
+    }
+
+    public void setExtraProperties(Map<String, String> extraProperties) {
+        this.extraProperties = extraProperties;
+    }
+    
+    
 }
