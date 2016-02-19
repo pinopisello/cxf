@@ -47,6 +47,11 @@
                                 </goals>
                                 <configuration>
                                     <mainClass>org.apache.cxf.wsn.services.Service</mainClass>
+                                    <arguments>
+                                    <!-- Per connettere as un broker esterno invece di quello embedded di default [vedi org.apache.cxf.wsn.services.Service] -->
+                                     <argument>-brokerUrl</argument>
+                                    <argument>tcp://localhost:61616</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>

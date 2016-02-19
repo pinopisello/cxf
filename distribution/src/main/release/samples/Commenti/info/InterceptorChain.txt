@@ -1,0 +1,96 @@
+org.apache.cxf.message.Messgae definisce getInterceptorChain()/setInterceptorChain()
+
+
+Per ogni messaggio in ingresso viene creata una InterceptorChain e assegnata al messaggio [ChainInitiationObserver.onMessage()].
+
+Questa viene creata a partire da InterceptorChain definite in:
+
+bus.getInInterceptors()                      PolicyInInterceptor
+endpoint.getService().getInInterceptors()    ServiceInvokerInterceptor,OutgoingChainInterceptor, OneWayProcessorInterceptor
+endpoint.getService().getDataBinding()       WrapperClassInInterceptor,HolderInInterceptor, SwAInInterceptor, WSDLGetInterceptor
+endpoint.getInInterceptors()                 WrapperClassInInterceptor, HolderInInterceptor, SwAInInterceptor, WSDLGetInterceptor
+getBinding().getInInterceptors()             AttachmentInInterceptor, StaxInInterceptor, SoapActionInInterceptor,DocLiteralInInterceptor, SoapHeaderInterceptor, ReadHeadersInterceptor, StartBodyInterceptor, CheckFaultInterceptor, MustUnderstandInterceptor
+message.getDestination().getInInterceptors() JAXBAttachmentSchemaValidationHack
+
+
+La InterceptorChain finale viene salvata in una PhaseChainCache e in message.interceptorChain  ed infine viene laciata per processare il message [ phaseChain.doIntercept(message);s].
+Durante il processing InterceptorChain puo' essere modificata on the fly.
+
+
+Per esempio in ws-addressing , nella fase pre-logical, una altra chain e' eseguita mentre quella iniziale e' "pausata":
+
+MAPAggregatorImpl.mediate() => InternalContextUtils.rebaseResponse() 
+
+Qui OutgoingChainInterceptor.getOutInterceptorChain() ritorna una nuova chain che viene invocata [InternalContextUtils.rebaseResponse()]
+e interceptors aggiuntivi vengomo invocati [HolderOutInterceptor,SoapHeaderOutFilterInterceptor,MessageSenderInterceptor]
+Dopodiche la chain iniziale resumes ed arriva a processare OutgoingChainInterceptor.handleMessage().
+
+
+Qui succede il seguente:
+
+Exchange ex = message.getExchange();
+Message out = ex.getOutMessage()
+outChain = OutgoingChainInterceptor.getChain(ex, chainCache);
+outChain.doIntercept(out);
+
+
+Qui gli interceptors sono:
+
+Chain org.apache.cxf.phase.PhaseInterceptorChain@3dab47e. Current flow:
+  setup [PolicyOutInterceptor]
+  pre-logical [MAPAggregatorImpl, HolderOutInterceptor, SwAOutInterceptor, WrapperClassOutInterceptor, SoapHeaderOutFilterInterceptor]
+  post-logical [SoapPreProtocolOutInterceptor]
+  prepare-send [MessageSenderInterceptor]
+  pre-stream [AttachmentOutInterceptor, StaxOutInterceptor]
+  pre-protocol [MAPCodec]
+  write [SoapOutInterceptor]
+  marshal [WrappedOutInterceptor, BareOutInterceptor]
+  write-ending [SoapOutEndingInterceptor]
+  pre-stream-ending [StaxOutEndingInterceptor]
+  prepare-send-ending [MessageSenderEndingInterceptor]
+
+
+ Poi chain.reset() resume la chain inizale fino ad eseguire l ultimo interceptor: OutgoingChainInterceptor.handleMessage()
+ 
+ Message out = ex.getOutMessage();
+ OutgoingChainInterceptor.getChain(ex, chainCache) crea nuova chain e la pone in out.setInterceptorChain().
+ 
+ Chain org.apache.cxf.phase.PhaseInterceptorChain@6fdf8ffc. Current flow:
+  setup [PolicyOutInterceptor]
+  pre-logical [MAPAggregatorImpl, HolderOutInterceptor, SwAOutInterceptor, WrapperClassOutInterceptor, SoapHeaderOutFilterInterceptor]
+  post-logical [SoapPreProtocolOutInterceptor]
+  prepare-send [MessageSenderInterceptor]
+  pre-stream [AttachmentOutInterceptor, StaxOutInterceptor]
+  pre-protocol [MAPCodec]
+  write [SoapOutInterceptor]
+  marshal [WrappedOutInterceptor, BareOutInterceptor]
+  
+  quindi outChain.doIntercept(out)  per processare stavolta il messaggio out [non in!!].
+  La response e' inviata in MessageSenderEndingInterceptor.handleMessage().
+  
+  
+ 
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

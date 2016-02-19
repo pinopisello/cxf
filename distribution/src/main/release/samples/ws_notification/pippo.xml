@@ -1,0 +1,15 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<ns2:Notify xmlns="http://www.w3.org/2005/08/addressing"
+			xmlns:ns2="http://docs.oasis-open.org/wsn/b-2" xmlns:ns3="http://docs.oasis-open.org/wsn/t-1"
+			xmlns:ns4="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns5="http://docs.oasis-open.org/wsrf/rp-2"
+			xmlns:ns6="http://docs.oasis-open.org/wsn/br-2" xmlns:ns7="http://docs.oasis-open.org/wsrf/r-2">
+			<ns2:NotificationMessage>
+				<ns2:Topic>MyTopic</ns2:Topic>
+				<ns2:Message>
+					<ns8:foo xmlns:ns8="urn:test:org">Hello World!</ns8:foo>
+				</ns2:Message>
+			</ns2:NotificationMessage>
+		</ns2:Notify>
+	</soap:Body>
+</soap:Envelope>

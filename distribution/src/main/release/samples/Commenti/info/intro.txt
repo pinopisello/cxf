@@ -321,20 +321,57 @@ Da notare come CodahaleMetricsProvider.setupJMXReporter(b, registry)
 
 ===============  WS-Addressing   ====================
 
+SOAP over http a partire da wsdl [ws_addressing/src/main/resources/hello_world_addr.wsdl] usando WS-addressing [https://www.w3.org/Submission/ws-addressing/]
+dove response del server e' diretta verso un endpoint indicato dal soap header "ReplyTo" e NON nella stessa connessione client.
+
+
+[cxf-codegen-plugin] genera jaxb ,sei e proxy in ws_addressing/target/generated-sources/cxf a partire dal ws_addressing/src/main/resources/hello_world_addr.wsdl con il goal wsdl2java.
+
+
+[-Pserver] => lancia demo.ws_addressing.server.Server.java che usa  Endpoint.publish() per lanciare GreeterImpl.java endpoint su jetty.
+Prima di lanciare il server , il Bus viene creato usando ws_addressing/src/main/resources/server.xml per configurare ws_addressing.
+
+[-Pclient] => lancia demo.ws_addressing.client.Client.java che usa  SOAPService (@WebClient generato da cxf-codegen-plugin) per ottenere un Greeter proxy 
+per invocare il webservice.
+Prima di lanciare il server , il Bus viene creato usando ws_addressing/src/main/resources/client.xml per configurare ws_addressing.
+Viene aggiunto il SOAP header: 
+
+<soap:Header>
+<Action xmlns="http://www.w3.org/2005/08/addressing">http://apache.org/hello_world_soap_http/Greeter/sayHiRequest</Action>
+<MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:78606155-6621-426a-af12-cd30dc94a0cd</MessageID>
+<To xmlns="http://www.w3.org/2005/08/addressing">http://localhost:9000/SoapContext/SoapPort</To>
+<ReplyTo xmlns="http://www.w3.org/2005/08/addressing"><Address>http://localhost:9990/decoupled_endpoint</Address></ReplyTo>
+</soap:Header>
 
 
 
+===============  WS-Eventing   ====================
+E' un framework definito da W3C specs [https://www.w3.org/Submission/WS-Eventing/] che permette clients di creare con messaggi soap
+delle "subscriptions" lato server per determinati eventi.
+
+Una subscription e' definita da:
+1)Un endpoint dove il server deve inviare le notifice
+2)un filter che definisce quali sono gli eventi che scatenano le notifiche.
+3)una expiration date.
 
 
+===============  WS-Notification   ====================
+WS-notification e' un framework definito da OASIS  specs [https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=wsn] che permette:
 
+These specifications provide a standardized way for a Web service, or other entity, to disseminate information to a set of other Web services, 
+without having to have prior knowledge of these other Web Services. They can be thought of as defining "Publish/Subscribe for Web services".
 
+Le specifiche definiscono:
 
+WS-BaseNotification 
+WS-BrokeredNotification 
+WS-Topics 
 
+Assomiglia molto a ws_eventing con differenza che:
 
-
-
-
-
+1)lato server c'e' JMS e le notifiche vengono inviate ad un topic specificato dal subscriber [we_eventing non c'e' jms lato server]
+2)gli eventi che scatenano le notifice vengono inviati via soap http con uno schema prefissato [ws_eventing eventi sono generati lato server con api]
+3)le subscriptions non hanno ne filtri ne enddate [al contrario di ws-eventing]
 
 
 

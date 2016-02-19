@@ -1,7 +1,10 @@
 SOAP over http a partire da wsdl [ws_addressing/src/main/resources/hello_world_addr.wsdl] usando WS-addressing [https://www.w3.org/Submission/ws-addressing/]
+dove response del server e' diretta verso un endpoint indicato dal soap header "ReplyTo" e NON nella stessa connessione client.
 
-Endpoint:  http://localhost:9000/SoapContext/SoapPort
 Wsdl:      http://localhost:9000/SoapContext/SoapPort?wsdl
+Inbound Endpoint:  http://localhost:9000/SoapContext/SoapPort
+Outbount Endpoint: http://localhost:9990/decoupled_endpoint     [configurato in  client.xml <http:client DecoupledEndpoint="http://localhost:9990/decoupled_endpoint"  /> ]
+
 
 
 [cxf-codegen-plugin] genera jaxb ,sei e proxy in ws_addressing/target/generated-sources/cxf a partire dal ws_addressing/src/main/resources/hello_world_addr.wsdl con il goal wsdl2java.
@@ -65,14 +68,30 @@ Quando Spring bootstrappa, e l'elemento <cxf:bus> viene parsato, BeanDefinitionP
  2)MAPCodec(pre-protocol) e un MAPAggregatorImpl(pre-logical) sono aggiunti SpringBus InInterceptors ,OutInterceptors,InFaultInterceptors,OutFaultInterceptors [SpringBus extemds AbstractBasicInterceptorProvider]
 
  
- <= Inbound => 
+================================    Processamento messaggio  ================================
+
  MAPCodec : parsa il messaggio SOAP cercando tutti element appartenenti al namespace "http://www.w3.org/2006/05/addressing/wsdl" [vedi org.apache.cxf.ws.addressing.Names]
  Crea un AddressingProperties contenente ti i WSAddressing soap headers contenuti nel messaggio inbound e li mette in Message sotto key "javax.xml.ws.addressing.context.inbound"
  Trova BindingOperationInfo del exchange.getEndpoint().getEndpointInfo() che matcha valore soap header Action e lo mette in exchange.put(BindingOperationInfo.class, bindingOp) [SoapActionInInterceptor.getAndSetOperation()]
  
  MAPAggregatorImpl: ripesca AddressingProperties settate da MAPCodec 
 
+MAPAggregatorImpl.mediate() => InternalContextUtils.rebaseResponse() =>InternalContextUtils.createDecoupledDestination()
 
+Qui si usa replyto letto da MAPCodec per creare una DecoupleDestination [http://localhost:9990/decoupled_endpoint] e viene assegnata a exchange.destination.
+
+  => exchange.setDestination(destination) => OutgoingChainInterceptor.handleMessage() => OutgoingChainInterceptor.getBackChannelConduit() => exchange.getDestination().getBackChannel(ex.getInMessage()) =>
+   => InternalContextUtils$DecoupledDestination.getBackChannelConduit() 
+
+DecoupledDestination e' quella creata in  InternalContextUtils.createDecoupledDestination()   sopra e che contiene la url del target endpoint dove inviare response.
+
+ exchange.put(ConduitSelector.class,new PreexistingConduitSelector(conduit, ex.getEndpoint()));
+
+
+PreexistingConduitSelector contiene la   conduit che punta al decoupled cleint endpoint [http://localhost:9990/decoupled_endpoint]
+e viene usata in MessageSenderInterceptor.handleMessage() per settare la conduit usata per la response al client .
+
+LA response e' inviata in MessageSenderEndingInterceptor.handleMessage().
 
 
 

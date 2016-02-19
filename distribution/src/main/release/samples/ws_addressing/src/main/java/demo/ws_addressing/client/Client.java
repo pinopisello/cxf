@@ -19,25 +19,28 @@
 
 package demo.ws_addressing.client;
 
+import static org.apache.cxf.ws.addressing.JAXWSAConstants.CLIENT_ADDRESSING_PROPERTIES;
+
 import java.io.File;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URL;
 import java.util.Map;
+
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.spring.SpringBusFactory;
+import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.AttributedURIType;
 import org.apache.cxf.ws.addressing.ObjectFactory;
-
 import org.apache.hello_world_soap_http.Greeter;
 import org.apache.hello_world_soap_http.PingMeFault;
 import org.apache.hello_world_soap_http.SOAPService;
-
-import static org.apache.cxf.ws.addressing.JAXWSAConstants.CLIENT_ADDRESSING_PROPERTIES;
 
 
 public final class Client {
@@ -75,13 +78,18 @@ public final class Client {
 
             SOAPService service = new SOAPService(wsdlURL, SERVICE_NAME);
             Greeter port = service.getSoapPort();
-
+            
+            //Setto quanti msecs il client aspetta per una risposta prima di andare in timeout.
+            ((BindingProvider)port).getRequestContext().put("cxf.synchronous.timeout", 6000000);
+            
+            
             implicitPropagation(port);
 
             explicitPropagation(port);
 
             implicitPropagation(port);
 
+            Thread.sleep(1000000000);
         } catch (UndeclaredThrowableException ex) {
             ex.getUndeclaredThrowable().printStackTrace();
         } catch (Throwable ex) {

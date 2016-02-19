@@ -1,0 +1,174 @@
+E' un framework definito da W3C specs [https://www.w3.org/Submission/WS-Eventing/] che permette clients di creare con messaggi soap
+delle "subscriptions" lato server per determinati eventi che accadono lato server.
+
+Ogni evento generato lato server, tutte le subscriptions vengono iterate e per quelle che matchano una soap request viene generata contenente
+la rappresentazione xml dell event []
+
+
+Una subscription e' definita da:
+1)Un endpoint dove il server deve inviare le notifice
+2)un filter che definisce quali sono gli eventi che scatenano le notifiche.
+3)una expiration date.
+
+Gli "events" che generano notifications non vanno inviati via soap, bensi tramite NotificatorService.dispatchEvent(Object event)
+
+Questo proggetto crea una webapp che definisce 3 endpoints [vedi beans.xml]:
+
+
+http://127.0.0.1:9000/ws_eventing/services/EventSource           => demo.wseventing.services.TestEventSource           subscribeOp
+http://127.0.0.1:9000/ws_eventing/services/SubscriptionManager   => demo.wseventing.services.TestSubscriptionManager   getStatusOp, renewOp, unsubscribeOp
+http://127.0.0.1:9000/ws_eventing/services/default               => endpoint che riceve notifiche ogni volta che un qualifying event accade  
+
+http://127.0.0.1:9000/ws_eventing/services espone i SOAP services esposti dall applicazione.
+
+
+===================   Notification Endpoint ================
+http://127.0.0.1:9000/ws_eventing/services/default   
+
+
+Inizializzazione:
+
+NotificatorServiceHolder.contextInitialized() [annotata @WebListener] fa due cose:
+
+A)crea e tiene reference di new EventSinkInterfaceNotificatorService() [extends org.apache.cxf.ws.eventing.backend.notification.NotificatorService]      
+EventSinkInterfaceNotificatorService esponse dispatchEvent(object) che viene chiamato da  EarthquakeEventServlet e FireEventServlet
+per notificare cxf-rt-ws-eventing che un evento e' accaduto.
+
+
+EventSinkInterfaceNotificatorService contiene:
+
+1)instanza SubscriptionManagerImpl  [ getTickets(),registerNotificator()]
+
+2)EventSinkInterface =>  CatastrophicEventSink.class [earthquake(EarthquakeEvent),fire( FireEvent )]  [metodi esposti dal ws http://127.0.0.1:9000/ws_eventing/services/default]
+
+
+B)  ApplicationSingleton.getInstance().createEventSink("/default");
+
+=> new CatastrophicEventSinkImpl("/default") => bean = new JaxWsServerFactoryBean()
+                                                bean.setServiceBean(this);
+												bean.setAddress(/default);
+												server = bean.create();     => pubblica CatastrophicEventSinkImpl sotto url http://127.0.0.1:9000/ws_eventing/services/default
+
+CatastrophicEventSinkImpl.earthquake(EarthquakeEvent ev) :aggiunge EarthquakeEvent in  List<Object> receivedEvents = new ArrayList<Object>();
+
+CatastrophicEventSinkImpl. fire(FireEvent ev)            :aggiunge FireEvent in  List<Object> receivedEvents = new ArrayList<Object>();
+
+
+
+
+
+=============================  UI ===============================================
+
+Pagina "Globale"
+http://127.0.0.1:9000/ws_eventing/index.jsp espone una UI per:
+1) creare subscriptions
+2) grestire subscriptions
+2) emettere events
+
+
+----------------------------   Creazione subscriptions [http://127.0.0.1:9000/ws_eventing/subscribe.jsp] ------------------------------------
+
+Invia un form verso CreateSubscriptionServlet.java passando 3 parametri:
+
+targeturl=http://localhost:8080/ws_eventing/services/default
+filter=//location[text()='Russia']
+expires=2016-06-26T12:23:12.000-01:00
+
+CreateSubscriptionServlet.doGet() crea un client per invocare http://127.0.0.1:9000/ws_eventing/services/EventSource.subscribeOp(Subscribe body) 
+e passa un Subscribe con dentro i parametri definiti nella subscribe.jsp
+
+In breve la richiesta e' di iviare una notifica http://localhost:8080/ws_eventing/services/default ogni qual volta il server riceva un evento con //location[text()='Russia']
+entro 2016-06-26T12:23:12.000-01:00
+
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://www.w3.org/2005/08/addressing">http://www.w3.org/2011/03/ws-evt/Subscribe
+		</Action>
+		<MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:dc527d21-6936-440e-81b3-5e8282754b3d
+		</MessageID>
+		<To xmlns="http://www.w3.org/2005/08/addressing">http://localhost:9000/ws_eventing/services/EventSource
+		</To>
+		<ReplyTo xmlns="http://www.w3.org/2005/08/addressing">
+			<Address>http://www.w3.org/2005/08/addressing/anonymous</Address>
+		</ReplyTo>
+	</soap:Header>
+	<soap:Body>
+		<ns2:Subscribe xmlns="http://www.w3.org/2005/08/addressing"
+			xmlns:ns2="http://www.w3.org/2011/03/ws-evt" xmlns:ns3="http://www.w3.org/2006/05/addressing/wsdl">
+			<ns2:Delivery>
+				<ns2:NotifyTo>
+					<Address>http://localhost:8080/ws_eventing/services/default
+					</Address>
+				</ns2:NotifyTo>
+			</ns2:Delivery>
+			<ns2:Expires>2016-06-26T12:23:12.000-01:00</ns2:Expires>
+			<ns2:Filter>//location[text()='Russia']</ns2:Filter>
+		</ns2:Subscribe>
+	</soap:Body>
+</soap:Envelope>
+
+
+La nuova subscription e' registrata in SubscriptionDatabaseImpl.tickets!
+
+
+
+-----------------------  Fire event [ http://127.0.0.1:9000/ws_eventing/index.jsp] e generazione notifica  -------------------------------------
+Invio un Earthquake event con location=Russia e strength=5.1 verso EarthquakeEventServlet.
+
+
+EarthquakeEventServlet => NotificatorService.dispatchEvent() => NotificatorService.submitNotificationTask() => EventSinkInterfaceNotificationTask.run() 
+Qui succedono le seguenti code:
+
+1)getProxy() JaxWsProxyFactoryBean ritorna un client per inviare la notifica.FilteringInterceptor e' aggiunto come outinterceptor.
+2)proxy viene invocato x inviare notifica.
+3)FilteringInterceptor.handleMessage() => FilteringUtil.runFilterOnMessage(msg, filter) => FilteringUtil.runFilterOnMessage(msg, filter) => FilteringUtil.doesConformToFilter(elm, filter)
+
+elm e' il soap body della notifica, filter contiene il filter della subscription relativa a questa notifica [//location[text()='Russia']
+
+doesConformToFilter verifica che il contenuto soap body notifica matcha xPathExpression del filter [//location[text()='Russia']
+
+Se matcha il client continua la phaseInterceptor chain e la notifica va.
+Se NON matcha la phaseInterceptor chain si stoppa e niente notifica [ message.getInterceptorChain().abort();]
+
+
+
+Se l'evento qualifica per uno delle subscriptions create , una request come sotto viene inviata all endpoint specificato dalla subscription stessa:
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://www.w3.org/2005/08/addressing">http://www.earthquake.com</Action>
+		<MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:580b195c-1d44-4823-8485-f65b41d47cc7
+		</MessageID>
+		<To xmlns="http://www.w3.org/2005/08/addressing">http://localhost:9000/ws_eventing/services/default</To>
+		<ReplyTo xmlns="http://www.w3.org/2005/08/addressing">
+			<Address>http://www.w3.org/2005/08/addressing/none</Address>
+		</ReplyTo>
+	</soap:Header>
+	<soap:Body>
+		<ns2:earthquake xmlns:ns2="http://www.events.com">
+			<location>Russia</location>
+			<richterScale>5.1</richterScale>
+		</ns2:earthquake>
+	</soap:Body>
+</soap:Envelope>
+
+
+
+L'invio della notifica avviene in EventSinkInterfaceNotificationTask.run().
+
+
+-----------------------  Gestione subscriptions [endpoint http://127.0.0.1:9000/ws_eventing/services/SubscriptionManager]----------------------
+Vedi SubscriptionManagerClient.java
+
+Si puo renew,unsubscribe getstatus per una data subscription.
+
+La target subscription e' inviata tramite soap header:<SubscriptionID xmlns="http://cxf.apache.org/ws-eventing">c2a114ec-84b7-413d-aa6e-252ac3ffca88</SubscriptionID>
+
+
+
+
+
+
+

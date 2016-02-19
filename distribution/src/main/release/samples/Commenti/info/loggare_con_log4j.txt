@@ -1,7 +1,7 @@
 ======================  Logging in CXF code   ==========================
 
 
-CXF cerca quale log framework usare in org.apache.cxf.common.logging.LogUtils nello static block:
+CXF cerca quale log framework usare in org.apache.cxf.common.logging.LogUtils nello static block:  org.apache.cxf.common.logging.LogUtils.java
 
 
 Cerca per :

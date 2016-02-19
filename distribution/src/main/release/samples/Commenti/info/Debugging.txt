@@ -1,6 +1,6 @@
 Generazione wsdl:   WSDLGetInterceptor
 
-PhaseInterceptorchain:  PhaseInterceptorChain
+PhaseInterceptorchain:  PhaseInterceptorChain.doIntercept() itera per tutti gli interceptors che processano il messaggio in entrata.
 
 
 

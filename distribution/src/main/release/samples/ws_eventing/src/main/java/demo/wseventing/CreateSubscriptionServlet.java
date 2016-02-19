@@ -50,12 +50,14 @@ public class CreateSubscriptionServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
         try {
+            
             resp.getWriter().append("<html><body>");
 
 
             JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
             factory.setServiceClass(EventSourceEndpoint.class);
-            factory.setAddress("http://localhost:8080/ws_eventing/services/EventSource");
+            
+            factory.setAddress("http://localhost:"+req.getServerPort()+"/ws_eventing/services/EventSource");
             EventSourceEndpoint requestorClient = (EventSourceEndpoint)factory.create();
 
             String expires = null;
@@ -74,6 +76,7 @@ public class CreateSubscriptionServlet extends HttpServlet {
             resp.getWriter().append("<h3>Subscription request</h3>");
             resp.getWriter().append(convertJAXBElementToStringAndEscapeHTML(sub));
 
+            //Invocazione http://127.0.0.1:9000/ws_eventing/services/EventSource.subscribeOp(Subscribe body)
             SubscribeResponse subscribeResponse = requestorClient.subscribeOp(sub);
 
             resp.getWriter().append("<h3>Response from Event Source</h3>");

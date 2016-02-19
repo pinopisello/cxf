@@ -1,0 +1,46 @@
+This XML file does not appear to have any style information associated with it. The document tree is shown below.
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsp="http://www.w3.org/ns/ws-policy" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:tns="http://services.wseventing.demo/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns2="http://schemas.xmlsoap.org/soap/http" xmlns:ns1="http://www.w3.org/2011/03/ws-evt" name="TestSubscriptionManagerService" targetNamespace="http://services.wseventing.demo/">
+<wsdl:import location="http://127.0.0.1:9000/ws_eventing/services/SubscriptionManager?wsdl=SubscriptionManagerEndpoint.wsdl" namespace="http://www.w3.org/2011/03/ws-evt"></wsdl:import>
+<wsdl:binding name="TestSubscriptionManagerServiceSoapBinding" type="ns1:SubscriptionManagerEndpoint">
+<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+<wsaw:UsingAddressing xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" wsdl:required="true"/>
+<wsp:PolicyReference URI="#TestSubscriptionManagerServiceSoapBinding_WSAM_Addressing_Policy"/>
+<wsdl:operation name="unsubscribeOp">
+<soap:operation soapAction="http://www.w3.org/2011/03/ws-evt/Unsubscribe" style="document"/>
+<wsdl:input name="unsubscribeOp">
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output name="unsubscribeOpResponse">
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getStatusOp">
+<soap:operation soapAction="http://www.w3.org/2011/03/ws-evt/GetStatus" style="document"/>
+<wsdl:input name="getStatusOp">
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output name="getStatusOpResponse">
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="renewOp">
+<soap:operation soapAction="http://www.w3.org/2011/03/ws-evt/Renew" style="document"/>
+<wsdl:input name="renewOp">
+<soap:body use="literal"/>
+</wsdl:input>
+<wsdl:output name="renewOpResponse">
+<soap:body use="literal"/>
+</wsdl:output>
+</wsdl:operation>
+</wsdl:binding>
+<wsdl:service name="TestSubscriptionManagerService">
+<wsdl:port binding="tns:TestSubscriptionManagerServiceSoapBinding" name="TestSubscriptionManagerPort">
+<soap:address location="http://127.0.0.1:9000/ws_eventing/services/SubscriptionManager"/>
+</wsdl:port>
+</wsdl:service>
+<wsp:Policy xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="TestSubscriptionManagerServiceSoapBinding_WSAM_Addressing_Policy">
+<wsam:Addressing xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata">
+<wsp:Policy/>
+</wsam:Addressing>
+</wsp:Policy>
+</wsdl:definitions>

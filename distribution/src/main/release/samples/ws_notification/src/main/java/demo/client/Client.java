@@ -56,7 +56,7 @@ public final class Client {
                     System.out.println(((Element)o).getTextContent());
                 }
             }
-        }, "http://localhost:9001/MyConsumer");
+        }, "http://localhost:9001/MyConsumer");//Dove il consumer attende le notifiche
         
         
         // Create a subscription for a Topic on the broker
@@ -71,7 +71,7 @@ public final class Client {
                                           String.class, "Hello World!"));
         
         // Just sleep for a bit to make sure the notification gets delivered
-        Thread.sleep(5000);
+        Thread.sleep(50000);
         
         // Cleanup and exit
         subscription.unsubscribe();
