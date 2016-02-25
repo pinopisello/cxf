@@ -16,20 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package sample.rs.client;
+package org.apache.cxf.rs.security.oidc.common;
 
-import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
-
-import sample.rs.service.hello1.HelloService;
-
-
-public final class SampleRestClientApplication {
-    private SampleRestClientApplication() {
-        
+public class DistributedClaimSource {
+    private String endpoint;
+    private String accessToken;
+    
+    public String getEndpoint() {
+        return endpoint;
     }
-    public static void main(String[] args) {
-        HelloService service = JAXRSClientFactory.create("http://localhost:8080/services/helloservice/", 
-                                  HelloService.class);
-        System.out.println(service.sayHello("ApacheCxfUser"));
-    }  
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+    
 }

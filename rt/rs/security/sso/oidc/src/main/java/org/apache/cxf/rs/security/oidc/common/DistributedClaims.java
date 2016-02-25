@@ -16,20 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package sample.rs.client;
+package org.apache.cxf.rs.security.oidc.common;
 
-import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
+import java.util.Map;
 
-import sample.rs.service.hello1.HelloService;
-
-
-public final class SampleRestClientApplication {
-    private SampleRestClientApplication() {
-        
+public class DistributedClaims {
+    private Map<String, String> claimNames;
+    private Map<String, DistributedClaimSource> claimSources;
+    public Map<String, String> getClaimNames() {
+        return claimNames;
     }
-    public static void main(String[] args) {
-        HelloService service = JAXRSClientFactory.create("http://localhost:8080/services/helloservice/", 
-                                  HelloService.class);
-        System.out.println(service.sayHello("ApacheCxfUser"));
-    }  
+
+    public void setClaimNames(Map<String, String> claimNames) {
+        this.claimNames = claimNames;
+    }
+
+    public Map<String, DistributedClaimSource> getClaimSources() {
+        return claimSources;
+    }
+
+    public void setClaimSources(Map<String, DistributedClaimSource> claimSources) {
+        this.claimSources = claimSources;
+    }
+       
 }

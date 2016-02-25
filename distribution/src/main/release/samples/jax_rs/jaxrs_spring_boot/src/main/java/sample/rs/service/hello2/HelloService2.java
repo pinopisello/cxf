@@ -16,20 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package sample.rs.client;
+package sample.rs.service.hello2;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 
-import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
+import org.springframework.stereotype.Service;
 
-import sample.rs.service.hello1.HelloService;
-
-
-public final class SampleRestClientApplication {
-    private SampleRestClientApplication() {
-        
+import io.swagger.annotations.Api;
+ 
+@Path("/sayHello2")
+@Service
+@Api("/sayHello2")
+public class HelloService2 {
+ 
+    @GET
+    @Path("/{a}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String sayHello(@PathParam("a") String a) {
+        return "Hello2 " + a + ", Welcome to CXF RS Spring Boot World!!!";
     }
-    public static void main(String[] args) {
-        HelloService service = JAXRSClientFactory.create("http://localhost:8080/services/helloservice/", 
-                                  HelloService.class);
-        System.out.println(service.sayHello("ApacheCxfUser"));
-    }  
+    
 }

@@ -16,16 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package sample.rs.service;
+package sample.rs.service.hello1;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
 import org.springframework.stereotype.Service;
+
+import io.swagger.annotations.Api;
  
 @Path("/sayHello")
 @Service
+@Api("/sayHello")
 public class HelloService {
  
     @GET
