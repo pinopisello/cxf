@@ -13,6 +13,7 @@ public class NotificationSender {
         notificationBroker.notify("MyTopic", 
                                   new JAXBElement<String>(new QName("urn:test:org", "foo"),
                                           String.class, "Hello World!"));
+       
         
     }
 

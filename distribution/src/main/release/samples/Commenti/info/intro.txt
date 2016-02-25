@@ -372,8 +372,51 @@ Assomiglia molto a ws_eventing con differenza che:
 1)lato server c'e' JMS e le notifiche vengono inviate ad un topic specificato dal subscriber [we_eventing non c'e' jms lato server]
 2)gli eventi che scatenano le notifice vengono inviati via soap http con uno schema prefissato [ws_eventing eventi sono generati lato server con api]
 3)le subscriptions non hanno ne filtri ne enddate [al contrario di ws-eventing]
+4)non ci sono servizi definiti per renew,getstatus,delete subscriptions .
 
 
+===============  WS-Policy   ====================
+ Progetto che utilizza cxf-rt-ws-policy per soddisfare Addressing assertion nel wsdl :
 
+        <wsdl:port binding="tns:Greeter_SOAPBinding" name="SoapPort">
+            <soap:address location="http://localhost:9000/SoapContext/SoapPort"/>
+            <wsp:Policy xmlns:wsp="http://www.w3.org/ns/ws-policy">
+                <wsam:Addressing xmlns:wsam="http://www.w3.org/2007/02/addressing/metadata">
+                    <wsp:Policy/>
+                </wsam:Addressing>
+            </wsp:Policy>
+        </wsdl:port>
+
+Tale xml indica che l'endpoint http://localhost:9000/SoapContext/SoapPort e' capace di inviare risposte in un endpoint diverso da quello della request.
+Si utilizza cxf-rt-ws-policy per abilitare ws-addressing invece che usare <wsa:addressing/> come bus feature per configurare gli interceptors MAPAggregatorImpl/MAPCodec
+
+
+[-Pgenerate-sources] Legge  }/src/main/resources/hello_world_addr_policy.wsdl
+cxf-codegen-plugin e' usato per generare jaxb e SEI interface in target/generated-sources
+org.apache.hello_world_soap_http.Greeter.java 
+
+Nota : le info sul supporto ws-addressing definite hello_world_addr_policy.wsdl non sono portate nei file generati.
+Per questo occorre fare la magia in server.xml e addr-external.xml.
+
+
+[-Pserver]Lancia demo.ws_policy.server.Server.java che configura SpringBus con ws_policy/src/main/resources/server.xml e poi lancia endpoint
+demo.ws_policy.server.GreeterImpl.java su http://localhost:9000/SoapContext/SoapPort.
+server.xml configura <p:externalAttachment location="addr-external.xml" />
+
+[-Pclient]Lancia demo.ws_policy.client.Client.java che configura SpringBus con ws_policy/src/main/resources/client.xml , ottiene un proxy al
+ ws service.getSoapPort() invoca chiamate verso http://localhost:9000/SoapContext/SoapPort.
  
+
+===============  WS-Reliable Message   ====================
+
+
+
+
+
+
+
+
+
+
+
 

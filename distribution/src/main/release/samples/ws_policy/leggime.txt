@@ -1,0 +1,153 @@
+Progetto che utilizza cxf-rt-ws-policy per soddisfare Addressing assertion nel wsdl :
+
+        <wsdl:port binding="tns:Greeter_SOAPBinding" name="SoapPort">
+            <soap:address location="http://localhost:9000/SoapContext/SoapPort"/>
+            <wsp:Policy xmlns:wsp="http://www.w3.org/ns/ws-policy">
+                <wsam:Addressing xmlns:wsam="http://www.w3.org/2007/02/addressing/metadata">
+                    <wsp:Policy/>
+                </wsam:Addressing>
+            </wsp:Policy>
+        </wsdl:port>
+
+Tale xml indica che l'endpoint http://localhost:9000/SoapContext/SoapPort e' capace di inviare risposte in un endpoint diverso da quello della request.
+Si utilizza cxf-rt-ws-policy per abilitare ws-addressing invece che usare <wsa:addressing/> come bus feature per configurare gli interceptors MAPAggregatorImpl/MAPCodec
+
+
+
+
+Specifiche involved:
+
+WS-policy specs:               http://www.w3.org/TR/2007/REC-ws-policy-20070904/
+WS-Addressing Metadata specs:  https://www.w3.org/TR/2007/REC-ws-addr-metadata-20070904/   indica che un endpoint supporta ws-addressing
+WS-policy-attachment specs:    https://www.w3.org/TR/2007/REC-ws-policy-attach-20070904/   in addr-external.xml permette di associare una policy [WS-Addressing Metadata ] ad una entity [endpoint]
+
+
+
+In server.xml si abilita cxf policy engine con:
+
+      <cxf:features>
+			<p:policies />
+		</cxf:features>
+
+
+
+La policy e' definita il addr-external.xml :
+
+   <wsp:PolicyAttachment>
+        <wsp:AppliesTo>
+            <wsa:EndpointReference>
+                <wsa:Address>http://localhost:9000/SoapContext/SoapPort</wsa:Address>
+            </wsa:EndpointReference>
+        </wsp:AppliesTo>
+        <wsp:Policy>
+            <wsam:Addressing xmlns:wsam="http://www.w3.org/2007/02/addressing/metadata">
+                <wsp:Policy/>
+            </wsam:Addressing>
+        </wsp:Policy>
+    </wsp:PolicyAttachment>
+
+
+
+
+[-Pgenerate-sources] Legge  }/src/main/resources/hello_world_addr_policy.wsdl
+cxf-codegen-plugin e' usato per generare jaxb e SEI interface in target/generated-sources
+org.apache.hello_world_soap_http.Greeter.java 
+
+Nota : le info sul supporto ws-addressing definite hello_world_addr_policy.wsdl non sono portate nei file generati.
+Per questo occorre fare la magia in server.xml e addr-external.xml.
+
+
+
+[-Pserver]Lancia demo.ws_policy.server.Server.java che configura SpringBus con ws_policy/src/main/resources/server.xml e poi lancia endpoint
+demo.ws_policy.server.GreeterImpl.java su http://localhost:9000/SoapContext/SoapPort.
+server.xml configura <p:externalAttachment location="addr-external.xml" />
+
+Instanziamento SpringBus:
+
+SpringBus() => ExtensionManagerImpl.load(META-INF/cxf/bus-extensions.txt) => ClassLoader.getResources(META-INF/cxf/bus-extensions.txt) =>
+ /cxf-rt-ws-policy/src/main/resources/META-INF/cxf/bus-extensions.txt  definisce PolicyDataEngineImpl => ExtensionManagerImpl.ordered.add(PolicyDataEngineImpl)
+
+
+server.xml configura <p:policies /> come bus features.
+Istanzia WSPolicyFeature.java e lo setta in SpringBus.features.
+
+org.apache.cxf.ws.policy.spring.NamespaceHandler:
+
+        org.apache.cxf.ws.policy.spring.NamespaceHandler definisce :
+	    registerBeanDefinitionParser("policies", new PolicyFeatureBeanDefinitionParser());
+        registerBeanDefinitionParser("engine", new PolicyEngineBeanDefinitionParser());
+        registerBeanDefinitionParser("externalAttachment",  new ExternalAttachmentProviderBeanDefinitionParser()); 
+    
+Quando il Bus e' instanziato Spring trova <p:externalAttachment location="addr-external.xml" /> , invoca ExternalAttachmentProviderBeanDefinitionParser che indica ExternalAttachmentProvider come beanClass.
+Quindi ExternalAttachmentProvider e' instanziato come singleton e addr-external.xml settato come location.
+Tale file e' letto solo al momento prima request e' ricevuta [vedi sotto].
+
+
+
+
+SpringBus.setApplicationContext() => ExtensionManagerBus.initialize() => ExtensionManagerBus.doInitializeInternal()
+
+Qui due cose succedono :
+  1) extensionManager.initialize() => ExtensionManagerImpl.initialize() => ExtensionManagerImpl.loadAndRegister(PolicyEngineImpl) => new PolicyEngineImpl() => 
+        PolicyEngineImpl.setBus() => PolicyEngineImpl.addBusInterceptors()
+   
+    vengono aggiunti al Bus:
+    PolicyInInterceptor
+    PolicyOutInterceptor
+    ClientPolicyInFaultInterceptor
+    ServerPolicyOutFaultInterceptor
+    PolicyVerificationInFaultInterceptor
+    
+    
+    PolicyEngineImpl viene aggiunto a SpringBus.extensions
+    
+
+  2) ExtensionManagerBus.initializeFeatures() => WSPolicyFeature.initialize() => ExtensionManagerBus.getExtension(PolicyEngine.class) => PolicyEngineImpl
+     PolicyEngineImpl viene ripescato dalle SpringBus extensions e set enabled.
+
+
+Processamento request:
+
+JettyHTTPDestination.doService() => AbstractHTTPDestination.getServer() => AbstractHTTPDestination.calcServerPolicy() => AbstractHTTPDestination.calcServerPolicyInternal()
+Qui bus.getExtension(PolicyDataEngine.class) => PolicyDataEngineImpl.getServerEndpointPolicy() => new EndpointPolicyImpl() =>EndpointPolicyImpl.initialize() => EndpointPolicyImpl.initializePolicy() => PolicyEngineImpl.getAggregatedServicePolicy() => ExternalAttachmentProvider.getEffectivePolicy() => ExternalAttachmentProvider.readDocument()  
+           																													 																																																						addr-external.xml viene letto, un PolicyAttachment viene creato contenente il target endpoint [http://localhost:9000/SoapContext/SoapPort] e una org.apache.neethi.Policy contenente un policyComponent  {http://www.w3.org/2007/02/addressing/metadata}Addressing
+           																													 																																																						La nuova policy e' salvata in EndpointPolicyImpl.policy
+																															 EndpointPolicyImpl.finalizeConfig() => EndpointPolicyImpl.chooseAlternative() => EndpointPolicyImpl.getSupportedAlternatives()  => EndpointPolicyImpl.policy.getAlternatives() [questa e' la policy creta sopra da addr-external.xml]  => PolicyEngineImpl.supportsAlternative() => PolicyInterceptorProviderRegistryImpl.get({http://www.w3.org/2007/02/addressing/metadata}Addressing) => new AddressingPolicyInterceptorProvider  => new MAPAggregatorImpl/MAPCodec =>
+																															              AddressingPolicyInterceptorProvider.setInInterceptor( MAPAggregatorImpl/MAPCodec)/ AddressingPolicyInterceptorProvider.setOutInterceptor( MAPAggregatorImpl/MAPCodec) / AddressingPolicyInterceptorProvider.setInFaultInterceptor( MAPAggregatorImpl/MAPCodec)/ AddressingPolicyInterceptorProvider.setOutFaultInterceptor( MAPAggregatorImpl/MAPCodec)         
+Tutto sto casino per salvare MAPAggregatorImpl/MAPCodec come in/out/fault interceptios in AddressingPolicyInterceptorProvider.
+Vengono ripescati e settati a message.interceptorchain in PolicyInInterceptor e PolicyOutInterceptor.
+
+Ripescaggio   MAPAggregatorImpl/MAPCodec :              PolicyInInterceptor.handleMessage() =>PolicyInInterceptor.handle()  => EndpointPolicyImpl.getInterceptors() => PolicyInterceptorProviderRegistryImpl.getInInterceptorsForAssertion() => AddressingPolicyInterceptorProvider.getInInterceptorsForAssertion()
+Aggiunta     MAPAggregatorImpl/MAPCodec   a message.interceptorChain:                                                       => message.getInterceptorChain().add(MAPAggregatorImpl/MAPCodec)
+
+Il processmento continua come descritto in ws_addressing/leggime.txt per l' aggiunta soap headers .
+
+
+
+
+
+[-Pclient]Lancia demo.ws_policy.client.Client.java che configura SpringBus con ws_policy/src/main/resources/client.xml , ottiene un proxy al
+ ws service.getSoapPort() invoca chiamate verso http://localhost:9000/SoapContext/SoapPort.
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://www.w3.org/2005/08/addressing">http://apache.org/hello_world_soap_http/Greeter/sayHiRequest
+		</Action>
+		<MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:3fa1eb25-86b8-4339-a664-1a94987aeeb4
+		</MessageID>
+		<To xmlns="http://www.w3.org/2005/08/addressing">http://localhost:9000/SoapContext/SoapPort</To>
+		<ReplyTo xmlns="http://www.w3.org/2005/08/addressing">
+			<Address>http://localhost:9990/decoupled_endpoint</Address>
+		</ReplyTo>
+	</soap:Header>
+	<soap:Body>
+		<sayHi xmlns="http://apache.org/hello_world_soap_http/types" />
+	</soap:Body>
+</soap:Envelope>
+
+
+
+      
+
+

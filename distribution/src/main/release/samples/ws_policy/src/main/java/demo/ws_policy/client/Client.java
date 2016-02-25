@@ -49,7 +49,7 @@ public final class Client {
             System.out.println("Invoking sayHi...");
             String resp = port.sayHi();
             System.out.println("Server responded with: " + resp + "\n");
-
+/*
             System.out.println("Invoking greetMe...");
             resp = port.greetMe(USER_NAME);
             System.out.println("Server responded with: " + resp + "\n");
@@ -57,7 +57,9 @@ public final class Client {
             System.out.println("Invoking greetMeOneWay...");
             port.greetMeOneWay(USER_NAME);
             System.out.println("No response from server as method is OneWay\n");
-
+*/
+            
+            Thread.sleep(1000000000);
             try {
                 System.out.println("Invoking pingMe, expecting exception...");
                 port.pingMe();

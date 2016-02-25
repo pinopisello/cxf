@@ -11,14 +11,16 @@ WS-Topics
 
 Assomiglia molto a ws_eventing con differenza che:
 
-1)lato server c'e' JMS e le notifiche vengono inviate ad un topic specificato dal subscriber [we_eventing non c'e' jms lato server]
+1)lato server c'e' JMS e le notifiche vengono inviate ad un topic specificato dal subscriber [ws_eventing non c'e' jms lato server]
 2)gli eventi che scatenano le notifice vengono inviati via soap http con uno schema prefissato [ws_eventing eventi sono generati lato server con api]
 3)le subscriptions non hanno ne filtri ne enddate [al contrario di ws-eventing]
+4)non ci sono servizi definiti per renew,getstatus,delete subscriptions .
+5)clients possono creare pull-points ossia possono chiedere al server di accumulare le notifiche e connettersi asincro per riceverli.
 
 
 
 [-Pwsn-server] Lancia org.apache.cxf.wsn.services.Service  [cxf-services-wsn-core].
-Lancia un activemq-broker su : vm:(broker:(tcp://localhost:6000)?persistent=false)
+Lancia un activemq-broker su : vm:(broker:(tcp://localhost:6000)?persistent=false) oppure uno non embedded su tcp://localhost:61616 vedi pom.
 Poi instanzia :
 
 
@@ -38,7 +40,7 @@ che System.out.println(message.getMessage().getAny().
  
 2)Invia POST verso  http://0.0.0.0:9000/wsn/NotificationBroker:   [Subscription subscription = notificationBroker.subscribe(consumer, "MyTopic")]
 
-Informa NotificationBroker che :
+Informa NotificationBroker che Consumer deve ricevere notiche inviate topic "MyTopic" :
 
 a) service Consumer e' in ascolto verso  http://localhost:9001/MyConsumer 
 b) wsdl in file:/Users/glocon/.m2/repository/org/apache/cxf/services/wsn/cxf-services-wsn-api/3.2.0-SNAPSHOT/cxf-services-wsn-api-3.2.0-SNAPSHOT.jar!/org/apache/cxf/wsn/wsdl/wsn.wsdl
@@ -111,6 +113,131 @@ NotificationMessageHolderType contenente la notifica.
 
 
 Inoltre la notifica viene inviata al broker via http [http://localhost:9000/wsn/NotificationBroker] e ricevuta dal Consumer in http://localhost:9001/MyConsumer
+
+
+===========================  Modalita' Pull-point  ===============
+
+----------   CREAZIONE PULL-POINT http://127.0.0.1:9000/wsn/CreatePullPoint --------------------------
+
+org.apache.cxf.wsn.services.Service quando lanciato crea un PullPointServer sempre  connesso ad activemq e con un endpoint in ascolto http://0.0.0.0:9000/wsn/CreatePullPoint
+Tale servizio espone interfaccia org.apache.cxf.wsn.AbstractCreatePullPoint che espone metodo:
+
+
+CREAZIONE PULL-POINT:	CreatePullPointResponse createPullPoint(CreatePullPoint createPullPointRequest)
+
+CreatePullPointResponse contiene PullPoint che permette di invocare il pullpoint.
+Nella response c'e' anche l' ID del pullpoint che viene usato per invocare l' invio e la ricezione messaggi.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<CreatePullPoint xmlns="http://docs.oasis-open.org/wsn/b-2"
+			xmlns:ns2="http://www.w3.org/2005/08/addressing" xmlns:ns3="http://docs.oasis-open.org/wsn/t-1"
+			xmlns:ns4="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns5="http://docs.oasis-open.org/wsrf/rp-2"
+			xmlns:ns6="http://docs.oasis-open.org/wsn/br-2" xmlns:ns7="http://docs.oasis-open.org/wsrf/r-2" />
+	</soap:Body>
+</soap:Envelope>
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<CreatePullPointResponse xmlns="http://docs.oasis-open.org/wsn/b-2"
+			xmlns:ns2="http://www.w3.org/2005/08/addressing" xmlns:ns3="http://docs.oasis-open.org/wsn/t-1"
+			xmlns:ns4="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns5="http://docs.oasis-open.org/wsrf/rp-2"
+			xmlns:ns6="http://docs.oasis-open.org/wsn/br-2" xmlns:ns7="http://docs.oasis-open.org/wsrf/r-2">
+			<PullPoint>
+				<ns2:Address>http://0.0.0.0:9000/wsn/pullpoints/ID127001152fc1bcc8110
+				</ns2:Address>
+				<ns2:ReferenceParameters />
+				<ns2:Metadata xmlns:wsdli="http://www.w3.org/ns/wsdl-instance"
+					wsdli:wsdlLocation="http://cxf.apache.org/wsn/jaxws jar:file:/Users/glocon/.m2/repository/org/apache/cxf/services/wsn/cxf-services-wsn-api/3.2.0-SNAPSHOT/cxf-services-wsn-api-3.2.0-SNAPSHOT.jar!/org/apache/cxf/wsn/wsdl/wsn.wsdl">
+					<wsam:InterfaceName xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+						xmlns:ns1="http://docs.oasis-open.org/wsn/bw-2" xmlns:wsa="http://www.w3.org/2005/08/addressing"
+						xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl">ns1:PullPoint</wsam:InterfaceName>
+					<wsam:ServiceName xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+						xmlns:ns2="http://cxf.apache.org/wsn/jaxws" xmlns:wsa="http://www.w3.org/2005/08/addressing"
+						xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl"
+						EndpointName="PullPointPort">ns2:PullPointService</wsam:ServiceName>
+					<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+						xmlns:wsa="http://www.w3.org/2005/08/addressing" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+						xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl">
+						<wsdl:import
+							location="jar:file:/Users/glocon/.m2/repository/org/apache/cxf/services/wsn/cxf-services-wsn-api/3.2.0-SNAPSHOT/cxf-services-wsn-api-3.2.0-SNAPSHOT.jar!/org/apache/cxf/wsn/wsdl/wsn.wsdl"
+							namespace="http://cxf.apache.org/wsn/jaxws" />
+					</wsdl:definitions>
+				</ns2:Metadata>
+			</PullPoint>
+		</CreatePullPointResponse>
+	</soap:Body>
+</soap:Envelope>
+
+
+------------------   RICEZIONE/INVIO MESSAGGI PULL_POINT + DISTRUZIONE PULL-POINT  http://127.0.0.1:9000/wsn/pullpoints/pullpointID  ---------------------
+org.oasis_open.docs.wsn.bw_2.PullPoint e' @Webservice che  espone invece i seguenti metodi:
+ 	
+    DestroyPullPointResponse destroyPullPoint(DestroyPullPoint destroyPullPointRequest)
+    GetMessagesResponse getMessages(GetMessages getMessagesRequest)
+    notify(Notify notify)
+ 
+ Esempio notify message:
+ 
+ <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<ns2:Notify xmlns="http://www.w3.org/2005/08/addressing"
+			xmlns:ns2="http://docs.oasis-open.org/wsn/b-2" xmlns:ns3="http://docs.oasis-open.org/wsn/t-1"
+			xmlns:ns4="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns5="http://docs.oasis-open.org/wsrf/rp-2"
+			xmlns:ns6="http://docs.oasis-open.org/wsn/br-2" xmlns:ns7="http://docs.oasis-open.org/wsrf/r-2">
+			<ns2:NotificationMessage>
+				<ns2:Message>
+					<ns8:foo xmlns:ns8="urn:test:org">Notifica</ns8:foo>
+				</ns2:Message>
+			</ns2:NotificationMessage>
+		</ns2:Notify>
+	</soap:Body>
+</soap:Envelope>
+ 
+ 
+ Esempio getMessages()<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<ns2:DestroyPullPoint xmlns="http://www.w3.org/2005/08/addressing"
+			xmlns:ns2="http://docs.oasis-open.org/wsn/b-2" xmlns:ns3="http://docs.oasis-open.org/wsn/t-1"
+			xmlns:ns4="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns5="http://docs.oasis-open.org/wsrf/rp-2"
+			xmlns:ns6="http://docs.oasis-open.org/wsn/br-2" xmlns:ns7="http://docs.oasis-open.org/wsrf/r-2" />
+	</soap:Body>
+</soap:Envelope>:
+ 
+ <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<ns2:GetMessages xmlns="http://www.w3.org/2005/08/addressing"
+			xmlns:ns2="http://docs.oasis-open.org/wsn/b-2" xmlns:ns3="http://docs.oasis-open.org/wsn/t-1"
+			xmlns:ns4="http://docs.oasis-open.org/wsrf/bf-2" xmlns:ns5="http://docs.oasis-open.org/wsrf/rp-2"
+			xmlns:ns6="http://docs.oasis-open.org/wsn/br-2" xmlns:ns7="http://docs.oasis-open.org/wsrf/r-2">
+			<ns2:MaximumNumber>10</ns2:MaximumNumber>
+		</ns2:GetMessages>
+	</soap:Body>
+</soap:Envelope>
+
+
+Esempio destroyPullPoint()
+
+
+
+ 
+ Le request colpiscono lato server AbstractPullPoint
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+
+
+
+
+
 
 
 

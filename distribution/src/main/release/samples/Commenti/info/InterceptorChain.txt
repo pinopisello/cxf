@@ -1,4 +1,4 @@
-org.apache.cxf.message.Messgae definisce getInterceptorChain()/setInterceptorChain()
+org.apache.cxf.message.Message definisce getInterceptorChain()/setInterceptorChain()
 
 
 Per ogni messaggio in ingresso viene creata una InterceptorChain e assegnata al messaggio [ChainInitiationObserver.onMessage()].

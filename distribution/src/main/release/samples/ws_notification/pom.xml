@@ -48,6 +48,9 @@
                                 <configuration>
                                     <mainClass>org.apache.cxf.wsn.services.Service</mainClass>
                                     <arguments>
+                                     <argument>-rootUrl</argument>
+                                     <argument>http://127.0.0.1:9000/wsn</argument>
+                                    
                                     <!-- Per connettere as un broker esterno invece di quello embedded di default [vedi org.apache.cxf.wsn.services.Service] -->
                                      <argument>-brokerUrl</argument>
                                     <argument>tcp://localhost:61616</argument>

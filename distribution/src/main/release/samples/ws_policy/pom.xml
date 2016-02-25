@@ -69,14 +69,16 @@
                             <execution>
                                 <phase>test</phase>
                                 <goals>
-                                    <goal>exec</goal>
+                                    <goal>java</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>java</executable>
+                                <mainClass>demo.ws_policy.server.Server</mainClass>
+                                   <!--  <executable>java</executable> -->
                                     <arguments>
-                                        <argument>-classpath</argument>
+                                       <!--   <argument>-classpath</argument>
                                         <classpath />
                                         <argument>demo.ws_policy.server.Server</argument>
+                                        -->
                                     </arguments>
                                 </configuration>
                             </execution>

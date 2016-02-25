@@ -94,4 +94,8 @@ e viene usata in MessageSenderInterceptor.handleMessage() per settare la conduit
 LA response e' inviata in MessageSenderEndingInterceptor.handleMessage().
 
 
+I ws-addressing SOAP headers  sono letti da MAPCodec.decode() e settati da MAPCodec.encodeAsExposed() usando SoapMessage.getHeaders().
+
+
+
 
