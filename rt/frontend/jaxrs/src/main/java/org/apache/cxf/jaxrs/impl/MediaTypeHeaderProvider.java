@@ -59,6 +59,8 @@ public class MediaTypeHeaderProvider implements HeaderDelegate<MediaType> {
         int i = mType.indexOf('/');
         if (i == -1) {
             return handleMediaTypeWithoutSubtype(mType.trim());
+        } else if (i == 0) {
+            throw new IllegalArgumentException("Invalid media type string: " + mType);
         }
         
         int paramsStart = mType.indexOf(';', i + 1);
@@ -66,6 +68,9 @@ public class MediaTypeHeaderProvider implements HeaderDelegate<MediaType> {
         
         String type = mType.substring(0, i); 
         String subtype = mType.substring(i + 1, end);
+        if (subtype.indexOf("/") != -1) {
+            throw new IllegalArgumentException("Invalid media type string: " + mType);
+        }
         
         Map<String, String> parameters = Collections.emptyMap();
         if (paramsStart != -1) {
