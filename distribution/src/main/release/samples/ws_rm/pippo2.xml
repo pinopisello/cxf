@@ -1,0 +1,347 @@
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/CreateSequence
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:0edf3a85-b164-401d-8ffd-b7060aed3c82
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+	</soap:Header>
+	<soap:Body>
+		<CreateSequence xmlns="http://schemas.xmlsoap.org/ws/2005/02/rm"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<AcksTo>
+				<ns2:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+				</ns2:Address>
+			</AcksTo>
+			<Expires>PT0S</Expires>
+			<Offer>
+				<Identifier>urn:uuid:efb36c05-9fbf-4bef-a29a-504fe04dcd34
+				</Identifier>
+				<Expires>PT0S</Expires>
+			</Offer>
+		</CreateSequence>
+	</soap:Body>
+</soap:Envelope>
+HTTP/1.1 200 OK
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/CreateSequenceResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:3e095e3b-d13b-4bf3-9552-2aec45c135dc
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:0edf3a85-b164-401d-8ffd-b7060aed3c82
+		</RelatesTo>
+	</soap:Header>
+	<soap:Body>
+		<CreateSequenceResponse xmlns="http://schemas.xmlsoap.org/ws/2005/02/rm"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</Identifier>
+			<Expires>P0Y0M0DT0H0M0S</Expires>
+			<Accept>
+				<AcksTo>
+					<ns2:Address>http://localhost:9000/SoapContext/GreeterPort
+					</ns2:Address>
+				</AcksTo>
+			</Accept>
+		</CreateSequenceResponse>
+	</soap:Body>
+</soap:Envelope>
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeRequest
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:48f61286-7b8d-42e8-b2de-04089f0c03fb
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>1</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMe xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<requestType>Anne</requestType>
+		</greetMe>
+	</soap:Body>
+</soap:Envelope>
+HTTP/1.1 200 OK
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:96eafca6-af1e-4c98-84d9-6bc72c0262fa
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:48f61286-7b8d-42e8-b2de-04089f0c03fb
+		</RelatesTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:efb36c05-9fbf-4bef-a29a-504fe04dcd34
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>1</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMeResponse xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<responseType>Hello Anne</responseType>
+		</greetMeResponse>
+	</soap:Body>
+</soap:Envelope>
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeRequest
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:6e61be7e-86eb-4a97-ac94-ab3cfbfe6709
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>2</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMe xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<requestType>Bill</requestType>
+		</greetMe>
+	</soap:Body>
+</soap:Envelope>
+HTTP/1.1 200 OK
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:ec5c2cc4-6c53-473b-bfe6-ef30ede4d980
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:6e61be7e-86eb-4a97-ac94-ab3cfbfe6709
+		</RelatesTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:efb36c05-9fbf-4bef-a29a-504fe04dcd34
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>2</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMeResponse xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<responseType>Hello Bill</responseType>
+		</greetMeResponse>
+	</soap:Body>
+</soap:Envelope>
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeRequest
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:8a5bf8c7-3331-412a-b157-da3c9b16e179
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>3</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMe xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<requestType>Chris</requestType>
+		</greetMe>
+	</soap:Body>
+</soap:Envelope>
+HTTP/1.1 200 OK
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:47c62937-045d-41eb-99ae-99122b028e98
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:8a5bf8c7-3331-412a-b157-da3c9b16e179
+		</RelatesTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:efb36c05-9fbf-4bef-a29a-504fe04dcd34
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>3</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMeResponse xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<responseType>Hello Chris</responseType>
+		</greetMeResponse>
+	</soap:Body>
+</soap:Envelope>
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeRequest
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:9ef0da42-3b88-45ac-835c-4619e58011a2
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>4</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMe xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<requestType>Daisy</requestType>
+		</greetMe>
+	</soap:Body>
+</soap:Envelope>
+HTTP/1.1 200 OK
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:5b1ff700-20bd-416c-94d4-9661fd69005b
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:9ef0da42-3b88-45ac-835c-4619e58011a2
+		</RelatesTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:efb36c05-9fbf-4bef-a29a-504fe04dcd34
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>4</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMeResponse xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<responseType>Hello Daisy</responseType>
+		</greetMeResponse>
+	</soap:Body>
+</soap:Envelope>
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/SequenceAcknowledgement
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:f35919ad-7a28-4746-9756-16cb8bf7e88e
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<wsrm:SequenceAcknowledgement
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:efb36c05-9fbf-4bef-a29a-504fe04dcd34
+			</wsrm:Identifier>
+			<wsrm:AcknowledgementRange Lower="1" Upper="4" />
+		</wsrm:SequenceAcknowledgement>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>
+HTTP/1.1 202 Accepted
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/LastMessage
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:dfb7251c-31bf-413a-b18a-ee2fdd2de961
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>5</wsrm:MessageNumber>
+			<wsrm:LastMessage />
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>
+HTTP/1.1 200 OK
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/SequenceAcknowledgement
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:5b6b9273-052e-4230-8e45-4d82ac4495d0
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://www.w3.org/2005/08/addressing/unspecified
+		</RelatesTo>
+		<wsrm:SequenceAcknowledgement
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</wsrm:Identifier>
+			<wsrm:AcknowledgementRange Lower="1" Upper="5" />
+		</wsrm:SequenceAcknowledgement>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/TerminateSequence
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:c229dbf1-1ebe-4fc3-ba3e-6bec8119523f
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+	</soap:Header>
+	<soap:Body>
+		<TerminateSequence xmlns="http://schemas.xmlsoap.org/ws/2005/02/rm"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Identifier>urn:uuid:1e71de4d-61e5-480a-97ac-22f163b99c17
+			</Identifier>
+		</TerminateSequence>
+	</soap:Body>
+</soap:Envelope>
+HTTP/1.1 202 Accepted
+

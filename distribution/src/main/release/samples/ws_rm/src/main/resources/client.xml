@@ -17,23 +17,67 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core" xmlns:wsa="http://cxf.apache.org/ws/addressing" xmlns:http="http://cxf.apache.org/transports/http/configuration" xmlns:wsrm-policy="http://schemas.xmlsoap.org/ws/2005/02/rm/policy" xmlns:wsrm-mgr="http://cxf.apache.org/ws/rm/manager" xsi:schemaLocation="        http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd        http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd        http://schemas.xmlsoap.org/ws/2005/02/rm/policy http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm-policy.xsd        http://cxf.apache.org/ws/rm/manager http://cxf.apache.org/schemas/configuration/wsrm-manager.xsd        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+<beans xmlns="http://www.springframework.org/schema/beans"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+ xmlns:cxf="http://cxf.apache.org/core" 
+ xmlns:wsa="http://cxf.apache.org/ws/addressing" 
+ xmlns:http="http://cxf.apache.org/transports/http/configuration" 
+ xmlns:wsrm-policy="http://schemas.xmlsoap.org/ws/2005/02/rm/policy"
+  xmlns:wsrm-mgr="http://cxf.apache.org/ws/rm/manager"
+   xsi:schemaLocation="http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd   
+        http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd  
+        http://schemas.xmlsoap.org/ws/2005/02/rm/policy http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm-policy.xsd     
+        http://cxf.apache.org/ws/rm/manager http://cxf.apache.org/schemas/configuration/wsrm-manager.xsd  
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
     <cxf:bus>
         <cxf:features>
             <cxf:logging/>
             <wsa:addressing/>
             <wsrm-mgr:reliableMessaging>
+            
                 <wsrm-policy:RMAssertion>
-                    <wsrm-policy:BaseRetransmissionInterval Milliseconds="4000"/>
-                    <wsrm-policy:AcknowledgementInterval Milliseconds="2000"/>
+                    <!--  <wsrm-policy:InactivityTimeout Milliseconds="2000000"/>--> 
+                    <wsrm-policy:BaseRetransmissionInterval Milliseconds="20000"/><!-- quanto tempo RM Source attende per un ack prima di ritrasmattere un messaggio-->
+                    <!-- <wsrm-policy:ExponentialBackoff /> --><!-- Modifica Retransmission Interval come BaseRetransmissionInterval^(numero ritransmissioni gia fatti)  -->
+                    <wsrm-policy:AcknowledgementInterval Milliseconds="1000"/>   <!-- the duration after which the RM Destination will transmit an acknowledgemen -->
                 </wsrm-policy:RMAssertion>
-                <wsrm-mgr:destinationPolicy>
-                    <wsrm-mgr:acksPolicy intraMessageThreshold="0"/>
-                </wsrm-mgr:destinationPolicy>
+
+                
+                <!-- Policy che si applica a RM Source di messaggi [wsrm-manager-types.xsd]-->
+				<wsrm-mgr:sourcePolicy sequenceExpiration="PT0S" includeOffer="true" offeredSequenceExpiration="PT0S">
+					<wsrm-mgr:sequenceTerminationPolicy maxLength="0" maxRanges="0" maxUnacknowledged="0" terminateOnShutdown="false" />
+					<wsrm-mgr:retryPolicy maxRetries="-1" />
+				</wsrm-mgr:sourcePolicy>
+
+				<!-- Policy che si aplica a RM Destination di messaggi [wsrm-manager-types.xsd]-->
+				<wsrm-mgr:destinationPolicy acceptOffers="true" maxSequences="0">
+					<wsrm-mgr:acksPolicy intraMessageThreshold="0"	ImmediaAcksTimeout="10" /> <!-- garantics che un ack e' inviato alla rm source entro tale intervallo anche usando un out of band messagge -->
+					<wsrm-mgr:retryPolicy maxRetries="-1" />
+				</wsrm-mgr:destinationPolicy>
+
+				<wsrm-mgr:RM10AddressingNamespace
+					uri="http://schemas.xmlsoap.org/ws/2004/08/addressing" />
+                
+                 <wsrm-mgr:store>
+					<!-- The store to use when persisting messages. The child element of 
+						this element must be a bean whose bean class implements org.apache.cxf.ws.rm.persistence.RMStore, 
+						or a reference to such a bean. By default, messages are only persisted in 
+						memory, and thus delivery cannot be guaranteed in the presence of application 
+						crashes. -->
+					<!-- Configura org.apache.cxf.ws.rm.persistence.jdbc.RMTxStore -->
+					<wsrm-mgr:jdbcStore name="postgres_jdbc_store"
+						id="postgres_jdbc_store" abstract="false" driverClassName="org.postgresql.Driver"
+						url="jdbc:postgresql://127.0.0.1:5432/cxf_client" userName="cxf"
+						password="cxf123" keepConnection="true" />
+				</wsrm-mgr:store>
             </wsrm-mgr:reliableMessaging>
         </cxf:features>
     </cxf:bus>
-    <http:conduit name="{http://cxf.apache.org/hello_world_soap_http}GreeterPort.http-conduit">
-        <http:client DecoupledEndpoint="http://localhost:9990/decoupled_endpoint"/>
+    
+       
+    <!-- Configura client connection    -->
+    <http:conduit   name="http://localhost:9000/SoapContext/GreeterPort">
+         <http:client ConnectionTimeout="30000000" ReceiveTimeout="30000000"/>
     </http:conduit>
+   
 </beans>

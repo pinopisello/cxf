@@ -36,24 +36,35 @@ import org.apache.cxf.phase.Phase;
 import org.apache.cxf.phase.PhaseInterceptor;
 import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.rm.RMContextUtils;
+import org.apache.cxf.ws.rm.RMProperties;
+import org.apache.cxf.ws.rm.v200702.SequenceType;
 
 /**
- * 
+ * Rimuove, previene l'invio messaggi con sequence pari lato client.
+ * Ergo il client li inviera'2 volte non ricevendo ack per il primo.
  */
-public class MessageLossSimulator extends AbstractPhaseInterceptor<Message> {
+public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
 
-    private static final Logger LOG = Logger.getLogger(MessageLossSimulator.class.getName());
+    private static final Logger LOG = Logger.getLogger(MessageLossInterceptor.class.getName());
     private int appMessageCount; 
+    private long lastrun=System.currentTimeMillis();
     
-    public MessageLossSimulator() {
+    
+    public MessageLossInterceptor() {
         super(Phase.PREPARE_SEND);
         addBefore(MessageSenderInterceptor.class.getName());
     }
 
     
     public void handleMessage(Message message) throws Fault {
-        AddressingProperties maps =
-            RMContextUtils.retrieveMAPs(message, false, true);
+        System.out.println("Last run:  "+(System.currentTimeMillis() - lastrun) );
+        AddressingProperties maps =    RMContextUtils.retrieveMAPs(message, false, true);
+        
+        RMProperties rmps = RMContextUtils.retrieveRMProperties(message, true);
+        if(null !=rmps){
+            SequenceType st = rmps.getSequence();
+            Long messgaeNumber = st.getMessageNumber();
+        }
         //Fixed the build error of ws_rm, now there is no ensureExposedVersion anymore
         //RMContextUtils.ensureExposedVersion(maps);
         String action = null;

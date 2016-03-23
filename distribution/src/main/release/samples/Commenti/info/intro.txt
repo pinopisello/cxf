@@ -407,7 +407,7 @@ server.xml configura <p:externalAttachment location="addr-external.xml" />
  ws service.getSoapPort() invoca chiamate verso http://localhost:9000/SoapContext/SoapPort.
  
 
-===============  WS-Reliable Message   ====================
+===============  WS-ReliableMessaging   ====================
 
 
 

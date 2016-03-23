@@ -1,5 +1,139 @@
+Proggetto implementa WS-ReliableMessaging [http://docs.oasis-open.org/ws-rx/wsrm/200702/wsrm-1.2-spec-os.html]
+
+Oltre a garantire la ricezione del messaggio al sender, garantisce anche che l' ordine del processamento e' sequenziale, cioe'
+la destination effettua reordering dei messaggi ricevuto evitando losses, dups e messaggi fuori ordine.
+
+
+[-Pgenerate-sources] Legge  ws_rm/src/main/resources/hello_world_rm.wsdl
+cxf-codegen-plugin e' usato per generare jaxb e SEI interface in ws_rm/target/generated-sources/cxf/org/apache/cxf/hello_world_soap_http/Greeter.java
+
+Nota : hello_world_rm.wsdl dichiara che endpoint http://localhost:9000/SoapContext/GreeterPort supporta ws-addressing.
+  <wsdl:port binding="tns:Greeter_SOAPBinding" name="GreeterPort">
+            <soap:address location="http://localhost:9000/SoapContext/GreeterPort"/>
+            <wswa:UsingAddressing xmlns:wswa="http://www.w3.org/2005/02/addressing/wsdl"/>
+        </wsdl:port>
+
+
+Specs involved:
+
+
+WS-Reliable Messaging:    				 http://docs.oasis-open.org/ws-rx/wsrm/200702/wsrm-1.2-spec-os.html
+WS-Reliable Messaging Policy Assertion:  http://specs.xmlsoap.org/ws/2005/02/rm/WS-RMPolicy.pdf
+CXF wsrm-manager [vedi http://cxf.apache.org/docs/wsrmconfiguration.html]:   http://cxf.apache.org/schemas/configuration/wsrm-manager.xsd
 
 
 
+
+
+[-Pserver] => lancia demo.ws_rm.server che usa  Endpoint.publish() per lanciare GreeterImpl.java endpoint su jetty.
+Prima di lanciare il server , il Bus viene creato usando ws_rm/src/main/resources/server.xml per configurare reliableMessaging.
+
+
+Inizializzazione bus:
+
+ <cxf:bus>
+        <cxf:features>
+            <cxf:logging/>
+            <wsa:addressing/>
+            <wsrm-mgr:reliableMessaging>
+                <wsrm-policy:RMAssertion>
+                    <wsrm-policy:BaseRetransmissionInterval Milliseconds="4000"/>
+                    <wsrm-policy:AcknowledgementInterval Milliseconds="2000"/>
+                </wsrm-policy:RMAssertion>
+                <wsrm-mgr:destinationPolicy>
+                    <wsrm-mgr:acksPolicy intraMessageThreshold="0"/>
+                </wsrm-mgr:destinationPolicy>
+                <wsrm-mgr:store>
+					<!-- The store to use when persisting messages. The child element of 
+						this element must be a bean whose bean class implements org.apache.cxf.ws.rm.persistence.RMStore, 
+						or a reference to such a bean. By default, messages are only persisted in 
+						memory, and thus delivery cannot be guaranteed in the presence of application 
+						crashes. -->
+					<!-- Configura org.apache.cxf.ws.rm.persistence.jdbc.RMTxStore -->
+					<wsrm-mgr:jdbcStore name="postgres_jdbc_store"
+						id="postgres_jdbc_store" abstract="false" driverClassName="org.postgresql.Driver"
+						url="jdbc:postgresql://127.0.0.1:5432/CXF" userName="postgres"
+						password="postgres" keepConnection="true" />
+				</wsrm-mgr:store>
+            </wsrm-mgr:reliableMessaging>
+        </cxf:features>
+    </cxf:bus>
+
+
+<wsa:addressing/>  : MAPCodec(pre-protocol) e un MAPAggregatorImpl(pre-logical) sono aggiunti SpringBus InInterceptors ,OutInterceptors,InFaultInterceptors,OutFaultInterceptors [SpringBus extemds AbstractBasicInterceptorProvider]
+
+
+
+org.apache.cxf.ws.rm.spring.NamespaceHandler definisce:
+
+        registerBeanDefinitionParser("rmManager", new RMManagerBeanDefinitionParser());
+        registerBeanDefinitionParser("reliableMessaging", new RMFeatureBeanDefinitionParser());
+        registerBeanDefinitionParser("jdbcStore", new RMTxStoreBeanDefinitionParser()); 
+
+
+
+Ergo RMFeatureBeanDefinitionParser definisce reliableMessaging con RMFeature.java come beanclass.
+RMAssertion,deliveryAssurance,sourcePolicy,destinationPolicy,store sono setters in RMFeature.java e settati in RMManager.java in RMFeature.initializeProvider()
+
+
+A bootstrap, org.apache.cxf.ws.rm.feature.RMFeature e' instanziato e BeanWrapperImpl.setPropertyValue() setta i valori corrispondenti ossia:
+
+RMFeature.destinationPolicy  =>  org.apache.cxf.ws.rm.manager.DestinationPolicyType
+RMFeature.rmAssertion        =>  org.apache.cxf.ws.rmp.v200502.RMAssertion
+
+
+Tutti i paraetri definiti in <wsrm-policy:RMAssertion> vanno in  org.apache.cxf.ws.rm.RMConfiguration
+
+SpringBus.initializeFeatures() => SpringBus.initializeFeatures() => RMFeature.initialize() => RMFeature.initializeProvider() => SpringBus.getExtension(org.apache.cxf.ws.rm.RMManager)   [/cxf-rt-ws-rm/src/main/resources/META-INF/cxf/bus-extensions.txt definisce org.apache.cxf.ws.rm.RMManager::true]
+																							  RMManager.RMAssertion = RMFeature.rmAssertion
+																							  RMManager.destinationPolicy = RMFeature.destinationPolicy
+																							  
+																							  
+																							  SpringBus.InInterceptors.add(RMInInterceptor)
+																							  SpringBus.InInterceptors.add(RMSoapInInterceptor)																								
+																							  SpringBus.InInterceptors.add(RMDeliveryInterceptor)
+																							  SpringBus.InInterceptors.add(RMCaptureInInterceptor)
+																							  SpringBus.OutInterceptors.add(RMOutInterceptor)
+																							  SpringBus.OutInterceptors.add(RMSoapOutInterceptor)																							  
+																							  SpringBus.OutInterceptors.add(RMCaptureOutInterceptor)																							  
+																							  																							  																								
+
+
+
+ <wsrm-mgr:store> :configura  org.apache.cxf.ws.rm.persistence.jdbc.RMTxStore che e' usato per persistere Source/DestinationSequence e incoming/OutgoingMEssages.
+ 
+ RMProperties.java e' associato ad ogni message e contiene RM info come sequence,ack,ackrequested, etc
+ 
+ InputChain:
+ pre-stream    RMCaptureInInterceptor     Trasforma message.getContent(InputStream.class)  in RewindableInputStream  e lo salva in  message.setContent(InputStream.class, ris) e message.put(RMMessageConstants.SAVED_CONTENT, ris);
+ pre-protocol  RMSoapInInterceptor        Estrae RMProperties dai soap headers della request e la assegna a message sotto chiave org.apache.cxf.ws.rm.inbound.Questo permette a RMContextUtils.retrieveRMProperties() di funzionare
+ pre-logical   RMInInterceptor            processAcknowledgments : cerca soap headers "SequenceAcknowledgement" nella request,itera , trova la RMEndpoint.source.sequence.id con matching ack Identifier,invoca per tale sequence setAcknowledged(ack)
+ 										  Questo 
+ 
+ ,processAcknowledgmentRequests,processSequence(persistIncoming,scheduleack)]
+ 
+ 
+ post-invoke   RMDeliveryInterceptor
+
+ OutputChain:
+ pre-stream    RMCaptureOutInterceptor, RMOutInterceptor
+ pre-protocol  RMSoapOutInterceptor
+
+
+Invio acks [DestinationSequence.scheduleAcknowledgement(),processDeliveryAssurance]
+
+
+
+
+
+[-Pclient]Lancia demo.ws_policy.client.Client.java che configura SpringBus con ws_policy/src/main/resources/client.xml , ottiene un proxy al
+ ws service.getSoapPort() invoca chiamate verso http://localhost:9000/SoapContext/SoapPort.
+
+
+
+
+
+
+===================     ==============================
 
 

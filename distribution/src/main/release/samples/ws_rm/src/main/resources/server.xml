@@ -1,36 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
- 
-  http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core" xmlns:wsa="http://cxf.apache.org/ws/addressing" xmlns:http="http://cxf.apache.org/transports/http/configuration" xmlns:wsrm-policy="http://schemas.xmlsoap.org/ws/2005/02/rm/policy" xmlns:wsrm-mgr="http://cxf.apache.org/ws/rm/manager" xsi:schemaLocation="        http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd        http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd        http://schemas.xmlsoap.org/ws/2005/02/rm/policy http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm-policy.xsd        http://cxf.apache.org/ws/rm/manager http://cxf.apache.org/schemas/configuration/wsrm-manager.xsd        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
-    <cxf:bus>
-        <cxf:features>
-            <cxf:logging/>
-            <wsa:addressing/>
-            <wsrm-mgr:reliableMessaging>
-                <wsrm-policy:RMAssertion>
-                    <wsrm-policy:BaseRetransmissionInterval Milliseconds="4000"/>
-                    <wsrm-policy:AcknowledgementInterval Milliseconds="2000"/>
-                </wsrm-policy:RMAssertion>
-                <wsrm-mgr:destinationPolicy>
-                    <wsrm-mgr:acksPolicy intraMessageThreshold="0"/>
-                </wsrm-mgr:destinationPolicy>
-            </wsrm-mgr:reliableMessaging>
-        </cxf:features>
-    </cxf:bus>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+	license agreements. See the NOTICE file distributed with this work for additional 
+	information regarding copyright ownership. The ASF licenses this file to 
+	you under the Apache License, Version 2.0 (the "License"); you may not use 
+	this file except in compliance with the License. You may obtain a copy of 
+	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+	by applicable law or agreed to in writing, software distributed under the 
+	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+	OF ANY KIND, either express or implied. See the License for the specific 
+	language governing permissions and limitations under the License. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:wsa="http://cxf.apache.org/ws/addressing" xmlns:http="http://cxf.apache.org/transports/http/configuration"
+	xmlns:wsrm-policy="http://schemas.xmlsoap.org/ws/2005/02/rm/policy"
+	xmlns:wsrm-mgr="http://cxf.apache.org/ws/rm/manager"
+	xsi:schemaLocation="http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd 
+       				http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd  
+           			http://schemas.xmlsoap.org/ws/2005/02/rm/policy http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm-policy.xsd  
+                	http://cxf.apache.org/ws/rm/manager http://cxf.apache.org/schemas/configuration/wsrm-manager.xsd   
+                    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<cxf:bus>
+		<cxf:features>
+			<cxf:logging />
+			<wsa:addressing />
+			<wsrm-mgr:reliableMessaging>
+
+				<!-- Vedi http://specs.xmlsoap.org/ws/2005/02/rm/WS-RMPolicy.pdf -->
+				<wsrm-policy:RMAssertion>
+				    <wsrm-policy:InactivityTimeout Milliseconds="2000000"/> <!-- Ogni ricezione questo timeout parte.Quando  non si riceve nulla e timeout finisce, server cancella destination seq nel db DestinationSequence.run() -->
+					<wsrm-policy:BaseRetransmissionInterval	Milliseconds="400000" /> <!-- how long the RM Source will wait for an aknowledge after transmitting a message and before retransmitting the message -->
+				    <wsrm-policy:ExponentialBackoff />
+					<wsrm-policy:AcknowledgementInterval	Milliseconds="100" />   <!-- the duration after which the RM Destination will transmit an acknowledgement -->
+				</wsrm-policy:RMAssertion>
+
+				<wsrm-mgr:deliveryAssurance>
+					<!-- <wsrm-mgr:AtLeastOnce /> --><!-- There is no requirement for the RM Destination to apply duplicate 
+						message filtering. -->
+					<!--<wsrm-mgr:AtMostOnce /> --> <!-- RM Source MAY retry transmission of unacknowledged messages, but is 
+						NOT REQUIRED .RM Destination is that it MUST filter out duplicate messages -->
+					<!--<wsrm-mgr:ExactlyOnce /> -->
+					<wsrm-mgr:InOrder />	<!-- Messages from each individual Sequence are to be delivered in the same 
+						order they have been sent by the Application Source. -->
+				</wsrm-mgr:deliveryAssurance>
+
+
+				<!-- Policy che si applica a RM Source di messaggi [wsrm-manager-types.xsd]-->
+				<wsrm-mgr:sourcePolicy sequenceExpiration="PT0S" includeOffer="true" offeredSequenceExpiration="PT0S">
+					<wsrm-mgr:sequenceTerminationPolicy maxLength="0" maxRanges="0" maxUnacknowledged="0" terminateOnShutdown="false" />
+					<wsrm-mgr:retryPolicy maxRetries="-1" />
+				</wsrm-mgr:sourcePolicy>
+
+				<!-- Policy che si aplica a RM Destination di messaggi [wsrm-manager-types.xsd]-->
+				<wsrm-mgr:destinationPolicy acceptOffers="true" maxSequences="0">
+					<wsrm-mgr:acksPolicy intraMessageThreshold="0"	ImmediaAcksTimeout="10" /> <!-- garantics che un ack e' inviato alla rm source entro tale intervallo anche usando un out of band messagge -->
+					<wsrm-mgr:retryPolicy maxRetries="-1" />
+				</wsrm-mgr:destinationPolicy>
+
+				<wsrm-mgr:RM10AddressingNamespace
+					uri="http://schemas.xmlsoap.org/ws/2004/08/addressing" />
+
+				<wsrm-mgr:store>
+					<!-- The store to use when persisting messages. The child element of 
+						this element must be a bean whose bean class implements org.apache.cxf.ws.rm.persistence.RMStore, 
+						or a reference to such a bean. By default, messages are only persisted in 
+						memory, and thus delivery cannot be guaranteed in the presence of application 
+						crashes. -->
+					<!-- Configura org.apache.cxf.ws.rm.persistence.jdbc.RMTxStore -->
+					<wsrm-mgr:jdbcStore name="postgres_jdbc_store"
+						id="postgres_jdbc_store" abstract="false" driverClassName="org.postgresql.Driver"
+						url="jdbc:postgresql://127.0.0.1:5432/cxf_server" userName="cxf"
+						password="cxf123" keepConnection="true" />
+
+				</wsrm-mgr:store>
+			</wsrm-mgr:reliableMessaging>
+
+
+		</cxf:features>
+	</cxf:bus>
+
+
+
 </beans>

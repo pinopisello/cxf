@@ -20,6 +20,7 @@
 package demo.ws_rm.server;
 
 import java.net.URL;
+
 import javax.xml.ws.Endpoint;
 
 import org.apache.cxf.Bus;
@@ -43,12 +44,15 @@ public class Server {
         URL busFile = Server.class.getResource("/server.xml");
         Bus bus = bf.createBus(busFile.toString());
         
+        //Ignora alcuni messaggi 
+        //bus.getInInterceptors().add(new InMessageLossInterceptor());
+       
         BusFactory.setDefaultBus(bus);
 
         new Server();
         System.out.println("Server ready...");
 
-        Thread.sleep(5 * 60 * 1000);
+        Thread.sleep(500 * 60 * 1000);
 
         bus.shutdown(true);
         System.out.println("Server exiting");

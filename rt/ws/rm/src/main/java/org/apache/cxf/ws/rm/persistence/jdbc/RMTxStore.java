@@ -72,7 +72,7 @@ public class RMTxStore implements RMStore {
            {"ACKS_TO", "VARCHAR(1024) NOT NULL"},
            {"LAST_MSG_NO", "DECIMAL(19, 0)"},
            {"ENDPOINT_ID", "VARCHAR(1024)"},
-           {"ACKNOWLEDGED", "BLOB"},
+           {"ACKNOWLEDGED", "BYTEA"},
            {"PROTOCOL_VERSION", "VARCHAR(256)"}};
     private static final String[] DEST_SEQUENCES_TABLE_KEYS = {"SEQ_ID"};
     private static final String[][] SRC_SEQUENCES_TABLE_COLS
@@ -88,13 +88,13 @@ public class RMTxStore implements RMStore {
         = {{"SEQ_ID", "VARCHAR(256) NOT NULL"},
            {"MSG_NO", "DECIMAL(19, 0) NOT NULL"},
            {"SEND_TO", "VARCHAR(256)"},
-           {"CONTENT", "BLOB"}};
+           {"CONTENT", "BYTEA"}};
     private static final String[] MESSAGES_TABLE_KEYS = {"SEQ_ID", "MSG_NO"};
     private static final String[][] ATTACHMENTS_TABLE_COLS
         = {{"SEQ_ID", "VARCHAR(256) NOT NULL"},
            {"MSG_NO", "DECIMAL(19, 0) NOT NULL"},
            {"ATTACHMENT_NO", "DECIMAL(19, 0) NOT NULL"},
-           {"DATA", "BLOB"}};
+           {"DATA", "BYTEA"}};
     private static final String[] ATTACHMENTS_TABLE_KEYS = {"SEQ_ID", "MSG_NO", "ATTACHMENT_NO"};
 
     private static final String DEST_SEQUENCES_TABLE_NAME = "CXF_RM_DEST_SEQUENCES"; 
@@ -218,7 +218,7 @@ public class RMTxStore implements RMStore {
     private int reconnectAttempts;
     private long nextReconnectAttempt;
     
-    private String tableExistsState = DERBY_TABLE_EXISTS_STATE;
+    private String tableExistsState = "42P07";
     private int tableExistsCode = ORACLE_TABLE_EXISTS_CODE;
     
     public RMTxStore() {
@@ -627,11 +627,11 @@ public class RMTxStore implements RMStore {
             while (res1.next()) {
                 long mn = res1.getLong(1);
                 String to = res1.getString(2);
-                Blob blob = res1.getBlob(3);
+                InputStream blob = res1.getBinaryStream(3);
                 RMMessage msg = new RMMessage();
                 msg.setMessageNumber(mn);
                 msg.setTo(to);
-                msg.setContent(blob.getBinaryStream());
+                msg.setContent(blob);
                 msgs.add(msg);
                 stmt2 = getStatement(con, outbound
                      ? SELECT_OUTBOUND_ATTACHMENTS_STMT_STR : SELECT_INBOUND_ATTACHMENTS_STMT_STR);
@@ -961,13 +961,13 @@ public class RMTxStore implements RMStore {
         ResultSet rs = null;
         try {
             DatabaseMetaData metadata = con.getMetaData();
-            rs = metadata.getColumns(null, null, tableName, "%");
+            rs = metadata.getColumns(null, null, tableName.toLowerCase(), "%");
             Set<String> dbCols = new HashSet<String>();
             while (rs.next()) {
                 dbCols.add(rs.getString(4));
             }
             for (String[] col : tableCols) {
-                if (!dbCols.contains(col[0])) {
+                if (!dbCols.contains(col[0].toLowerCase())) {
                     newCols.add(col);
                 }
             }

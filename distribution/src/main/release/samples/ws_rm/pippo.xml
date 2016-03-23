@@ -1,0 +1,18 @@
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/SequenceAcknowledgement
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:db142fed-5151-443b-aa27-68fecdd93957
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<wsrm:SequenceAcknowledgement
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:cdb397bb-4186-49a2-9cb7-0d4095f9e614
+			</wsrm:Identifier>
+			<wsrm:AcknowledgementRange Lower="1" Upper="1" />
+		</wsrm:SequenceAcknowledgement>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>

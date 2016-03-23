@@ -1,0 +1,163 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeRequest
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:eae9b77b-8c7d-4dde-b049-a089c8773807
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>1</wsrm:MessageNumber>
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body>
+		<greetMe xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<requestType>Anne</requestType>
+		</greetMe>
+	</soap:Body>
+</soap:Envelope>
+
+RMInInterceptor.handle() =>  RMInInterceptor.processSequence() => Destination.acknoledge() => DestinationSequence.acknowledge() => RMTxStore.persistIncoming()   
+
+
+UPDATE CXF_RM_DEST_SEQUENCES SET LAST_MSG_NO = ?, ACKNOWLEDGED = ? WHERE SEQ_ID = ?
+INSERT INTO CXF_RM_INBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148', 1, NULL, ?)
+
+GreetingImpl.greetMe() =>Invocazione Servizio!!
+
+
+RMDeliveryInterceptor.handle() => Destination.processingComplete() => DestinationSequence.purgeAcknowledged() => RMTxStore.removeMessages() 
+
+DELETE FROM CXF_RM_INBOUND_MESSAGES WHERE SEQ_ID = 'urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148' AND MSG_NO = ?
+DELETE FROM CXF_RM_INBOUND_ATTACHMENTS WHERE SEQ_ID = 'urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148' AND MSG_NO = ?
+
+
+RMCaptureOutInterceptor$CaptureEnd.handleMessage() => RMTxStore.persistOutgoing() 
+
+UPDATE CXF_RM_SRC_SEQUENCES SET CUR_MSG_NO = 1, LAST_MSG = '0' WHERE SEQ_ID = 'urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89'
+INSERT INTO CXF_RM_OUTBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89', 1, 'http://www.w3.org/2005/08/addressing/anonymous', ?)
+
+Server => Client [Include response, ack della request.E' esso stesso un seq message con id=1 quindi necessita ack dal client]
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:5c4cb690-af0d-4775-aaa3-7ecc6e549abd
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:2c2afe33-5cde-4034-8ea9-6cb7c1d0aa53
+		</RelatesTo>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:cdb397bb-4186-49a2-9cb7-0d4095f9e614
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>1</wsrm:MessageNumber>
+		</wsrm:Sequence>
+		<wsrm:SequenceAcknowledgement
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:6f2aa59c-ca60-4ea1-be08-21cee62e95ad
+			</wsrm:Identifier>
+			<wsrm:AcknowledgementRange Lower="1" Upper="1" />
+		</wsrm:SequenceAcknowledgement>
+	</soap:Header>
+	<soap:Body>
+		<greetMeResponse xmlns="http://cxf.apache.org/hello_world_soap_http/types">
+			<responseType>Hello Anne</responseType>
+		</greetMeResponse>
+	</soap:Body>
+</soap:Envelope>
+
+Client=> Server ack!! Controllato da    <wsrm-policy:AcknowledgementInterval Milliseconds="10000"/> 
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/SequenceAcknowledgement
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:db142fed-5151-443b-aa27-68fecdd93957
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<wsrm:SequenceAcknowledgement
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:cdb397bb-4186-49a2-9cb7-0d4095f9e614
+			</wsrm:Identifier>
+			<wsrm:AcknowledgementRange Lower="1" Upper="1" />
+		</wsrm:SequenceAcknowledgement>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>
+
+Client=> Server "Last Message"
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/LastMessage
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:f8f2b85a-b136-453d-b678-60caf655c004
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<wsrm:Sequence soap:mustUnderstand="1"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:58a3f7dc-60be-4496-b450-55430c862b20
+			</wsrm:Identifier>
+			<wsrm:MessageNumber>2</wsrm:MessageNumber>
+			<wsrm:LastMessage />
+		</wsrm:Sequence>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>
+
+
+Server =>Client ack al "Last Message"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/SequenceAcknowledgement
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:ca4c1c00-0cea-4d45-8503-a422fcf881dd
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://www.w3.org/2005/08/addressing/unspecified
+		</RelatesTo>
+		<wsrm:SequenceAcknowledgement
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing"
+			xmlns:wsrm="http://schemas.xmlsoap.org/ws/2005/02/rm">
+			<wsrm:Identifier>urn:uuid:58a3f7dc-60be-4496-b450-55430c862b20
+			</wsrm:Identifier>
+			<wsrm:AcknowledgementRange Lower="1" Upper="2" />
+		</wsrm:SequenceAcknowledgement>
+	</soap:Header>
+	<soap:Body />
+</soap:Envelope>
+
+
+Client =>Server "Terminate Sequence"
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/TerminateSequence
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:e91bf180-d99e-4101-a7f9-fe327cfdc877
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+	</soap:Header>
+	<soap:Body>
+		<TerminateSequence xmlns="http://schemas.xmlsoap.org/ws/2005/02/rm"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Identifier>urn:uuid:58a3f7dc-60be-4496-b450-55430c862b20
+			</Identifier>
+		</TerminateSequence>
+	</soap:Body>
+</soap:Envelope>
+

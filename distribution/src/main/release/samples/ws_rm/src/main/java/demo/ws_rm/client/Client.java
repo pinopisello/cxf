@@ -24,13 +24,15 @@ import java.io.File;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URL;
 
+import javax.xml.ws.BindingProvider;
+
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.spring.SpringBusFactory;
 import org.apache.cxf.hello_world_soap_http.Greeter;
 import org.apache.cxf.hello_world_soap_http.GreeterService;
 
-import demo.ws_rm.common.MessageLossSimulator;
+import demo.ws_rm.common.MessageLossInterceptor;
 
 
 public final class Client {
@@ -46,7 +48,10 @@ public final class Client {
             Bus bus = bf.createBus(busFile.toString());
             BusFactory.setDefaultBus(bus);
 
-            bus.getOutInterceptors().add(new MessageLossSimulator());
+            //Evita che i  essaggi con sequence pari vengano inviati per stimolare client retransmission
+            //bus.getOutInterceptors().add(new OutMessageLossInterceptor());
+            
+            
             GreeterService service;
             if (args.length != 0 && args[0].length() != 0) {
                 File wsdlFile = new File(args[0]);
@@ -66,15 +71,20 @@ public final class Client {
                                            "Bill",
                                            "Chris",
                                            "Daisy"};
+            
+            
+            int counter=0;
+            //Setto quanti msecs il client aspetta per una risposta prima di andare in timeout.
+            //for(int j=0;j<100;j++){
             // make a sequence of invocations
-            for (int i = 0; i < names.length; i++) {
-                System.out.println("Invoking greetMeOneWay...");
-                port.greetMeOneWay(names[i]);
-                System.out.println("No response as method is OneWay\n");
+            for (int i = 0; i < names.length-3; i++) {
+                System.out.println("Invoking greetMeOneWay..." + counter++);
+                String out = port.greetMe(names[i]);
+                System.out.println(out+"\n");
             }
-
+           // }
             // allow aynchronous resends to occur
-            Thread.sleep(30 * 1000);
+            Thread.sleep(3 * 1000);
 
             if (port instanceof Closeable) {
                 ((Closeable)port).close();

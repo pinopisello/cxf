@@ -55,7 +55,9 @@
 	</profiles>
 	<build>
 		<plugins>
-			<plugin>
+			
+			<!-- Altrienti   Error injecting: aQute.bnd.maven.indexer.plugin.IndexerMojo-->
+			<!-- <plugin>
 				<groupId>biz.aQute.bnd</groupId>
 				<artifactId>bnd-indexer-maven-plugin</artifactId>
 				<version>${bnd.version}</version>
@@ -72,6 +74,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			 -->
 		</plugins>
 	</build>
 	<dependencies>
