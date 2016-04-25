@@ -37,7 +37,7 @@
             
                 <wsrm-policy:RMAssertion>
                     <!--  <wsrm-policy:InactivityTimeout Milliseconds="2000000"/>--> 
-                    <wsrm-policy:BaseRetransmissionInterval Milliseconds="20000"/><!-- quanto tempo RM Source attende per un ack prima di ritrasmattere un messaggio-->
+                    <wsrm-policy:BaseRetransmissionInterval Milliseconds="300000"/><!-- quanto tempo RM Source attende per un ack prima di ritrasmattere un messaggio-->
                     <!-- <wsrm-policy:ExponentialBackoff /> --><!-- Modifica Retransmission Interval come BaseRetransmissionInterval^(numero ritransmissioni gia fatti)  -->
                     <wsrm-policy:AcknowledgementInterval Milliseconds="1000"/>   <!-- the duration after which the RM Destination will transmit an acknowledgemen -->
                 </wsrm-policy:RMAssertion>
@@ -45,7 +45,7 @@
                 
                 <!-- Policy che si applica a RM Source di messaggi [wsrm-manager-types.xsd]-->
 				<wsrm-mgr:sourcePolicy sequenceExpiration="PT0S" includeOffer="true" offeredSequenceExpiration="PT0S">
-					<wsrm-mgr:sequenceTerminationPolicy maxLength="0" maxRanges="0" maxUnacknowledged="0" terminateOnShutdown="false" />
+					<!-- <wsrm-mgr:sequenceTerminationPolicy maxLength="0" maxRanges="0" maxUnacknowledged="0" terminateOnShutdown="true" /> -->
 					<wsrm-mgr:retryPolicy maxRetries="-1" />
 				</wsrm-mgr:sourcePolicy>
 

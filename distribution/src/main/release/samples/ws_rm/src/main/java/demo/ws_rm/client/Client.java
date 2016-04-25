@@ -84,7 +84,7 @@ public final class Client {
             }
            // }
             // allow aynchronous resends to occur
-            Thread.sleep(3 * 1000);
+            Thread.sleep(70 * 1000);
 
             if (port instanceof Closeable) {
                 ((Closeable)port).close();

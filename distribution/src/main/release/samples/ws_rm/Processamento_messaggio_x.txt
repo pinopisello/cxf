@@ -1,3 +1,85 @@
+
+Client->Server [CreateSequence]
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/CreateSequence
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:551cbe20-ea71-42c3-b3ab-3e5a68b577dd
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://localhost:9000/SoapContext/GreeterPort</To>
+		<ReplyTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+			</Address>
+		</ReplyTo>
+	</soap:Header>
+	<soap:Body>
+		<CreateSequence xmlns="http://schemas.xmlsoap.org/ws/2005/02/rm"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<AcksTo>
+				<ns2:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+				</ns2:Address>
+			</AcksTo>
+			<Expires>PT0S</Expires>
+			<Offer>
+				<Identifier>urn:uuid:eee05d60-add0-4f50-9b4d-4c9c1558f0dd
+				</Identifier>
+				<Expires>PT0S</Expires>
+			</Offer>
+		</CreateSequence>
+	</soap:Body>
+</soap:Envelope>
+
+Server:
+	ServiceInvokerInterceptor.handle() => SynchronousExecutor.execute() => ServiceInvokerInterceptor.run() => Servant.invoke() => Servant.createSequence() => Source.addSequence() => RMTxStore.createSourceSequence()  [SEQ_ID e' Identifier inviato in CreateSequence]
+	INSERT INTO CXF_RM_SRC_SEQUENCES (SEQ_ID, CUR_MSG_NO, LAST_MSG, EXPIRY, OFFERING_SEQ_ID, ENDPOINT_ID, PROTOCOL_VERSION) VALUES('urn:uuid:0c146834-ca15-4539-bba3-43de30b63126', 1, '0', 0, 'urn:uuid:7e8024c3-ddaf-469c-80a4-1629b7c43880', '{http://cxf.apache.org/hello_world_soap_http}GreeterService.{http://cxf.apache.org/hello_world_soap_http}GreeterPort@cxf', 'http://schemas.xmlsoap.org/ws/2005/02/rm http://schemas.xmlsoap.org/ws/2004/08/addressing')
+	
+	ServiceInvokerInterceptor.handle() => SynchronousExecutor.execute() => ServiceInvokerInterceptor.run() => Servant.invoke() => Servant.createSequence() => Destination.addSequence() => RMTxStore.createDestinationSequence() [SEQ_ID e' Identifier inviato da CreateSequenceResponse]
+	INSERT INTO CXF_RM_DEST_SEQUENCES (SEQ_ID, ACKS_TO, ENDPOINT_ID, PROTOCOL_VERSION) VALUES('urn:uuid:7e8024c3-ddaf-469c-80a4-1629b7c43880', 'http://www.w3.org/2005/08/addressing/anonymous', '{http://cxf.apache.org/hello_world_soap_http}GreeterService.{http://cxf.apache.org/hello_world_soap_http}GreeterPort@cxf', 'http://schemas.xmlsoap.org/ws/2005/02/rm http://schemas.xmlsoap.org/ws/2004/08/addressing')
+
+Client : nulla
+
+
+
+Server->Client  [CreateSequenceResponse]
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Header>
+		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/CreateSequenceResponse
+		</Action>
+		<MessageID xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:d2739dfc-791c-4f79-931e-a642df3e8800
+		</MessageID>
+		<To xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous
+		</To>
+		<RelatesTo xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">urn:uuid:551cbe20-ea71-42c3-b3ab-3e5a68b577dd
+		</RelatesTo>
+	</soap:Header>
+	<soap:Body>
+		<CreateSequenceResponse xmlns="http://schemas.xmlsoap.org/ws/2005/02/rm"
+			xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing">
+			<Identifier>urn:uuid:c08803bd-53fc-40a5-9b7c-abd6310588d9
+			</Identifier>
+			<Expires>P0Y0M0DT0H0M0S</Expires>
+			<Accept>
+				<AcksTo>
+					<ns2:Address>http://localhost:9000/SoapContext/GreeterPort
+					</ns2:Address>
+				</AcksTo>
+			</Accept>
+		</CreateSequenceResponse>
+	</soap:Body>
+</soap:Envelope>
+
+
+Client:
+	RMCaptureOutInterceptor.handle() => RMManager.getSequence() => Servant.createSequenceResponse() => Source.addSequence() => RMTxStore.createSourceSequence()  [SEQ_ID e' Identifier inviato da CreateSequenceResponse]
+	INSERT INTO CXF_RM_SRC_SEQUENCES (SEQ_ID, CUR_MSG_NO, LAST_MSG, EXPIRY, OFFERING_SEQ_ID, ENDPOINT_ID, PROTOCOL_VERSION) VALUES('urn:uuid:40ff9077-07f8-4e37-85d2-392cda850612', 1, '0', 0, NULL, '{http://cxf.apache.org/hello_world_soap_http}GreeterService.{http://cxf.apache.org/hello_world_soap_http}GreeterPort@cxf', 'http://schemas.xmlsoap.org/ws/2005/02/rm http://schemas.xmlsoap.org/ws/2004/08/addressing')
+	
+	RMCaptureOutInterceptor.handle() => RMManager.getSequence() => Servant.createSequenceResponse() => Source.addSequence() => RMTxStore.createDestinationSequence() [SEQ_ID e' Identifier inviato in CreateSequence]
+	INSERT INTO CXF_RM_DEST_SEQUENCES (SEQ_ID, ACKS_TO, ENDPOINT_ID, PROTOCOL_VERSION) VALUES('urn:uuid:42c95d25-b1bd-4072-a408-0829ad5e057e', 'http://localhost:9000/SoapContext/GreeterPort', '{http://cxf.apache.org/hello_world_soap_http}GreeterService.{http://cxf.apache.org/hello_world_soap_http}GreeterPort@cxf', 'http://schemas.xmlsoap.org/ws/2005/02/rm http://schemas.xmlsoap.org/ws/2004/08/addressing')
+
+
+
+Client->Server [Invocazione servizio]
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 	<soap:Header>
 		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://cxf.apache.org/hello_world_soap_http/Greeter/greetMeRequest
@@ -24,25 +106,42 @@
 	</soap:Body>
 </soap:Envelope>
 
-RMInInterceptor.handle() =>  RMInInterceptor.processSequence() => Destination.acknoledge() => DestinationSequence.acknowledge() => RMTxStore.persistIncoming()   
+Client:
+    RMCaptureOutInterceptor$CaptureEnd.handleMessage() => RMTxStore.persistOutgoing() => RMTxStore.updateSourceSequence()
+	UPDATE CXF_RM_SRC_SEQUENCES SET CUR_MSG_NO = 1, LAST_MSG = '0' WHERE SEQ_ID = 'urn:uuid:39d82172-1d84-42f0-b99f-9326542d6100'  [updata src sequence con curr_msg_no = wsrm:MessageNumber inviato ]
+
+	RMCaptureOutInterceptor$CaptureEnd.handleMessage() => RMTxStore.persistOutgoing() => RMTxStore.storeMessage()
+	INSERT INTO CXF_RM_OUTBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89', 1, 'http://www.w3.org/2005/08/addressing/anonymous', ?) 
+	[server salva il SOAP della request inviata al server]
 
 
-UPDATE CXF_RM_DEST_SEQUENCES SET LAST_MSG_NO = ?, ACKNOWLEDGED = ? WHERE SEQ_ID = ?
-INSERT INTO CXF_RM_INBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148', 1, NULL, ?)
 
-GreetingImpl.greetMe() =>Invocazione Servizio!!
+Server:
+	RMInInterceptor.handle() =>  RMInInterceptor.processSequence() => Destination.acknoledge() => DestinationSequence.acknowledge() => RMTxStore.persistIncoming() => RMTxStore.updateDestinationSequence()
+	UPDATE CXF_RM_DEST_SEQUENCES SET LAST_MSG_NO = 0, ACKNOWLEDGED = ? WHERE SEQ_ID = 'urn:uuid:003e5b63-ec57-4b35-847f-4218a2c8d710'
+	
+	RMInInterceptor.handle() =>  RMInInterceptor.processSequence() => Destination.acknoledge() => DestinationSequence.acknowledge() => RMTxStore.persistIncoming() => RMTxStore.storeMessage()  [Si salva tutto il SOAP inviato dal client nella tabella CXF_RM_INBOUND_MESSAGES  ]
+	INSERT INTO CXF_RM_INBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148', 1, NULL, ?)
+
+	
+##########################################################
+	GreetingImpl.greetMe() =>Invocazione Servizio!!
+##########################################################
+
+    [Una volta processato il messaggio ingresso con successo si cancella da lDB.]
+	RMDeliveryInterceptor.handle() => Destination.processingComplete() => DestinationSequence.purgeAcknowledged() => RMTxStore.removeMessages() 
+
+	DELETE FROM CXF_RM_INBOUND_MESSAGES WHERE SEQ_ID = 'urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148' AND MSG_NO = ?
+	DELETE FROM CXF_RM_INBOUND_ATTACHMENTS WHERE SEQ_ID = 'urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148' AND MSG_NO = ?
 
 
-RMDeliveryInterceptor.handle() => Destination.processingComplete() => DestinationSequence.purgeAcknowledged() => RMTxStore.removeMessages() 
+	RMCaptureOutInterceptor$CaptureEnd.handleMessage() => RMTxStore.persistOutgoing() => RMTxStore.updateSourceSequence()
+	UPDATE CXF_RM_SRC_SEQUENCES SET CUR_MSG_NO = 1, LAST_MSG = '0' WHERE SEQ_ID = 'urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89'
+	
+	RMCaptureOutInterceptor$CaptureEnd.handleMessage() => RMTxStore.persistOutgoing() => RMTxStore.storeMessage()
+	INSERT INTO CXF_RM_OUTBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89', 1, 'http://www.w3.org/2005/08/addressing/anonymous', ?) 
+	[server salva il SOAP della response dell invocazione prima dell invio al client]
 
-DELETE FROM CXF_RM_INBOUND_MESSAGES WHERE SEQ_ID = 'urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148' AND MSG_NO = ?
-DELETE FROM CXF_RM_INBOUND_ATTACHMENTS WHERE SEQ_ID = 'urn:uuid:9e36cd6a-e5f1-493a-bded-3800f8b6b148' AND MSG_NO = ?
-
-
-RMCaptureOutInterceptor$CaptureEnd.handleMessage() => RMTxStore.persistOutgoing() 
-
-UPDATE CXF_RM_SRC_SEQUENCES SET CUR_MSG_NO = 1, LAST_MSG = '0' WHERE SEQ_ID = 'urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89'
-INSERT INTO CXF_RM_OUTBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:09134b5e-d02c-4e59-8b78-eb9c4f4ffd89', 1, 'http://www.w3.org/2005/08/addressing/anonymous', ?)
 
 Server => Client [Include response, ack della request.E' esso stesso un seq message con id=1 quindi necessita ack dal client]
 
@@ -78,7 +177,27 @@ Server => Client [Include response, ack della request.E' esso stesso un seq mess
 	</soap:Body>
 </soap:Envelope>
 
+Client:
+	RMInInterceptor.handle() => RMInInterceptor.processAcknowledgments() => SourceSequence.setAcknowledged() => RetransmissionQueueImpl.purgeAcknowledged() => RetransmissionQueueImpl.purgeCandidates() => RMTxStore.removeMessages()
+	DELETE FROM CXF_RM_OUTBOUND_MESSAGES WHERE SEQ_ID = 'urn:uuid:39d82172-1d84-42f0-b99f-9326542d6100' AND MSG_NO = ?  [client rimuove gli outbound message per i quali si e' ricevuto il seq ack]
+
+	RMInInterceptor.handle() => RMInInterceptor.processSequence() => Destination.acknowledge() => DestinationSequence.acknowledge() => RMTxStore.persistIncoming() => RMTxStore.updateDestinationSequence()
+	UPDATE CXF_RM_DEST_SEQUENCES SET LAST_MSG_NO = 0, ACKNOWLEDGED = ? WHERE SEQ_ID = 'urn:uuid:85a9dbd3-ad38-4864-883b-bfa211e73812'  [usa  <SequenceAcknowledgement> ricevuto e updata LAST_MSG_NO e ACKNOWLEDGED ]
+	
+	RMInInterceptor.handle() => RMInInterceptor.processSequence() => Destination.acknowledge() => DestinationSequence.acknowledge() => RMTxStore.persistIncoming() => RMTxStore.storeMessage()
+	INSERT INTO CXF_RM_INBOUND_MESSAGES (SEQ_ID, MSG_NO, SEND_TO, CONTENT) VALUES('urn:uuid:85a9dbd3-ad38-4864-883b-bfa211e73812', 1, NULL, ?)  [salva tutta la response in CXF_RM_INBOUND_MESSAGES]
+	
+	RMDeliveryInterceptor.handle() => Destination.processingComplete() => DestinationSequence.purgeAcknowledged() => RMTxStore.removeMessages() 
+	DELETE FROM CXF_RM_INBOUND_MESSAGES WHERE SEQ_ID = 'urn:uuid:85a9dbd3-ad38-4864-883b-bfa211e73812' AND MSG_NO = ?  [rimuovo response dal server una volta processata]
+
+
 Client=> Server ack!! Controllato da    <wsrm-policy:AcknowledgementInterval Milliseconds="10000"/> 
+
+
+Client:
+	RMInInterceptor.handle() => RMInInterceptor.processSequence() => Destination.acknowledge() => DestinationSequence.acknowledge() (subito dopo RMTxStore.persistIncoming()) =>
+	    DestinationSequence.scheduleDeferredAcknowledgement(wsrm-policy:AcknowledgementInterval)  => DestinationSequence$DeferredAcknowledgment.run() => org.apache.cxf.ws.rm.Proxy.acknowledge(0
+
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 	<soap:Header>
 		<Action xmlns="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/rm/SequenceAcknowledgement
@@ -96,6 +215,10 @@ Client=> Server ack!! Controllato da    <wsrm-policy:AcknowledgementInterval Mil
 	</soap:Header>
 	<soap:Body />
 </soap:Envelope>
+
+
+
+
 
 Client=> Server "Last Message"
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">

@@ -22,7 +22,6 @@ package org.apache.cxf.transport.websocket.atmosphere;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -47,10 +46,12 @@ import org.atmosphere.cpr.AtmosphereFramework;
 import org.atmosphere.cpr.AtmosphereInterceptorAdapter;
 import org.atmosphere.cpr.AtmosphereInterceptorWriter;
 import org.atmosphere.cpr.AtmosphereRequest;
+import org.atmosphere.cpr.AtmosphereRequestImpl;
 import org.atmosphere.cpr.AtmosphereResource;
 import org.atmosphere.cpr.AtmosphereResourceEvent;
 import org.atmosphere.cpr.AtmosphereResourceEventListenerAdapter;
 import org.atmosphere.cpr.AtmosphereResponse;
+import org.atmosphere.cpr.AtmosphereResponseImpl;
 import org.atmosphere.cpr.FrameworkConfig;
 
 /**
@@ -142,6 +143,10 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
                     suspendedResponse.flushBuffer();
                     return this;
                 }
+
+                @Override
+                public void close(AtmosphereResponse response) throws IOException {
+                }
             });
             // REVISIT we need to keep this response's asyncwriter alive so that data can be written to the 
             //   suspended response, but investigate if there is a better alternative. 
@@ -158,10 +163,6 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
                 suspendedResponses.put(srid, event.getResource().getResponse());
 
                 AsyncIOWriter writer = event.getResource().getResponse().getAsyncIOWriter();
-                if (writer == null) {
-                    writer = new AtmosphereInterceptorWriter();
-                    r.getResponse().asyncIOWriter(writer);
-                }
                 if (writer instanceof AtmosphereInterceptorWriter) {
                     ((AtmosphereInterceptorWriter)writer).interceptor(interceptor);
                 }
@@ -244,12 +245,7 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
         AsyncIOWriter writer = res.getAsyncIOWriter();
 
         if (writer instanceof AtmosphereInterceptorWriter) {
-            //REVIST need a better way to add a custom filter at the first entry and not at the last as
-            // e.g. interceptor(AsyncIOInterceptor interceptor, int position)
-            Deque<AsyncIOInterceptor> filters = AtmosphereInterceptorWriter.class.cast(writer).filters();
-            if (!filters.contains(interceptor)) {
-                filters.addFirst(interceptor);
-            }
+            AtmosphereInterceptorWriter.class.cast(writer).interceptor(interceptor, 0);
         }
     }
 
@@ -262,7 +258,7 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
      * @throws IOException
      */
     protected AtmosphereRequest createAtmosphereRequest(AtmosphereRequest r, byte[] data) throws IOException {
-        AtmosphereRequest.Builder b = new AtmosphereRequest.Builder();
+        AtmosphereRequest.Builder b = new AtmosphereRequestImpl.Builder();
         ByteArrayInputStream in = new ByteArrayInputStream(data);
         Map<String, String> hdrs = WebSocketUtils.readHeaders(in);
         String path = hdrs.get(WebSocketUtils.URI_KEY);
@@ -362,7 +358,7 @@ public class DefaultProtocolInterceptor extends AtmosphereInterceptorAdapter {
     }
 
     // a workaround to flush the header data upon close when no write operation occurs  
-    private class WrappedAtmosphereResponse extends AtmosphereResponse {
+    private class WrappedAtmosphereResponse extends AtmosphereResponseImpl {
         final AtmosphereResponse response;
         ServletOutputStream sout;
         WrappedAtmosphereResponse(AtmosphereResponse resp, AtmosphereRequest req) throws IOException {

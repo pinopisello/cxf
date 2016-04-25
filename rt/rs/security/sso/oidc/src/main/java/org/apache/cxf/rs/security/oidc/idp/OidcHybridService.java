@@ -41,7 +41,7 @@ public class OidcHybridService extends OidcImplicitService {
         this(false);
     }
     public OidcHybridService(boolean hybridOnly) {
-        super(getResponseTypes(hybridOnly), "Hybrid");
+        super(getResponseTypes(hybridOnly), "hybrid");
     }
     
     private static Set<String> getResponseTypes(boolean hybridOnly) {
@@ -74,7 +74,7 @@ public class OidcHybridService extends OidcImplicitService {
         StringBuilder sb = super.prepareGrant(state, client, requestedScope, 
                                                           approvedScope, userSubject, preAuthorizedToken);
    
-        if (state.getResponseType().startsWith(OAuthConstants.CODE_RESPONSE_TYPE)) {
+        if (state.getResponseType() != null && state.getResponseType().startsWith(OAuthConstants.CODE_RESPONSE_TYPE)) {
             String code = codeService.getGrantCode(state, client, requestedScope,
                                                    approvedScope, userSubject, preAuthorizedToken);
             
