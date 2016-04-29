@@ -26,19 +26,26 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Date;
 
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
+import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
+import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
 import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactConsumer;
+import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactProducer;
+import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
 import org.apache.cxf.rs.security.jose.jwt.JwtConstants;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
 import org.apache.cxf.rs.security.oauth2.common.OAuthAuthorizationData;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
 import org.apache.cxf.systest.jaxrs.security.oauth2.common.OAuth2TestUtils;
+import org.apache.cxf.systest.jaxrs.security.oauth2.common.OAuth2TestUtils.AuthorizationCodeParameters;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.apache.cxf.testutil.common.TestUtil;
 import org.apache.wss4j.common.util.Loader;
@@ -375,9 +382,14 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
             org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
         
         // Get location
-        String location = 
-            OAuth2TestUtils.getLocation(client, "openid", "consumer-id", "123456789", null, 
-                                        "code id_token", "authorize-hybrid");
+        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
+        parameters.setConsumerId("consumer-id");
+        parameters.setScope("openid");
+        parameters.setNonce("123456789");
+        parameters.setResponseType("code id_token");
+        parameters.setPath("authorize-hybrid/");
+        
+        String location = OAuth2TestUtils.getLocation(client, parameters);
         assertNotNull(location);
         
         // Check code
@@ -419,9 +431,14 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
             org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
         
         // Get location
-        String location = 
-            OAuth2TestUtils.getLocation(client, "openid", "consumer-id", "123456789", null, 
-                                        "code token", "authorize-hybrid");
+        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
+        parameters.setConsumerId("consumer-id");
+        parameters.setScope("openid");
+        parameters.setNonce("123456789");
+        parameters.setResponseType("code token");
+        parameters.setPath("authorize-hybrid/");
+      
+        String location = OAuth2TestUtils.getLocation(client, parameters);
         assertNotNull(location);
         
         // Check code
@@ -445,9 +462,14 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
             org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
         
         // Get location
-        String location = 
-            OAuth2TestUtils.getLocation(client, "openid", "consumer-id", "123456789", null, 
-                                        "code id_token token", "authorize-hybrid");
+        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
+        parameters.setConsumerId("consumer-id");
+        parameters.setScope("openid");
+        parameters.setNonce("123456789");
+        parameters.setResponseType("code id_token token");
+        parameters.setPath("authorize-hybrid/");
+        
+        String location = OAuth2TestUtils.getLocation(client, parameters);
         assertNotNull(location);
         
         // Check code
@@ -462,6 +484,144 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         // Check Access Token
         String accessToken = OAuth2TestUtils.getSubstring(location, "access_token");
         assertNotNull(accessToken);
+    }
+    
+    @org.junit.Test
+    public void testAuthorizationCodeFlowUnsignedJWT() throws Exception {
+        URL busFile = OIDCFlowTest.class.getResource("client.xml");
+        
+        String address = "https://localhost:" + PORT + "/unsignedjwtservices/";
+        WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                            "alice", "security", busFile.toString());
+        // Save the Cookie for the second request...
+        WebClient.getConfig(client).getRequestContext().put(
+            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
+        
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer("consumer-id");
+        claims.setIssuedAt(new Date().getTime() / 1000L);
+        claims.setAudiences(
+            Collections.singletonList("https://localhost:" + PORT + "/unsignedjwtservices/"));
+        
+        JwsHeaders headers = new JwsHeaders();
+        headers.setAlgorithm("none");
+        
+        JwtToken token = new JwtToken(headers, claims);
+        
+        JwsJwtCompactProducer jws = new JwsJwtCompactProducer(token);
+        String request = jws.getSignedEncodedJws();
+        
+        // Get Authorization Code
+        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
+        parameters.setConsumerId("consumer-id");
+        parameters.setScope("openid");
+        parameters.setResponseType("code");
+        parameters.setPath("authorize/");
+        parameters.setRequest(request);
+        
+        String location = OAuth2TestUtils.getLocation(client, parameters);
+        String code = OAuth2TestUtils.getSubstring(location, "code");
+        assertNotNull(code);
+    }
+    
+    @org.junit.Test
+    public void testAuthorizationCodeFlowUnsignedJWTWithState() throws Exception {
+        URL busFile = OIDCFlowTest.class.getResource("client.xml");
+        
+        String address = "https://localhost:" + PORT + "/unsignedjwtservices/";
+        WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                            "alice", "security", busFile.toString());
+        // Save the Cookie for the second request...
+        WebClient.getConfig(client).getRequestContext().put(
+            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
+        
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer("consumer-id");
+        claims.setIssuedAt(new Date().getTime() / 1000L);
+        claims.setAudiences(
+            Collections.singletonList("https://localhost:" + PORT + "/unsignedjwtservices/"));
+        
+        JwsHeaders headers = new JwsHeaders();
+        headers.setAlgorithm("none");
+        
+        JwtToken token = new JwtToken(headers, claims);
+        
+        JwsJwtCompactProducer jws = new JwsJwtCompactProducer(token);
+        String request = jws.getSignedEncodedJws();
+        
+        // Get Authorization Code
+        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
+        parameters.setConsumerId("consumer-id");
+        parameters.setScope("openid");
+        parameters.setResponseType("code");
+        parameters.setPath("authorize/");
+        parameters.setState("123456789");
+        parameters.setRequest(request);
+        
+        String location = OAuth2TestUtils.getLocation(client, parameters);
+        String code = OAuth2TestUtils.getSubstring(location, "code");
+        assertNotNull(code);
+    }
+    
+    @org.junit.Test
+    public void testGetKeys() throws Exception {
+        URL busFile = OIDCFlowTest.class.getResource("client.xml");
+        
+        String address = "https://localhost:" + PORT + "/services/";
+        WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                            "alice", "security", busFile.toString());
+        client.accept("application/json");
+        
+        client.path("keys/");
+        Response response = client.get();
+        JsonWebKeys jsonWebKeys = response.readEntity(JsonWebKeys.class);
+        
+        assertEquals(1, jsonWebKeys.getKeys().size());
+    }
+    
+    @org.junit.Test
+    public void testAuthorizationCodeFlowWithKey() throws Exception {
+        URL busFile = OIDCFlowTest.class.getResource("client.xml");
+        
+        String address = "https://localhost:" + PORT + "/services/";
+        WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                            "alice", "security", busFile.toString());
+        // Save the Cookie for the second request...
+        WebClient.getConfig(client).getRequestContext().put(
+            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
+        
+        // Get Authorization Code
+        String code = OAuth2TestUtils.getAuthorizationCode(client, "openid");
+        assertNotNull(code);
+        
+        // Now get the access token
+        client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                  "consumer-id", "this-is-a-secret", busFile.toString());
+        // Save the Cookie for the second request...
+        WebClient.getConfig(client).getRequestContext().put(
+            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
+        
+        ClientAccessToken accessToken = 
+            OAuth2TestUtils.getAccessTokenWithAuthorizationCode(client, code);
+        assertNotNull(accessToken.getTokenKey());
+        assertTrue(accessToken.getApprovedScope().contains("openid"));
+        
+        String idToken = accessToken.getParameters().get("id_token");
+        assertNotNull(idToken);
+        
+        JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
+        
+        // Now get the key to validate the token
+        client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                  "alice", "security", busFile.toString());
+        client.accept("application/json");
+        
+        client.path("keys/");
+        Response response = client.get();
+        JsonWebKeys jsonWebKeys = response.readEntity(JsonWebKeys.class);
+        
+        Assert.assertTrue(jwtConsumer.verifySignatureWith(jsonWebKeys.getKeys().get(0),
+                                                          SignatureAlgorithm.RS256));
     }
     
     private void validateIdToken(String idToken, String nonce) 
