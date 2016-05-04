@@ -369,7 +369,7 @@ WS-Topics
 
 Assomiglia molto a ws_eventing con differenza che:
 
-1)lato server c'e' JMS e le notifiche vengono inviate ad un topic specificato dal subscriber [we_eventing non c'e' jms lato server]
+1)lato server c'e' JMS e le notifiche vengono inviate ad un topic specificato dal subscriber [ws_eventing non c'e' jms lato server]
 2)gli eventi che scatenano le notifice vengono inviati via soap http con uno schema prefissato [ws_eventing eventi sono generati lato server con api]
 3)le subscriptions non hanno ne filtri ne enddate [al contrario di ws-eventing]
 4)non ci sono servizi definiti per renew,getstatus,delete subscriptions .
