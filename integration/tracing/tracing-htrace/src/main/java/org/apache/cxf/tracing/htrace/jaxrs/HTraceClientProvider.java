@@ -33,8 +33,7 @@ import org.apache.htrace.core.Tracer;
 @Provider
 public class HTraceClientProvider extends AbstractHTraceClientProvider 
         implements ClientRequestFilter, ClientResponseFilter {
-    private static final String TRACE_SPAN = "org.apache.cxf.tracing.client.htrace.span";
-    
+
     public HTraceClientProvider(final Tracer tracer) {
         super(tracer);
     }

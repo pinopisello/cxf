@@ -53,10 +53,12 @@ import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.xml.ws.Holder;
 
+import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.model.AbstractResourceInfo;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -102,6 +104,24 @@ public class JAXRSAsyncClientTest extends AbstractBusClientServerTestBase {
         Book book = wc.invoke("PATCH", new Book("Patch", 123L), Book.class);
         assertEquals("Patch", book.getName());
         wc.close();
+    }
+    
+    @Test
+    public void testPatchBookTimeout() throws Exception {
+        String address = "http://localhost:" + PORT + "/bookstore/patch";
+        WebClient wc = WebClient.create(address);
+        wc.type("application/xml");
+        ClientConfiguration clientConfig = WebClient.getConfig(wc);
+        clientConfig.getRequestContext().put("use.async.http.conduit", true);
+        HTTPClientPolicy clientPolicy = clientConfig.getHttpConduit().getClient();
+        clientPolicy.setReceiveTimeout(500);
+        clientPolicy.setConnectionTimeout(500);
+        try {
+            Book book = wc.invoke("PATCH", new Book("Timeout", 123L), Book.class);
+            fail("should throw an exception due to timeout");
+        } catch (javax.ws.rs.ProcessingException e) {
+            //expected!!!
+        }
     }
     
     @Test
@@ -165,7 +185,7 @@ public class JAXRSAsyncClientTest extends AbstractBusClientServerTestBase {
     
     @Test
     public void testNonExistent() throws Exception {
-        String address = "http://localhostt/bookstore";
+        String address = "http://168.168.168.168/bookstore";
         List<Object> providers = new ArrayList<Object>();
         providers.add(new TestResponseFilter());
         WebClient wc =  WebClient.create(address, providers);
@@ -183,7 +203,7 @@ public class JAXRSAsyncClientTest extends AbstractBusClientServerTestBase {
     }
     @Test
     public void testNonExistentJaxrs20WithGet() throws Exception {
-        String address = "http://localhostt/bookstore";
+        String address = "http://168.168.168.168/bookstore";
         Client c = ClientBuilder.newClient();
         c.register(new TestResponseFilter());
         WebTarget t1 = c.target(address);
@@ -203,7 +223,7 @@ public class JAXRSAsyncClientTest extends AbstractBusClientServerTestBase {
     @Test
     public void testNonExistentJaxrs20WithPost() throws Exception {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://test.test/");
+        WebTarget target = client.target("http://168.168.168.168/");
         Invocation.Builder builder = target.request();
         Entity<String> entity = Entity.entity("entity", MediaType.WILDCARD_TYPE);
         Invocation invocation = builder.buildPost(entity);

@@ -18,6 +18,7 @@
   under the License.
 -->
 <<<<<<< HEAD
+<<<<<<< HEAD
 <beans xmlns="http://www.springframework.org/schema/beans" 
 		xmlns:cxf="http://cxf.apache.org/core" 
 		xmlns:wsa="http://cxf.apache.org/ws/addressing" 
@@ -27,6 +28,9 @@
 =======
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:cxf="http://cxf.apache.org/core" xmlns:wsa="http://cxf.apache.org/ws/addressing" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
 >>>>>>> 707fa4f3c3f3aa40979e57468a9ac3eb3102a71f
+=======
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:cxf="http://cxf.apache.org/core" xmlns:wsa="http://cxf.apache.org/ws/addressing" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+>>>>>>> 57fcf8df231fb087011f500435528741c33a726c
     <cxf:bus>
         <cxf:features>
             <wsa:addressing/>

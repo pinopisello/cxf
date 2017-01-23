@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
+import org.apache.cxf.rs.security.jose.jwt.JwtUtils;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.OAuthContext;
 import org.apache.cxf.rs.security.oauth2.provider.OAuthDataProvider;
@@ -43,7 +44,7 @@ public class UserInfoService extends OAuthServerJoseJwtProducer {
     private UserInfoProvider userInfoProvider;
     private OAuthDataProvider oauthDataProvider;
     private List<String> additionalClaims = Collections.emptyList();
-    
+    private boolean convertClearUserInfoToString;
     @Context
     private MessageContext mc;
     @GET
@@ -66,7 +67,7 @@ public class UserInfoService extends OAuthServerJoseJwtProducer {
             return Response.serverError().build();
         }
         
-        Object responseEntity = userInfo;
+        Object responseEntity = null;
         // UserInfo may be returned in a clear form as JSON
         if (super.isJwsRequired() || super.isJweRequired()) {
             Client client = null;
@@ -74,11 +75,18 @@ public class UserInfoService extends OAuthServerJoseJwtProducer {
                 client = oauthDataProvider.getClient(oauth.getClientId());
             }
             responseEntity = super.processJwt(new JwtToken(userInfo), client);
+        } else {
+            responseEntity = convertUserInfoToResponseEntity(userInfo);
         }
         return Response.ok(responseEntity).build();
         
     }
     
+    protected Object convertUserInfoToResponseEntity(UserInfo userInfo) {
+        // By default a JAX-RS MessageBodyWriter is expected to serialize UserInfo.
+        return convertClearUserInfoToString ? JwtUtils.claimsToJson(userInfo) : userInfo;
+    }
+
     protected UserInfo createFromIdToken(IdToken idToken) {
         UserInfo userInfo = new UserInfo();
         userInfo.setSubject(idToken.getSubject());
@@ -131,5 +139,9 @@ public class UserInfoService extends OAuthServerJoseJwtProducer {
      */
     public void setAdditionalClaims(List<String> additionalClaims) {
         this.additionalClaims = additionalClaims;
+    }
+
+    public void setConvertClearUserInfoToString(boolean convertClearUserInfoToString) {
+        this.convertClearUserInfoToString = convertClearUserInfoToString;
     }
 }
