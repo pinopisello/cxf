@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cxf.jaxrs.ext.MessageContext;
+import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.oauth2.common.AccessTokenRegistration;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.OAuthPermission;
@@ -33,6 +35,7 @@ import org.apache.cxf.rs.security.oauth2.common.ServerAccessToken;
 import org.apache.cxf.rs.security.oauth2.common.UserSubject;
 import org.apache.cxf.rs.security.oauth2.tokens.bearer.BearerAccessToken;
 import org.apache.cxf.rs.security.oauth2.tokens.refresh.RefreshToken;
+import org.apache.cxf.rs.security.oauth2.utils.JwtTokenUtils;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 
@@ -47,6 +50,9 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     private List<String> invisibleToClientScopes;
     private boolean supportPreauthorizedTokens;
     
+    private boolean useJwtFormatForAccessTokens;
+    private OAuthJoseJwtProducer jwtAccessTokenProducer;
+    private Map<String, String> jwtAccessTokenClaimMap;
     
     protected AbstractOAuthDataProvider() {
     }
@@ -76,7 +82,83 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
         at.setResponseType(atReg.getResponseType());
         at.setGrantCode(atReg.getGrantCode());
         at.getExtraProperties().putAll(atReg.getExtraProperties());
+        
+        if (isUseJwtFormatForAccessTokens()) {
+            JwtClaims claims = createJwtAccessToken(at);
+            String jose = processJwtAccessToken(claims);
+            at.setTokenKey(jose);
+        }
+        
         return at;
+    }
+    
+    protected JwtClaims createJwtAccessToken(ServerAccessToken at) {
+        JwtClaims claims = new JwtClaims();
+        claims.setTokenId(at.getTokenKey());
+        
+        // 'client_id' or 'cid', default client_id
+        String clientIdClaimName = 
+            JwtTokenUtils.getClaimName(OAuthConstants.CLIENT_ID, OAuthConstants.CLIENT_ID, 
+                                             getJwtAccessTokenClaimMap());
+        claims.setClaim(clientIdClaimName, at.getClient().getClientId());
+        claims.setIssuedAt(at.getIssuedAt());
+        if (at.getExpiresIn() > 0) {
+            claims.setExpiryTime(at.getIssuedAt() + at.getExpiresIn());
+        }
+        UserSubject userSubject = at.getSubject();
+        if (userSubject != null) {
+            if (userSubject.getId() != null) {
+                claims.setSubject(userSubject.getId());
+            }
+            
+            // 'username' by default to be consistent with the token introspection response
+            final String usernameProp = "username";
+            String usernameClaimName = 
+                JwtTokenUtils.getClaimName(usernameProp, usernameProp, getJwtAccessTokenClaimMap());
+            claims.setClaim(usernameClaimName, userSubject.getLogin());
+        }
+        if (at.getIssuer() != null) {
+            claims.setIssuer(at.getIssuer());
+        }
+        if (!at.getScopes().isEmpty()) {
+            claims.setClaim(OAuthConstants.SCOPE, 
+                            OAuthUtils.convertPermissionsToScopeList(at.getScopes()));
+        }
+        // OAuth2 resource indicators (resource server audience)
+        if (!at.getAudiences().isEmpty()) {
+            List<String> resourceAudiences = at.getAudiences();
+            if (resourceAudiences.size() == 1) {
+                claims.setAudience(resourceAudiences.get(0));
+            } else {
+                claims.setAudiences(resourceAudiences);
+            }
+        }
+        if (!at.getExtraProperties().isEmpty()) {
+            claims.setClaim("extra_properties", at.getExtraProperties());
+        }
+        // Can be used to check at RS/etc which grant was used to get this token issued
+        if (at.getGrantType() != null) {
+            claims.setClaim(OAuthConstants.GRANT_TYPE, at.getGrantType());
+        }
+        // Can be used to check the original code grant value which was removed from the storage
+        // (and is no longer valid) when this token was issued; relevant only if the authorization
+        // code flow was used
+        if (at.getGrantCode() != null) {
+            claims.setClaim(OAuthConstants.AUTHORIZATION_CODE_GRANT, at.getGrantCode());
+        }
+        // Can be used to link the clients (especially public ones) to this token
+        // to have a knowledge which client instance is using this token - might be handy at the RS/etc
+        if (at.getClientCodeVerifier() != null) {
+            claims.setClaim(OAuthConstants.AUTHORIZATION_CODE_VERIFIER, at.getClientCodeVerifier());
+        }
+        // ServerAccessToken 'nonce' property, if available, can be ignored for the purpose for persisting it
+        // further as a JWT claim - as it is only used once by (OIDC) IdTokenResponseFilter
+        // to set IdToken nonce property with the filter having an access to the current ServerAccessToken instance
+        return claims;
+    }
+    
+    protected ServerAccessToken createNewAccessToken(Client client) {
+        return new BearerAccessToken(client, accessTokenLifetime);
     }
     
     @Override
@@ -164,19 +246,27 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
         }
         if (requestedScopes.isEmpty()) {
             return Collections.emptyList();
-        } else if (!permissionMap.isEmpty()) {
+        } else {
             List<OAuthPermission> list = new ArrayList<OAuthPermission>();
             for (String scope : requestedScopes) {
-                OAuthPermission permission = permissionMap.get(scope);
-                if (permission == null) {
-                    throw new OAuthServiceException("Unexpected scope: " + scope);
-                }
-                list.add(permission);
+                convertSingleScopeToPermission(client, scope, list);
             }
-            return list;
-        } else {
-            throw new OAuthServiceException("Requested scopes can not be mapped");
+            if (!list.isEmpty()) {
+                return list;
+            }
+        } 
+        throw new OAuthServiceException("Requested scopes can not be mapped");
+        
+    }
+
+    protected void convertSingleScopeToPermission(Client client, 
+                                                  String scope,
+                                                  List<OAuthPermission> perms) {
+        OAuthPermission permission = permissionMap.get(scope);
+        if (permission == null) {
+            throw new OAuthServiceException("Unexpected scope: " + scope);
         }
+        perms.add(permission);
     }
 
     @Override
@@ -210,10 +300,12 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
         return theScopes.contains(OAuthConstants.REFRESH_TOKEN_SCOPE);
     }
 
-    protected ServerAccessToken createNewAccessToken(Client client) {
-        return new BearerAccessToken(client, accessTokenLifetime);
+    protected String getCurrentRequestedGrantType() {
+        return (String)messageContext.get(OAuthConstants.GRANT_TYPE);
     }
-     
+    protected String getCurrentClientSecret() {
+        return (String)messageContext.get(OAuthConstants.CLIENT_SECRET);
+    }
     protected RefreshToken updateRefreshToken(RefreshToken rt, ServerAccessToken at) {
         linkAccessTokenToRefreshToken(rt, at);
         saveRefreshToken(rt);
@@ -319,11 +411,17 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
     
     protected void removeClientTokens(Client c) {
-        for (RefreshToken rt : getRefreshTokens(c, null)) {
-            revokeRefreshToken(rt.getTokenKey());
+        List<RefreshToken> refreshTokens = getRefreshTokens(c, null);
+        if (refreshTokens != null) {
+            for (RefreshToken rt : refreshTokens) {
+                revokeRefreshToken(rt.getTokenKey());
+            }
         }
-        for (ServerAccessToken at : getAccessTokens(c, null)) {
-            revokeAccessToken(at.getTokenKey());
+        List<ServerAccessToken> accessTokens = getAccessTokens(c, null);
+        if (accessTokens != null) {
+            for (ServerAccessToken at : accessTokens) {
+                revokeAccessToken(at.getTokenKey());
+            }
         }
     }
     
@@ -408,6 +506,35 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
             setClient(c);
         }
     }
-    
 
+    public boolean isUseJwtFormatForAccessTokens() {
+        return useJwtFormatForAccessTokens;
+    }
+
+    public void setUseJwtFormatForAccessTokens(boolean useJwtFormatForAccessTokens) {
+        this.useJwtFormatForAccessTokens = useJwtFormatForAccessTokens;
+    }
+
+    public OAuthJoseJwtProducer getJwtAccessTokenProducer() {
+        return jwtAccessTokenProducer;
+    }
+
+    public void setJwtAccessTokenProducer(OAuthJoseJwtProducer jwtAccessTokenProducer) {
+        this.jwtAccessTokenProducer = jwtAccessTokenProducer;
+    }
+    
+    protected String processJwtAccessToken(JwtClaims jwtCliams) {
+        // It will JWS-sign (default) and/or JWE-encrypt
+        OAuthJoseJwtProducer processor = 
+            getJwtAccessTokenProducer() == null ? new OAuthJoseJwtProducer() : getJwtAccessTokenProducer(); 
+        return processor.processJwt(new JwtToken(jwtCliams));
+    }
+
+    public Map<String, String> getJwtAccessTokenClaimMap() {
+        return jwtAccessTokenClaimMap;
+    }
+
+    public void setJwtAccessTokenClaimMap(Map<String, String> jwtAccessTokenClaimMap) {
+        this.jwtAccessTokenClaimMap = jwtAccessTokenClaimMap;
+    }
 }

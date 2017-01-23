@@ -33,5 +33,6 @@
         <module>jca</module>
         <module>cdi</module>
         <module>tracing/tracing-htrace</module>
+        <module>spring-boot</module>
     </modules>
 </project>

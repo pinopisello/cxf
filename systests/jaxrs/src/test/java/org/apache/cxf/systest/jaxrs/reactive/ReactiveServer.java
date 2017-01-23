@@ -19,14 +19,19 @@
 
 package org.apache.cxf.systest.jaxrs.reactive;
 
+import java.util.Collections;
+
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.cxf.jaxrs.provider.rx.ObservableWriter;
+import org.apache.cxf.jaxrs.provider.StreamingResponseProvider;
+import org.apache.cxf.jaxrs.rx.provider.ObservableWriter;
 import org.apache.cxf.testutil.common.AbstractBusTestServerBase;
+
     
 public class ReactiveServer extends AbstractBusTestServerBase {
     public static final String PORT = allocatePort(ReactiveServer.class);
@@ -42,6 +47,10 @@ public class ReactiveServer extends AbstractBusTestServerBase {
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         sf.setProvider(new ObservableWriter<Object>());
         sf.setProvider(new JacksonJsonProvider());
+        StreamingResponseProvider<HelloWorldBean> streamProvider = new StreamingResponseProvider<HelloWorldBean>();
+        streamProvider.setProduceMediaTypes(Collections.singletonList("application/json"));
+        sf.setProvider(streamProvider);
+        sf.getOutInterceptors().add(new LoggingOutInterceptor());
         sf.setResourceClasses(ReactiveService.class);
         sf.setResourceProvider(ReactiveService.class,
                                new SingletonResourceProvider(new ReactiveService(), true));

@@ -94,12 +94,9 @@ public class IssueUnitTest extends AbstractBusClientServerTestBase {
     
     @BeforeClass
     public static void startServers() throws Exception {
-        assertTrue(
-                   "Server failed to launch",
-                   // run the server in the same process
-                   // set this to false to fork
-                   launchServer(STSServer.class, true)
-        );
+        STSServer stsServer = new STSServer();
+        stsServer.setContext("cxf-transport.xml");
+        assertTrue(launchServer(stsServer));
     }
     
     @org.junit.AfterClass
@@ -543,7 +540,7 @@ public class IssueUnitTest extends AbstractBusClientServerTestBase {
             "org.apache.ws.security.crypto.provider", "org.apache.ws.security.components.crypto.Merlin"
         );
         properties.put("org.apache.ws.security.crypto.merlin.keystore.password", "stsspass");
-        properties.put("org.apache.ws.security.crypto.merlin.keystore.file", "stsstore.jks");
+        properties.put("org.apache.ws.security.crypto.merlin.keystore.file", "keys/stsstore.jks");
 
         return properties;
     }

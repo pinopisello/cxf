@@ -96,20 +96,26 @@ public abstract class AbstractValidationInterceptor extends AbstractPhaseInterce
     
     protected Method getServiceMethod(Message message) {
         Message inMessage = message.getExchange().getInMessage();
-        Method method = (Method)inMessage.get("org.apache.cxf.resource.method");
-        if (method == null) {
-            BindingOperationInfo bop = inMessage.getExchange().getBindingOperationInfo();
-            if (bop != null) {
-                MethodDispatcher md = (MethodDispatcher) 
-                    inMessage.getExchange().getService().get(MethodDispatcher.class.getName());
-                method = md.getMethod(bop);
+        Method method = null;
+        if (inMessage != null) {
+            method = (Method)inMessage.get("org.apache.cxf.resource.method");
+            if (method == null) {
+                BindingOperationInfo bop = inMessage.getExchange().getBindingOperationInfo();
+                if (bop != null) {
+                    MethodDispatcher md = (MethodDispatcher) 
+                        inMessage.getExchange().getService().get(MethodDispatcher.class.getName());
+                    method = md.getMethod(bop);
+                }
             }
+        }
+        if (method == null) {
+            method = message.getExchange().get(Method.class);
         }
         return method;
     }
     
-    protected abstract void handleValidation(final Message message, final Object resourceInstance,
-                                             final Method method, final List<Object> arguments);
+    protected abstract void handleValidation(Message message, Object resourceInstance,
+                                             Method method, List<Object> arguments);
 
 
     protected BeanValidationProvider getProvider(Message message) {

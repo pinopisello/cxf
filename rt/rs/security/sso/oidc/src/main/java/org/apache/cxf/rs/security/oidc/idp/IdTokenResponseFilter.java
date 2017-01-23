@@ -45,7 +45,11 @@ public class IdTokenResponseFilter extends OAuthServerJoseJwtProducer implements
     @Override
     public void process(ClientAccessToken ct, ServerAccessToken st) {
         if (st.getResponseType() != null
-            && OidcUtils.CODE_AT_RESPONSE_TYPE.equals(st.getResponseType())) {
+            && OidcUtils.CODE_AT_RESPONSE_TYPE.equals(st.getResponseType())
+            && OAuthConstants.IMPLICIT_GRANT.equals(st.getGrantType())) {
+            // token post-processing as part of the current hybrid (implicit) flow
+            // so no id_token is returned now - however when the code gets exchanged later on
+            // this filter will add id_token to the returned access token
             return;
         }
         // Only add an IdToken if the client has the "openid" scope
@@ -69,26 +73,29 @@ public class IdTokenResponseFilter extends OAuthServerJoseJwtProducer implements
             return st.getSubject().getProperties().get(OidcUtils.ID_TOKEN);
         } else if (st.getSubject() instanceof OidcUserSubject) {
             OidcUserSubject sub = (OidcUserSubject)st.getSubject();
-            IdToken idToken = new IdToken(sub.getIdToken());
-            idToken.setAudience(st.getClient().getClientId());
-            idToken.setAuthorizedParty(st.getClient().getClientId());
-            // if this token was refreshed then the cloned IDToken might need to have its
-            // issuedAt and expiry time properties adjusted if it proves to be necessary
-            setAtHashAndNonce(idToken, st);
-            return processJwt(new JwtToken(idToken), st.getClient());
-        } else {
-            return null;
+            if (sub.getIdToken() != null) {
+                IdToken idToken = new IdToken(sub.getIdToken());
+                idToken.setAudience(st.getClient().getClientId());
+                idToken.setAuthorizedParty(st.getClient().getClientId());
+                // if this token was refreshed then the cloned IDToken might need to have its
+                // issuedAt and expiry time properties adjusted if it proves to be necessary
+                setAtHashAndNonce(idToken, st);
+                return processJwt(new JwtToken(idToken), st.getClient());
+            }
         }
+        return null;
+        
     }
     private void setAtHashAndNonce(IdToken idToken, ServerAccessToken st) {
         String rType = st.getResponseType();
         boolean atHashRequired = idToken.getAccessTokenHash() == null
             && (rType == null || !rType.equals(OidcUtils.ID_TOKEN_RESPONSE_TYPE));
-        boolean cHashRequired = idToken.getAuthorizationCodeHash() == null && st.getGrantCode() != null 
+        boolean cHashRequired = idToken.getAuthorizationCodeHash() == null 
             && rType != null 
             && (rType.equals(OidcUtils.CODE_ID_TOKEN_AT_RESPONSE_TYPE)
                 || rType.equals(OidcUtils.CODE_ID_TOKEN_RESPONSE_TYPE));
         
+        Message m = JAXRSUtils.getCurrentMessage();
         if (atHashRequired || cHashRequired) {
             Properties props = JwsUtils.loadSignatureOutProperties(false);
             SignatureAlgorithm sigAlgo = null;
@@ -103,12 +110,22 @@ public class IdTokenResponseFilter extends OAuthServerJoseJwtProducer implements
                     idToken.setAccessTokenHash(atHash);
                 }
                 if (cHashRequired) {
-                    String cHash = OidcUtils.calculateAuthorizationCodeHash(st.getGrantCode(), sigAlgo);
-                    idToken.setAuthorizationCodeHash(cHash);
+                    // c_hash can be returned from either Authorization or Token endpoints
+                    String code;
+                    if (st.getGrantCode() != null) {
+                        // This is a token endpoint, the code has been exchanged for a token
+                        code = st.getGrantCode();
+                    } else {
+                        // Authorization endpoint: hybrid flow, implicit part
+                        code = (String)m.getExchange().get(OAuthConstants.AUTHORIZATION_CODE_VALUE);
+                    }
+                    if (code != null) {
+                        idToken.setAuthorizationCodeHash(OidcUtils.calculateAuthorizationCodeHash(code, sigAlgo));
+                    }
                 }
             }
         }
-        Message m = JAXRSUtils.getCurrentMessage();
+        
         if (m != null && m.getExchange().containsKey(OAuthConstants.NONCE)) {
             idToken.setNonce((String)m.getExchange().get(OAuthConstants.NONCE));
         } else if (st.getNonce() != null) {

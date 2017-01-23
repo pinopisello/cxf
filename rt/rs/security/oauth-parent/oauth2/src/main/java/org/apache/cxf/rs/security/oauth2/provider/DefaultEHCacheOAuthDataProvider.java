@@ -36,11 +36,13 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
+import org.apache.cxf.rs.security.jose.jwt.JoseJwtConsumer;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.ServerAccessToken;
 import org.apache.cxf.rs.security.oauth2.common.UserSubject;
 import org.apache.cxf.rs.security.oauth2.tokens.refresh.RefreshToken;
 import org.apache.cxf.rs.security.oauth2.utils.EHCacheUtil;
+import org.apache.cxf.rs.security.oauth2.utils.JwtTokenUtils;
 
 public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     public static final String CLIENT_CACHE_KEY = "cxf.oauth2.client.cache";
@@ -52,6 +54,8 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     private Ehcache clientCache;
     private Ehcache accessTokenCache;
     private Ehcache refreshTokenCache;
+    private boolean storeJwtTokenKeyOnly;
+    private JoseJwtConsumer jwtTokenConsumer;
     
     public DefaultEHCacheOAuthDataProvider() {
         this(DEFAULT_CONFIG_URL, BusFactory.getThreadDefaultBus(true));
@@ -64,9 +68,9 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     public DefaultEHCacheOAuthDataProvider(String configFileURL, 
                                                Bus bus,
                                                String clientCacheKey, 
-                                               String accessTokenKey,
-                                               String refreshTokenKey) {
-        createCaches(configFileURL, bus, clientCacheKey, accessTokenKey, refreshTokenKey);
+                                               String accessTokenCacheKey,
+                                               String refreshTokenCacheKey) {
+        createCaches(configFileURL, bus, clientCacheKey, accessTokenCacheKey, refreshTokenCacheKey);
     }
     
     @Override
@@ -124,8 +128,20 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     
     @Override
     public ServerAccessToken getAccessToken(String accessToken) throws OAuthServiceException {
-        return getCacheValue(accessTokenCache, accessToken, ServerAccessToken.class);
+        ServerAccessToken at = null;
+        if (isUseJwtFormatForAccessTokens() && isStoreJwtTokenKeyOnly()) {
+            String jose = getCacheValue(accessTokenCache, accessToken, String.class);
+            if (jose != null) {
+                JoseJwtConsumer theConsumer = jwtTokenConsumer == null ? new JoseJwtConsumer() : jwtTokenConsumer;
+                at = JwtTokenUtils.createAccessTokenFromJwt(theConsumer, jose, this, 
+                                                                  super.getJwtAccessTokenClaimMap());
+            }
+        } else {
+            at = getCacheValue(accessTokenCache, accessToken, ServerAccessToken.class);
+        }
+        return at;
     }
+    
     @Override
     protected void doRevokeAccessToken(ServerAccessToken at) {
         accessTokenCache.remove(at.getTokenKey());
@@ -140,7 +156,13 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     }
     
     protected void saveAccessToken(ServerAccessToken serverToken) {
-        putCacheValue(accessTokenCache, serverToken.getTokenKey(), serverToken, serverToken.getExpiresIn());
+        Object accessTokenObject = null;
+        if (isUseJwtFormatForAccessTokens() && isStoreJwtTokenKeyOnly()) {
+            accessTokenObject = serverToken.getTokenKey();
+        } else {
+            accessTokenObject = serverToken;
+        }
+        putCacheValue(accessTokenCache, serverToken.getTokenKey(), accessTokenObject, serverToken.getExpiresIn());
     }
     
     protected void saveRefreshToken(RefreshToken refreshToken) {
@@ -216,6 +238,18 @@ public class DefaultEHCacheOAuthDataProvider extends AbstractOAuthDataProvider {
     @Override
     public void close() {
         cacheManager.shutdown();
+    }
+
+    public boolean isStoreJwtTokenKeyOnly() {
+        return storeJwtTokenKeyOnly;
+    }
+
+    public void setStoreJwtTokenKeyOnly(boolean storeJwtTokenKeyOnly) {
+        this.storeJwtTokenKeyOnly = storeJwtTokenKeyOnly;
+    }
+
+    public void setJwtTokenConsumer(JoseJwtConsumer jwtTokenConsumer) {
+        this.jwtTokenConsumer = jwtTokenConsumer;
     }
 
 }

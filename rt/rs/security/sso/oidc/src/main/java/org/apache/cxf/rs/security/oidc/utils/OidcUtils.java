@@ -20,6 +20,7 @@ package org.apache.cxf.rs.security.oidc.utils;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,6 @@ public final class OidcUtils {
     public static final String CODE_ID_TOKEN_RESPONSE_TYPE = "code id_token";
     public static final String CODE_ID_TOKEN_AT_RESPONSE_TYPE = "code id_token token";
     
-    
     public static final String ID_TOKEN = "id_token";
     public static final String OPENID_SCOPE = "openid";
     public static final String PROFILE_SCOPE = "profile";
@@ -66,6 +66,11 @@ public final class OidcUtils {
     public static final String ENDPOINT_CLAIM_SOURCE_PROPERTY = "endpoint";
     public static final String TOKEN_CLAIM_SOURCE_PROPERTY = "access_token";
     
+    public static final String PROMPT_PARAMETER = "prompt";
+    public static final String PROMPT_NONE_VALUE = "none";
+    public static final String PROMPT_CONSENT_VALUE = "consent";
+    public static final String CONSENT_REQUIRED_ERROR = "consent_required";
+    
     private static final Map<String, List<String>> SCOPES_MAP;
     static {
         SCOPES_MAP = new HashMap<String, List<String>>();
@@ -78,6 +83,15 @@ public final class OidcUtils {
     private OidcUtils() {
         
     }
+    public static List<String> getPromptValues(MultivaluedMap<String, String> params) {
+        String prompt = params.getFirst(PROMPT_PARAMETER);
+        if (prompt != null) {
+            return Arrays.asList(prompt.trim().split(" "));
+        } else {
+            return Collections.emptyList();
+        }
+    }
+    
     public static String getOpenIdScope() {
         return OPENID_SCOPE;
     }
@@ -114,8 +128,11 @@ public final class OidcUtils {
         validateAccessTokenHash(at, jwt, true);
     }
     public static void validateAccessTokenHash(ClientAccessToken at, JwtToken jwt, boolean required) {
+        validateAccessTokenHash(at.getTokenKey(), jwt, required);
+    }
+    public static void validateAccessTokenHash(String accessToken, JwtToken jwt, boolean required) {
         if (required) {
-            validateHash(at.getTokenKey(),
+            validateHash(accessToken,
                          (String)jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM),
                          jwt.getJwsHeaders().getSignatureAlgorithm());
         }

@@ -28,6 +28,7 @@ import org.apache.cxf.rs.security.oidc.common.IdToken;
 
 public class OidcSecurityContext extends SimpleSecurityContext implements SecurityContext {
     private OidcClientTokenContext oidcContext;
+    private String roleClaim;
 
     public OidcSecurityContext(IdToken token) {
         this(new OidcClientTokenContextImpl(token));
@@ -81,5 +82,25 @@ public class OidcSecurityContext extends SimpleSecurityContext implements Securi
     @Override
     public String getAuthenticationScheme() {
         return "OIDC";
+    }
+    
+    @Override
+    public boolean isUserInRole(String role) {
+        
+        return roleClaim != null && role != null
+            && (containsClaim(oidcContext.getIdToken(), roleClaim, role) 
+                || containsClaim(oidcContext.getUserInfo(), roleClaim, role));
+    }
+    
+    private boolean containsClaim(AbstractUserInfo userInfo, String claim, String claimValue) {
+        return userInfo != null && userInfo.containsProperty(claim)
+            && claimValue.equals(userInfo.getProperty(claim));
+    }
+    
+    /**
+     * Set the claim name that corresponds to the "role" of the Subject of the IdToken.
+     */
+    public void setRoleClaim(String roleClaim) {
+        this.roleClaim = roleClaim;
     }
 }

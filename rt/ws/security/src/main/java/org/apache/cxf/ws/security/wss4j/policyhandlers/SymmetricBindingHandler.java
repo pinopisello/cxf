@@ -20,6 +20,7 @@
 package org.apache.cxf.ws.security.wss4j.policyhandlers;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -42,6 +43,8 @@ import org.apache.cxf.ws.security.policy.PolicyUtils;
 import org.apache.cxf.ws.security.tokenstore.SecurityToken;
 import org.apache.cxf.ws.security.tokenstore.TokenStore;
 import org.apache.cxf.ws.security.wss4j.AttachmentCallbackHandler;
+import org.apache.cxf.ws.security.wss4j.StaxSerializer;
+import org.apache.cxf.ws.security.wss4j.WSS4JUtils;
 import org.apache.wss4j.common.WSEncryptionPart;
 import org.apache.wss4j.common.bsp.BSPEnforcer;
 import org.apache.wss4j.common.crypto.Crypto;
@@ -78,7 +81,6 @@ import org.apache.wss4j.policy.model.SpnegoContextToken;
 import org.apache.wss4j.policy.model.SymmetricBinding;
 import org.apache.wss4j.policy.model.UsernameToken;
 import org.apache.wss4j.policy.model.X509Token;
-import org.apache.xml.security.utils.Base64;
 
 /**
  * 
@@ -158,13 +160,13 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                     if (isRequestor()) {
                         tokenId = setupEncryptedKey(encryptionWrapper, encryptionToken);
                     } else {
-                        tokenId = getEncryptedKey();
+                        tok = getEncryptedKey();
                     }
                 } else if (encryptionToken instanceof UsernameToken) {
                     if (isRequestor()) {
                         tokenId = setupUTDerivedKey((UsernameToken)encryptionToken);
                     } else {
-                        tokenId = getUTDerivedKey();
+                        tok = getUTDerivedKey();
                     }
                 }
                 if (tok == null) {
@@ -288,13 +290,13 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                     if (isRequestor()) {
                         sigTokId = setupEncryptedKey(sigAbstractTokenWrapper, sigToken);
                     } else {
-                        sigTokId = getEncryptedKey();
+                        sigTok = getEncryptedKey();
                     }
                 } else if (sigToken instanceof UsernameToken) {
                     if (isRequestor()) {
                         sigTokId = setupUTDerivedKey((UsernameToken)sigToken);
                     } else {
-                        sigTokId = getUTDerivedKey();
+                        sigTok = getUTDerivedKey();
                     }
                 }
             } else {
@@ -400,7 +402,8 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                                           List<WSEncryptionPart> encrParts,
                                           boolean atEnd) {
         try {
-            WSSecDKEncrypt dkEncr = new WSSecDKEncrypt();
+            WSSecDKEncrypt dkEncr = new WSSecDKEncrypt(secHeader);
+            dkEncr.setEncryptionSerializer(new StaxSerializer());
             dkEncr.setIdAllocator(wssConfig.getIdAllocator());
             dkEncr.setCallbackLookup(callbackLookup);
             dkEncr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
@@ -483,7 +486,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             AlgorithmSuiteType algType = sbinding.getAlgorithmSuite().getAlgorithmSuiteType();
             dkEncr.setSymmetricEncAlgorithm(algType.getEncryption());
             dkEncr.setDerivedKeyLength(algType.getEncryptionDerivedKeyLength() / 8);
-            dkEncr.prepare(saaj.getSOAPPart());
+            dkEncr.prepare();
             Element encrDKTokenElem = null;
             encrDKTokenElem = dkEncr.getdktElement();
             addDerivedKeyElement(encrDKTokenElem);
@@ -516,7 +519,8 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                                            attached, encrParts, atEnd);
             } else {
                 try {
-                    WSSecEncrypt encr = new WSSecEncrypt();
+                    WSSecEncrypt encr = new WSSecEncrypt(secHeader);
+                    encr.setEncryptionSerializer(new StaxSerializer());
                     encr.setIdAllocator(wssConfig.getIdAllocator());
                     encr.setCallbackLookup(callbackLookup);
                     encr.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
@@ -548,7 +552,6 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                         setEncryptionUser(encr, encrToken, false, crypto);
                     }
                     
-                    encr.setDocument(saaj.getSOAPPart());
                     encr.setEncryptSymmKey(false);
                     encr.setSymmetricEncAlgorithm(algorithmSuite.getAlgorithmSuiteType().getEncryption());
                     encr.setMGFAlgorithm(algorithmSuite.getAlgorithmSuiteType().getMGFAlgo());
@@ -591,10 +594,10 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                         encr.setKeyIdentifierType(WSConstants.ENCRYPTED_KEY_SHA1_IDENTIFIER);
                     }
 
-                    encr.prepare(saaj.getSOAPPart(), crypto);
+                    encr.prepare(crypto);
                    
                     if (encr.getBSTTokenId() != null) {
-                        encr.prependBSTElementToHeader(secHeader);
+                        encr.prependBSTElementToHeader();
                     }
                    
                     Element refList = encr.encryptForRef(null, encrParts);
@@ -639,7 +642,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                                SecurityToken tok,
                                boolean included) throws WSSecurityException {
         Document doc = saaj.getSOAPPart();
-        WSSecDKSign dkSign = new WSSecDKSign();
+        WSSecDKSign dkSign = new WSSecDKSign(secHeader);
         dkSign.setIdAllocator(wssConfig.getIdAllocator());
         dkSign.setCallbackLookup(callbackLookup);
         dkSign.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
@@ -731,7 +734,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
             }
         }
         
-        dkSign.prepare(doc, secHeader);
+        dkSign.prepare();
         
         if (sbinding.isProtectTokens()) {
             String sigTokId = tok.getId();
@@ -750,7 +753,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
         }
         
         dkSign.getParts().addAll(sigs);
-        List<Reference> referenceList = dkSign.addReferencesToSign(sigs, secHeader);
+        List<Reference> referenceList = dkSign.addReferencesToSign(sigs);
         if (!referenceList.isEmpty()) {
             //Add elements to header
             Element el = dkSign.getdktElement();
@@ -779,7 +782,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
         if (policyToken.getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
             return doSignatureDK(sigs, policyAbstractTokenWrapper, policyToken, tok, included);
         } else {
-            WSSecSignature sig = new WSSecSignature();
+            WSSecSignature sig = new WSSecSignature(secHeader);
             sig.setIdAllocator(wssConfig.getIdAllocator());
             sig.setCallbackLookup(callbackLookup);
             sig.setAttachmentCallbackHandler(new AttachmentCallbackHandler(message));
@@ -884,9 +887,9 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                 crypto = getSignatureCrypto();
             }
             this.message.getExchange().put(SecurityConstants.SIGNATURE_CRYPTO, crypto);
-            sig.prepare(saaj.getSOAPPart(), crypto, secHeader);
+            sig.prepare(crypto);
             sig.getParts().addAll(sigs);
-            List<Reference> referenceList = sig.addReferencesToSign(sigs, secHeader);
+            List<Reference> referenceList = sig.addReferencesToSign(sigs);
             if (!referenceList.isEmpty()) {
                 //Do signature
                 if (bottomUpElement == null) {
@@ -911,7 +914,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
 
         Date created = new Date();
         Date expires = new Date();
-        expires.setTime(created.getTime() + 300000);
+        expires.setTime(created.getTime() + WSS4JUtils.getSecurityTokenLifetime(message));
         SecurityToken tempTok = new SecurityToken(
                         id, 
                         encrKey.getEncryptedKeyElement(),
@@ -933,7 +936,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
         //If direct ref is used to refer to the cert
         //then add the cert to the sec header now
         if (bstTokenId != null && bstTokenId.length() > 0) {
-            encrKey.prependBSTElementToHeader(secHeader);
+            encrKey.prependBSTElementToHeader();
         }
         return id;
     }
@@ -941,7 +944,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
     private static String getSHA1(byte[] input) {
         try {
             byte[] digestBytes = KeyUtils.generateDigest(input);
-            return Base64.encode(digestBytes);
+            return Base64.getMimeEncoder().encodeToString(digestBytes);
         } catch (WSSecurityException e) {
             //REVISIT
         }
@@ -956,7 +959,7 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
 
         Date created = new Date();
         Date expires = new Date();
-        expires.setTime(created.getTime() + 300000);
+        expires.setTime(created.getTime() + WSS4JUtils.getSecurityTokenLifetime(message));
         SecurityToken tempTok = 
             new SecurityToken(id, usernameToken.getUsernameTokenElement(), created, expires);
         tempTok.setSecret(secret);
@@ -966,28 +969,27 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
         return id;
     }
     
-    private String getEncryptedKey() {
+    private SecurityToken getEncryptedKey() {
         WSSecurityEngineResult encryptedKeyResult = getEncryptedKeyResult();
         if (encryptedKeyResult != null) {
             // Store it in the cache
             Date created = new Date();
             Date expires = new Date();
-            expires.setTime(created.getTime() + 300000);
+            expires.setTime(created.getTime() + WSS4JUtils.getSecurityTokenLifetime(message));
             
             String encryptedKeyID = (String)encryptedKeyResult.get(WSSecurityEngineResult.TAG_ID);
-            SecurityToken tempTok = new SecurityToken(encryptedKeyID, created, expires);
-            tempTok.setSecret((byte[])encryptedKeyResult.get(WSSecurityEngineResult.TAG_SECRET));
-            tempTok.setSHA1(getSHA1((byte[])encryptedKeyResult
+            SecurityToken securityToken = new SecurityToken(encryptedKeyID, created, expires);
+            securityToken.setSecret((byte[])encryptedKeyResult.get(WSSecurityEngineResult.TAG_SECRET));
+            securityToken.setSHA1(getSHA1((byte[])encryptedKeyResult
                                     .get(WSSecurityEngineResult.TAG_ENCRYPTED_EPHEMERAL_KEY)));
-            tokenStore.add(tempTok);
             
-            return encryptedKeyID;
+            return securityToken;
         }
         
         return null;
     }
     
-    private String getUTDerivedKey() throws WSSecurityException {
+    private SecurityToken getUTDerivedKey() throws WSSecurityException {
         
         List<WSHandlerResult> results = CastUtils.cast((List<?>)message.getExchange().getInMessage()
             .get(WSHandlerConstants.RECV_RESULTS));
@@ -1004,14 +1006,13 @@ public class SymmetricBindingHandler extends AbstractBindingBuilder {
                     }
                     Date created = new Date();
                     Date expires = new Date();
-                    expires.setTime(created.getTime() + 300000);
-                    SecurityToken tempTok = new SecurityToken(utID, created, expires);
+                    expires.setTime(created.getTime() + WSS4JUtils.getSecurityTokenLifetime(message));
+                    SecurityToken securityToken = new SecurityToken(utID, created, expires);
 
                     byte[] secret = (byte[])wser.get(WSSecurityEngineResult.TAG_SECRET);
-                    tempTok.setSecret(secret);
-                    tokenStore.add(tempTok);
+                    securityToken.setSecret(secret);
 
-                    return utID;
+                    return securityToken;
                 }
             }
         }

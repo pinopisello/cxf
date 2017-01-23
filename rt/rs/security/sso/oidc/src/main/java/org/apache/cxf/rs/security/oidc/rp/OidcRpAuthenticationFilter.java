@@ -47,27 +47,32 @@ import org.apache.cxf.rs.security.oauth2.client.ClientTokenContextManager;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
 
 @PreMatching
-@Priority(Priorities.AUTHENTICATION)
+@Priority(Priorities.AUTHENTICATION + 2)
 public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
     @Context
     private MessageContext mc;
     private ClientTokenContextManager stateManager;
     private String redirectUri;
+    private String roleClaim;
+    private boolean addRequestUriAsRedirectQuery;
     
     public void filter(ContainerRequestContext rc) {
         if (checkSecurityContext(rc)) {
             return;
         } else if (redirectUri != null) {
-            URI redirectAddress = null;
+            UriBuilder redirectBuilder = null;
             if (redirectUri.startsWith("/")) {
                 String basePath = (String)mc.get("http.base.path");
-                redirectAddress = UriBuilder.fromUri(basePath).path(redirectUri).build();
+                redirectBuilder = UriBuilder.fromUri(basePath).path(redirectUri);
             } else if (redirectUri.startsWith("http")) {
-                redirectAddress = URI.create(redirectUri);
+                redirectBuilder = UriBuilder.fromUri(URI.create(redirectUri));
             } else {
-                UriBuilder ub = rc.getUriInfo().getBaseUriBuilder().path(redirectUri);
-                redirectAddress = ub.build();
+                redirectBuilder = rc.getUriInfo().getBaseUriBuilder().path(redirectUri);
             }
+            if (addRequestUriAsRedirectQuery) {
+                redirectBuilder.queryParam("state", rc.getUriInfo().getRequestUri().toString());
+            }
+            URI redirectAddress = redirectBuilder.build();
             rc.abortWith(Response.seeOther(redirectAddress)
                            .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store")
                            .header("Pragma", "no-cache") 
@@ -95,7 +100,10 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
         newTokenContext.setUserInfo(tokenContext.getUserInfo());
         newTokenContext.setState(toRequestState(rc));
         JAXRSUtils.getCurrentMessage().setContent(ClientTokenContext.class, newTokenContext);
-        rc.setSecurityContext(new OidcSecurityContext(newTokenContext));
+        
+        OidcSecurityContext oidcSecCtx = new OidcSecurityContext(newTokenContext);
+        oidcSecCtx.setRoleClaim(roleClaim);
+        rc.setSecurityContext(oidcSecCtx);
         return true;
     }
     private MultivaluedMap<String, String> toRequestState(ContainerRequestContext rc) {
@@ -115,5 +123,13 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
     }
     public void setClientTokenContextManager(ClientTokenContextManager manager) {
         this.stateManager = manager;
+    }
+    
+    public void setRoleClaim(String roleClaim) {
+        this.roleClaim = roleClaim;
+    }
+    
+    public void setAddRequestUriAsRedirectQuery(boolean addRequestUriAsRedirectQuery) {
+        this.addRequestUriAsRedirectQuery = addRequestUriAsRedirectQuery;
     }
 }

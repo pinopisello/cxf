@@ -22,14 +22,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.AsyncInvoker;
+import javax.ws.rs.client.CompletionStageRxInvoker;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.InvocationCallback;
+import javax.ws.rs.client.NioInvoker;
+import javax.ws.rs.client.RxInvoker;
 import javax.ws.rs.client.SyncInvoker;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Cookie;
@@ -369,6 +373,33 @@ public class InvocationBuilderImpl implements Invocation.Builder {
         public <T> Future<T> submit(InvocationCallback<T> callback) {
             return invBuilder.async().method(httpMethod, entity, callback);
         }
+    }
 
+    @Override
+    public CompletionStageRxInvoker rx() {
+        return rx((ExecutorService)null);
+    }
+
+    @Override
+    public CompletionStageRxInvoker rx(ExecutorService executorService) {
+        return webClient.rx(executorService);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public <T extends RxInvoker> T rx(Class<T> clazz) {
+        return rx(clazz, (ExecutorService)null);
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Override
+    public <T extends RxInvoker> T rx(Class<T> clazz, ExecutorService executorService) {
+        return webClient.rx(clazz, executorService);
+    }
+
+    @Override
+    public NioInvoker nio() {
+        // TODO: Implementation required (JAX-RS 2.1)
+        return null;
     }
 }

@@ -24,7 +24,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.text.SimpleDateFormat;
@@ -43,6 +45,7 @@ import java.util.logging.Logger;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.InvocationCallback;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Form;
@@ -522,7 +525,7 @@ public abstract class AbstractClient implements Client {
     }
     
     protected boolean responseStreamCanBeClosed(Message outMessage, Class<?> cls) {
-        return cls != InputStream.class
+        return !JAXRSUtils.isStreamingOutType(cls)
             && MessageUtils.isTrue(outMessage.getContextualProperty("response.stream.auto.close"));
     }
     
@@ -555,6 +558,17 @@ public abstract class AbstractClient implements Client {
         Exchange exchange = message.getExchange(); 
       
         Exception ex = message.getContent(Exception.class);
+        if (ex == null) {
+            ex = message.getExchange().get(Exception.class);
+        }
+        if (ex == null && !exchange.isOneWay()) {
+            synchronized (exchange) {
+                while (exchange.get("IN_CHAIN_COMPLETE") == null) {
+                    exchange.wait(cfg.getSynchronousTimeout());
+                }
+            }
+        }
+        ex = message.getContent(Exception.class);
         if (ex != null
             || PropertyUtils.isTrue(exchange.get(SERVICE_NOT_AVAIL_PROPERTY))
                 && PropertyUtils.isTrue(exchange.get(COMPLETE_IF_SERVICE_NOT_AVAIL_PROPERTY))) {
@@ -572,16 +586,22 @@ public abstract class AbstractClient implements Client {
     protected void checkClientException(Message outMessage, Exception ex) throws Exception {
         Throwable actualEx = ex instanceof Fault ? ((Fault)ex).getCause() : ex;
         
-        Integer responseCode = getResponseCode(outMessage.getExchange());
+        Exchange exchange = outMessage.getExchange();
+        Integer responseCode = getResponseCode(exchange);
         if (responseCode == null 
-            || actualEx instanceof IOException 
-                && outMessage.getExchange().get("client.redirect.exception") != null) {
+            || actualEx instanceof IOException && exchange.get("client.redirect.exception") != null) {
             if (actualEx instanceof ProcessingException) {
-                throw ex;
+                throw (RuntimeException)actualEx;
             } else if (actualEx != null) {
-                throw new ProcessingException(actualEx);
-            } else if (!outMessage.getExchange().isOneWay() || cfg.isResponseExpectedForOneway()) {
-                waitForResponseCode(outMessage.getExchange());
+                Object useProcExProp = exchange.get("wrap.in.processing.exception");
+                if (actualEx instanceof RuntimeException
+                    && useProcExProp != null && PropertyUtils.isFalse(useProcExProp)) {                
+                    throw (Exception)actualEx;    
+                } else {
+                    throw new ProcessingException(actualEx);
+                }
+            } else if (!exchange.isOneWay() || cfg.isResponseExpectedForOneway()) {
+                waitForResponseCode(exchange);
             }
         }
     }
@@ -747,7 +767,10 @@ public abstract class AbstractClient implements Client {
     
     
     protected String convertParamValue(Object pValue, Annotation[] anns) {
-        if (pValue == null) {
+        return convertParamValue(pValue, pValue == null ? null : pValue.getClass(), anns);
+    }
+    protected String convertParamValue(Object pValue, Class<?> pClass, Annotation[] anns) {    
+        if (pValue == null && pClass == null) {
             return null;
         }
         ProviderFactory pf = ClientProviderFactory.getInstance(cfg.getEndpoint());
@@ -760,7 +783,6 @@ public abstract class AbstractClient implements Client {
                 m.getExchange().setOutMessage(m);
                 m.getExchange().put(Endpoint.class, cfg.getEndpoint());
             }
-            Class<?> pClass = pValue.getClass();
             @SuppressWarnings("unchecked")
             ParamConverter<Object> prov = 
                 (ParamConverter<Object>)pf.createParameterHandler(pClass, pClass, anns, m);
@@ -774,11 +796,11 @@ public abstract class AbstractClient implements Client {
                 }
             }
         }
-        return pValue.toString();
+        return pValue == null ? null : pValue.toString();
     }
     
     protected static void reportMessageHandlerProblem(String name, Class<?> cls, MediaType ct, Throwable ex) {
-        String errorMessage = JAXRSUtils.logMessageHandlerProblem("NO_MSG_WRITER", cls, ct);
+        String errorMessage = JAXRSUtils.logMessageHandlerProblem(name, cls, ct);
         Throwable actualEx = ex instanceof Fault ? ((Fault)ex).getCause() : ex;
         throw new ProcessingException(errorMessage, actualEx);
     }
@@ -1014,7 +1036,7 @@ public abstract class AbstractClient implements Client {
             = CastUtils.cast((Map<?, ?>)outMessage.get(Message.INVOCATION_CONTEXT));
         return CastUtils.cast((Map<?, ?>)invContext.get(REQUEST_CONTEXT));
     }
-    
+        
     protected List<?> getContentsList(Object body) {
         return body == null ? new MessageContentsList() : new MessageContentsList(body);
     }
@@ -1065,6 +1087,50 @@ public abstract class AbstractClient implements Client {
     
     protected void setPlainOperationNameProperty(Message outMessage, String name) {
         outMessage.getExchange().put("org.apache.cxf.resource.operation.name", name);
+    }
+    
+    protected static Type getCallbackType(InvocationCallback<?> callback) {
+        Class<?> cls = callback.getClass();
+        ParameterizedType pt = findCallbackType(cls);
+        Type actualType = null;
+        for (Type tp : pt.getActualTypeArguments()) {
+            actualType = tp;
+            break;
+        }
+        if (actualType instanceof TypeVariable) { 
+            actualType = InjectionUtils.getSuperType(cls, (TypeVariable<?>)actualType);
+        }
+        return actualType;
+    }
+    
+    protected static ParameterizedType findCallbackType(Class<?> cls) {
+        if (cls == null || cls == Object.class) {
+            return null;
+        }
+        for (Type c2 : cls.getGenericInterfaces()) {
+            if (c2 instanceof ParameterizedType) {
+                ParameterizedType pt = (ParameterizedType)c2;
+                if (InvocationCallback.class.equals(pt.getRawType())) {
+                    return pt;
+                }
+            }
+        }
+        return findCallbackType(cls.getSuperclass());
+    }
+    
+    protected static Class<?> getCallbackClass(Type outType) {
+        Class<?> respClass = null;
+        if (outType instanceof Class) {
+            respClass = (Class<?>)outType;
+        } else if (outType instanceof ParameterizedType) { 
+            ParameterizedType pt = (ParameterizedType)outType;
+            if (pt.getRawType() instanceof Class) {
+                respClass = (Class<?>)pt.getRawType();
+            }
+        } else if (outType == null) { 
+            respClass = Response.class;
+        }
+        return respClass;
     }
     
     protected abstract class AbstractBodyWriter extends AbstractOutDatabindingInterceptor {
@@ -1131,6 +1197,65 @@ public abstract class AbstractClient implements Client {
             }
             
             
+        }
+    }
+    protected abstract class AbstractClientAsyncResponseInterceptor extends AbstractPhaseInterceptor<Message> {
+        AbstractClientAsyncResponseInterceptor() {
+            super(Phase.UNMARSHAL);
+        }
+
+        @Override
+        public void handleMessage(Message message) throws Fault {
+            synchronized (message.getExchange()) {
+                message.getExchange().put("IN_CHAIN_COMPLETE", Boolean.TRUE);
+                message.getExchange().notifyAll();
+            }
+            if (message.getExchange().isSynchronous()) {
+                return;
+            }
+            handleAsyncResponse(message);
+        }
+
+        @Override
+        public void handleFault(Message message) {
+            synchronized (message.getExchange()) {
+                message.getExchange().put("IN_CHAIN_COMPLETE", Boolean.TRUE);
+                message.getExchange().notifyAll();
+            }
+            if (message.getExchange().isSynchronous()) {
+                return;
+            }
+            handleAsyncFault(message);
+        }
+
+        private void handleAsyncResponse(Message message) {
+            JaxrsClientCallback<?> cb = message.getExchange().get(JaxrsClientCallback.class);
+            Response r = null;
+            try {
+                Object[] results = preProcessResult(message);
+                if (results != null && results.length == 1) {
+                    r = (Response)results[0];
+                }
+            } catch (Exception ex) {
+                Throwable t = ex instanceof WebApplicationException 
+                    ? (WebApplicationException)ex 
+                    : ex instanceof ProcessingException 
+                    ? (ProcessingException)ex : new ProcessingException(ex);
+                cb.handleException(message, t);
+                return;
+            }
+            doHandleAsyncResponse(message, r, cb);
+        }
+        
+        protected abstract void doHandleAsyncResponse(Message message, Response r, JaxrsClientCallback<?> cb);
+
+        protected void closeAsyncResponseIfPossible(Response r, Message outMessage, JaxrsClientCallback<?> cb) {
+            if (responseStreamCanBeClosed(outMessage, cb.getResponseClass())) {
+                r.close();
+            }
+        }
+        
+        protected void handleAsyncFault(Message message) {
         }
     }
 }

@@ -55,6 +55,7 @@ import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.impl.ProvidersImpl;
 import org.apache.cxf.jaxrs.interceptor.AttachmentInputInterceptor;
 import org.apache.cxf.jaxrs.interceptor.AttachmentOutputInterceptor;
+import org.apache.cxf.jaxrs.utils.ExceptionUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.ExchangeImpl;
@@ -63,7 +64,6 @@ import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.message.MessageUtils;
 
 public class MessageContextImpl implements MessageContext {
-
     private Message m;
     public MessageContextImpl(Message m) {
         this.m = m;
@@ -288,7 +288,7 @@ public class MessageContextImpl implements MessageContext {
                                      new ProvidersImpl(inMessage));
             newAttachments.add(first);
         } catch (IOException ex) {
-            throw new WebApplicationException(500);
+            throw ExceptionUtils.toInternalServerErrorException(ex, null);
         }
         
     

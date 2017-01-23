@@ -186,7 +186,7 @@ public class UndertowHTTPServerEngine implements ServerEngine {
         deploymentInfo.setClassLoader(Thread.currentThread().getContextClassLoader());
         deploymentInfo.setDeploymentName("cxf-undertow");
         deploymentInfo.setContextPath(contextName);
-        ServletInfo asyncServlet = new ServletInfo(ServletPathMatches.DEFAULT_SERVLET_NAME, CxfUndertwoServlet.class);
+        ServletInfo asyncServlet = new ServletInfo(ServletPathMatches.DEFAULT_SERVLET_NAME, CxfUndertowServlet.class);
         deploymentInfo.addServlet(asyncServlet);
         servletContainer.addDeployment(deploymentInfo);
         DeploymentManager deploymentManager = servletContainer.getDeployment(deploymentInfo.getDeploymentName());
@@ -461,11 +461,11 @@ public class UndertowHTTPServerEngine implements ServerEngine {
             ? SSLContext.getInstance(proto)
                 : SSLContext.getInstance(proto, tlsServerParameters.getJsseProvider());
             
-        KeyManager keyManagers[] = tlsServerParameters.getKeyManagers();
+        KeyManager[] keyManagers = tlsServerParameters.getKeyManagers();
         if (tlsServerParameters.getCertAlias() != null) {
             keyManagers = getKeyManagersWithCertAlias(keyManagers);
         }
-        context.init(tlsServerParameters.getKeyManagers(), 
+        context.init(keyManagers, 
                      tlsServerParameters.getTrustManagers(),
                      tlsServerParameters.getSecureRandom());
 

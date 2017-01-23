@@ -17,6 +17,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
+<<<<<<< HEAD
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:jaxws="http://cxf.apache.org/jaxws"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -25,4 +26,9 @@
 	<jaxws:endpoint id="SoapService" address="/SoapContext" 
 		implementor="demo.hw.server.GreeterImpl">
 	</jaxws:endpoint>
+=======
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jaxws="http://cxf.apache.org/jaxws" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
+    <jaxws:endpoint id="SoapService" address="/SoapContext/SoapPort" implementor="demo.hw.server.GreeterImpl">
+    </jaxws:endpoint>
+>>>>>>> 707fa4f3c3f3aa40979e57468a9ac3eb3102a71f
 </beans>

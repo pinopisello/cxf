@@ -94,18 +94,19 @@ public class STSTokenOutInterceptorTest extends AbstractBusClientServerTestBase 
     private static final String STS_TRANSPORT_ENDPOINT_NAME = 
         "{http://docs.oasis-open.org/ws-sx/ws-trust/200512/}Transport_Port";
 
-    private static final String CLIENTSTORE = "/clientstore.jks";
+    private static final String CLIENTSTORE = "/keys/clientstore.jks";
     private static final String KEYSTORE_PASS = "cspass";
     private static final String KEY_PASS = "ckpass";
 
     @BeforeClass
     public static void startServers() throws Exception {
-        assertTrue(
-                   "Server failed to launch",
-                   // run the server in the same process
-                   // set this to false to fork
-                   launchServer(STSServer.class, true)
-        );
+        STSServer stsServer = new STSServer();
+        stsServer.setContext("cxf-transport.xml");
+        assertTrue(launchServer(stsServer));
+        
+        stsServer = new STSServer();
+        stsServer.setContext("cxf-x509.xml");
+        assertTrue(launchServer(stsServer));
     }
     
     @AfterClass

@@ -112,7 +112,7 @@ public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
 
         private Message outMessage;
 
-        public WrappedOutputStream(Message m) {
+        WrappedOutputStream(Message m) {
             this.outMessage = m;
         }
 

@@ -72,6 +72,7 @@ import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.ClassHelper;
 import org.apache.cxf.common.util.PrimitiveUtils;
 import org.apache.cxf.common.util.ProxyClassLoader;
+import org.apache.cxf.common.util.ReflectionUtil;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.jaxrs.ext.MessageContext;
@@ -113,6 +114,17 @@ public final class InjectionUtils {
         
     }
 
+    public static Field getDeclaredField(Class<?> cls, String fieldName) {
+        if (cls == null || cls == Object.class) {
+            return null;
+        }
+        Field f = ReflectionUtil.getDeclaredField(cls, fieldName);
+        if (f != null) {
+            return f;
+        }
+        return getDeclaredField(cls.getSuperclass(), fieldName);
+    }
+    
     public static boolean isConcreteClass(Class<?> cls) {
         return !cls.isInterface() && !Modifier.isAbstract(cls.getModifiers());
     }
@@ -877,9 +889,21 @@ public final class InjectionUtils {
      //CHECKSTYLE:ON    
         Class<?> type = getCollectionType(rawType);
 
-        Class<?> realType = rawType.isArray() ? rawType.getComponentType() 
-                : InjectionUtils.getActualType(genericType);
-        
+        Class<?> realType = null;
+        Type realGenericType = null;
+        if (rawType.isArray()) {
+            realType = rawType.getComponentType();
+            realGenericType = realType;
+        } else {
+            Type[] types = getActualTypes(genericType);
+            if (types.length == 0 || !(types[0] instanceof ParameterizedType)) {
+                realType = getActualType(genericType);
+                realGenericType = realType;
+            } else {
+                realType = getRawType(types[0]);
+                realGenericType = types[0] == realType ? realType : types[0];
+            }
+        }
         Object theValues = null;
         if (type != null) {
             try {
@@ -900,7 +924,7 @@ public final class InjectionUtils {
             valuesList = checkPathSegment(valuesList, realType, pathParam);
             for (int ind = 0; ind < valuesList.size(); ind++) {
                 Object o = InjectionUtils.handleParameter(valuesList.get(ind), decoded, 
-                                                          realType, realType, paramAnns, pathParam, message);
+                               realType, realGenericType, paramAnns, pathParam, message);
                 addToCollectionValues(theValues, o, ind);
             }
         }

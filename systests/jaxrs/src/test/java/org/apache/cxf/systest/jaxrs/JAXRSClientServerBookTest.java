@@ -73,6 +73,7 @@ import org.apache.cxf.jaxrs.provider.XSLTJaxbProvider;
 import org.apache.cxf.systest.jaxrs.BookStore.BookInfo;
 import org.apache.cxf.systest.jaxrs.BookStore.BookInfoInterface;
 import org.apache.cxf.systest.jaxrs.BookStore.BookNotReturnedException;
+import org.apache.cxf.systest.jaxrs.CustomFaultInInterceptor.CustomRuntimeException;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 
 import org.junit.BeforeClass;
@@ -351,6 +352,8 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         String name = r.readEntity(String.class);
         assertEquals("Good book", name);
         assertEquals("text/custom;charset=us-ascii", r.getMediaType().toString());
+        assertEquals("CustomValue", r.getHeaderString("CustomHeader"));
+        
     }    
     
     @Test
@@ -392,6 +395,12 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     }
     
     @Test
+    public void testUseParamBeanWebClientSubResource() {
+        String address = "http://localhost:" + PORT + "/bookstore/beanparamsub/beanparam";
+        doTestUseParamBeanWebClient(address);
+    }
+    
+    @Test
     public void testUseParamBeanWebClient2() {
         String address = "http://localhost:" + PORT + "/bookstore/beanparam2";
         doTestUseParamBeanWebClient(address);
@@ -399,10 +408,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     
     private void doTestUseParamBeanWebClient(String address) {
         WebClient wc = WebClient.create(address);
-        wc.path("100");
-        wc.query("id_2", "20");
-        wc.query("id3", "3");
-        wc.query("id4", "123");
+        wc.path("100").query("id_2", "20").query("id3", "3").query("id4", "123");
         Book book = wc.get(Book.class);
         assertEquals(123L, book.getId());
     }
@@ -418,8 +424,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetIntroChapterFromSelectedBook2() {
         String address = "http://localhost:" + PORT + "/bookstore/";
         WebClient wc = WebClient.create(address);
-        wc.path("books[id=le=123]");
-        wc.path("chapter");
+        wc.path("books[id=le=123]").path("chapter");
         wc.accept("application/xml");
         Chapter chapter = wc.get(Chapter.class);
         assertEquals("chapter 1", chapter.getTitle());
@@ -480,7 +485,6 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     @Test
     public void testProxyBeanParam2() throws Exception {
         BookStore store = JAXRSClientFactory.create("http://localhost:" + PORT, BookStore.class);
-        WebClient.getConfig(store).getHttpConduit().getClient().setReceiveTimeout(10000000L);
         BookStore.BookBean2 bean = new BookStore.BookBean2();
         bean.setId(100L);
         bean.setId2(23L);
@@ -770,6 +774,14 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     }
     
     @Test
+    public void testOnewayWebClient2() throws Exception {
+        WebClient client = WebClient.create("http://localhost:" + PORT + "/bookstore/oneway");
+        Response r = client.post(null);
+        assertEquals(202, r.getStatus());
+        assertFalse(r.getHeaders().isEmpty());
+    }
+    
+    @Test
     public void testBookWithSpace() throws Exception {
         WebClient client = WebClient.create("http://localhost:" + PORT + "/bookstore/").path("the books/123");
         Book book = client.get(Book.class);
@@ -961,21 +973,21 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
             + "org.apache.cxf.systest.jaxrs.BookNotFoundFault: Book Exception</ns1:faultstring>"
             + "</ns1:XMLFault>";
         getAndCompare("http://localhost:" + PORT + "/bookstore/propagate-exception2",
-                      data, "application/xml", 500);
+                      data, "application/xml", null, 500);
     }
     
     @Test
     public void testPropogateException3() throws Exception {
         String data = "<nobook/>";
         getAndCompare("http://localhost:" + PORT + "/bookstore/propagate-exception3",
-                      data, "application/xml", 500);
+                      data, "application/xml", null, 500);
     }
     
     @Test
     public void testPropogateException4() throws Exception {
         String data = "<nobook/>";
         getAndCompare("http://localhost:" + PORT + "/bookstore/propogateExceptionVar/1",
-                      data, "application/xml", 500);
+                      data, "application/xml", null, 500);
     }
     
     @Test
@@ -1061,7 +1073,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testWebApplicationException() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/webappexception",
                       "This is a WebApplicationException",
-                      "application/xml", 500);
+                      "application/xml", null, 500);
     }
     
     @Test 
@@ -1196,7 +1208,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompareAsStrings("http://localhost:" + PORT 
                                + "/bookstore/bookurl/http%3A%2F%2Ftest.com%2Frss%2F123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -1413,21 +1425,21 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/bookquery?"
                                + "urlid=http%3A%2F%2Ftest.com%2Frss%2F123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
     public void testGetGenericBook() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/genericbooks/123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
     public void testGetGenericResponseBook() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/genericresponse/123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -1435,21 +1447,21 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/bookidarray?"
                                + "id=1&id=2&id=3",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
         
     @Test
     public void testNoRootResourceException() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/nobookstore/webappexception",
                       "",
-                      "application/xml", 404);
+                      "application/xml", null, 404);
     }
     
     @Test
     public void testNoPathMatch() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/bookqueries",
                       "",
-                      "application/xml", 404);
+                      "application/xml", null, 404);
     }
     
     @Test
@@ -1469,13 +1481,13 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testWriteAndFailEarly() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/books/fail-early",
                       "This is supposed to go on the wire",
-                      "application/bar, text/plain", 410);
+                      "application/bar, text/plain", null, 410);
     }
     
     @Test
     public void testWriteAndFailLate() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/books/fail-late",
-                      "", "application/bar", 410);
+                      "", "application/bar", null, 410);
     }
     
     
@@ -1483,14 +1495,14 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testAcceptTypeMismatch() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/booknames/123",
                       "",
-                      "foo/bar", 406);
+                      "foo/bar", null, 406);
     }
             
     @Test
     public void testWrongHttpMethod() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/unsupportedcontenttype",
                       "",
-                      "foo/bar", 405);
+                      "foo/bar", null, 405);
     }
     
     @Test
@@ -1498,7 +1510,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompare("http://localhost:" + PORT + "/bookstore/wrongparametertype?p=1",
                       "Parameter Class java.util.Map has no constructor with single String "
                       + "parameter, static valueOf(String) or fromString(String) methods",
-                      "*/*", 500);
+                      "*/*", null, 500);
     }
 
     @Test
@@ -1519,14 +1531,14 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testExceptionDuringConstruction() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/exceptionconstruction?p=1",
                       "",
-                      "foo/bar", 404);
+                      "foo/bar", null, 404);
     }
     
     @Test
     public void testSubresourceMethodNotFound() throws Exception {
         getAndCompare("http://localhost:" + PORT + "/bookstore/interface/thesubresource",
                       "",
-                      "foo/bar", 404);
+                      "foo/bar", null, 404);
     }
     
     @Test
@@ -1650,7 +1662,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBookCustomExpression() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/custom/123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -1756,7 +1768,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/search"
                                + "?_s=name==CXF*;id=ge=123;id=lt=124",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -1785,7 +1797,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBook123CGLIB() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/123/cglib",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -1889,19 +1901,19 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBook123() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/query?bookId=123",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/defaultquery",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/missingquery",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/123",
                                "resources/expected_get_book123json.txt",
@@ -1927,36 +1939,36 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBookBuffer() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/buffer",
                                "resources/expected_get_book123.txt",
-                               "application/bar", 200);
+                               "application/bar", "application/bar", 200);
     }    
     
     @Test
     public void testGetBookBySegment() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/segment/matrix2;first=12;second=3",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore;bar/segment;foo/"
                                + "matrix2;first=12;second=3;third",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
     public void testGetBookByListOfSegments() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/segment/list/1/2/3",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
     public void testGetBookByMatrixParameters() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/segment/matrix;first=12;second=3",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore;bar;first=12/segment;foo;"
                                + "second=3/matrix;third",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -1964,7 +1976,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompareAsStrings(
             "http://localhost:" + PORT + "/bookstore/segment;first=12;second=3/matrix-middle",
             "resources/expected_get_book123.txt",
-            "application/xml", 200);
+            "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -2035,7 +2047,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBookElement() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/element",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -2074,7 +2086,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBookAdapter() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/adapter",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -2111,7 +2123,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBookAdapterInterface() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/interface/adapter",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
     
     @Test
@@ -2150,7 +2162,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBook123FromSub() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/interface/subresource",
                                "resources/expected_get_book123.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/books/123",
                                "resources/expected_get_book123json.txt",
@@ -2232,7 +2244,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         getAndCompareAsStrings("http://localhost:" 
                                + PORT + "/bookstore/booksubresource/123/chapters/sub/1/recurse",
                                "resources/expected_get_chapter1_utf.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
         getAndCompareAsStrings("http://localhost:"
                                + PORT + "/bookstore/booksubresource/123/chapters/sub/1/recurse2",
                                "resources/expected_get_chapter1.txt",
@@ -2252,7 +2264,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetBook123ReturnString() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/booknames/123",
                                "resources/expected_get_book123_returnstring.txt",
-                               "text/plain", 200);
+                               "text/plain", "text/plain", 200);
     }
     
     @Test
@@ -2436,7 +2448,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/cd/123",
                                "resources/expected_get_cdjson.txt",
-                               "application/json", 200);
+                               "application/json", "application/json", 200);
         
     }
     
@@ -2528,7 +2540,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/cd/123",
                                "resources/expected_get_cd.txt",
-                               "application/xml", 200);
+                               "application/xml", "application/xml", 200);
     }
 
     @Test
@@ -2551,7 +2563,7 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     public void testGetCDWithMultiContentTypesJSON() throws Exception {
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/cdwithmultitypes/123",
                                "resources/expected_get_cdjson.txt",
-                               "application/json", 200);
+                               "application/json", "application/json", 200);
         getAndCompareAsStrings("http://localhost:" + PORT + "/bookstore/cdwithmultitypes/123",
                                "resources/expected_get_cdjson.txt",
                                "*/*,application/xml;q=0.9,application/json", "application/json", 200);
@@ -2631,6 +2643,20 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     }
 
     @Test
+    public void testNonExistentWithGetCustomEx() throws Exception {
+        String address = "http://localhostt/bookstore";
+        BookStore c = JAXRSClientFactory.create(address, BookStore.class);
+        WebClient.getConfig(c).getInFaultInterceptors().add(new CustomFaultInInterceptor(false));
+        try {
+            c.getBook("123");
+            fail("Exception expected");
+        } catch (CustomRuntimeException ex) {
+            assertEquals("UnknownHostException: Microservice at http://localhostt/bookstore/bookstore/books/123/"
+                          + " is not available", ex.getMessage());
+        }
+    }
+    
+    @Test
     public void testBadlyQuotedHeaders() throws Exception {
 
         String endpointAddress =
@@ -2666,19 +2692,6 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
     }
 
 
-    private void getAndCompareAsStrings(String address,
-                                        String resourcePath,
-                                        String acceptType,
-                                        int status) throws Exception {
-        String expected = getStringFromInputStream(
-                              getClass().getResourceAsStream(resourcePath));
-        getAndCompare(address,
-                      expected,
-                      acceptType,
-                      acceptType,
-                      status);
-    }
-    
     private void getAndCompareAsStrings(String address, 
                                         String resourcePath,
                                         String acceptType,
@@ -2691,17 +2704,6 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
                       acceptType,
                       expectedContentType,
                       status);
-    }
-    
-    private void getAndCompare(String address, 
-                               String expectedValue,
-                               String acceptType,
-                               int expectedStatus) throws Exception {
-        getAndCompare(address,
-                      expectedValue,
-                      acceptType,
-                      null,
-                      expectedStatus);
     }
     
     private void getAndCompare(String address, 

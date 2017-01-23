@@ -19,6 +19,8 @@
 package org.apache.cxf.ext.logging;
 
 import org.apache.cxf.Bus;
+import org.apache.cxf.annotations.Provider;
+import org.apache.cxf.annotations.Provider.Type;
 import org.apache.cxf.common.injection.NoJSR250Annotations;
 import org.apache.cxf.ext.logging.event.LogEventSender;
 import org.apache.cxf.ext.logging.event.PrettyLoggingFilter;
@@ -42,6 +44,7 @@ import org.apache.cxf.interceptor.InterceptorProvider;
   </pre>
  */
 @NoJSR250Annotations
+@Provider(value = Type.Feature)
 public class LoggingFeature extends AbstractFeature {
     private LogEventSender sender;
     private LoggingInInterceptor in;
@@ -86,5 +89,23 @@ public class LoggingFeature extends AbstractFeature {
 
     public void setPrettyLogging(boolean prettyLogging) {
         this.prettyFilter.setPrettyLogging(prettyLogging);
+    }
+    
+    /**
+     * Log binary content?
+     * @param logBinary defaults to false 
+     */
+    public void setLogBinary(boolean logBinary) {
+        in.setLogBinary(logBinary);
+        out.setLogBinary(logBinary);
+    }
+    
+    /**
+     * Log multipart content? 
+     * @param logMultipart defaults to true
+     */
+    public void setLogMultipart(boolean logMultipart) {
+        in.setLogMultipart(logMultipart);
+        out.setLogMultipart(logMultipart);
     }
 }

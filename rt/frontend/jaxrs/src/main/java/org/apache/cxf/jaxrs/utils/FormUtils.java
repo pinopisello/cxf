@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
@@ -263,12 +264,17 @@ public final class FormUtils {
             return;
         }
         try {
-            int maxPartsCount = Integer.valueOf(maxPartsCountProp);
+            int maxPartsCount = Integer.parseInt(maxPartsCountProp);
             if (maxPartsCount != -1 && numberOfParts >= maxPartsCount) {
                 throw new WebApplicationException(413);
             }
         } catch (NumberFormatException ex) {
             throw ExceptionUtils.toInternalServerErrorException(ex, null);
         }
+    }
+
+    public static boolean isFormPostRequest(Message m) {
+        return MediaType.APPLICATION_FORM_URLENCODED.equals(m.get(Message.CONTENT_TYPE))
+            && HttpMethod.POST.equals(m.get(Message.HTTP_REQUEST_METHOD));
     }
 }

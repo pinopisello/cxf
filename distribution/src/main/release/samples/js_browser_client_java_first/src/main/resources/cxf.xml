@@ -17,6 +17,7 @@
         specific language governing permissions and limitations
         under the License.
 -->
+<<<<<<< HEAD
 <beans xmlns="http://www.springframework.org/schema/beans" 
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
 	xmlns:jaxws="http://cxf.apache.org/jaxws" 
@@ -31,6 +32,10 @@
     		<httpj:threadingParameters maxThreads="20"  minThreads="15" threadNamePrefix="pippo"/>
     	</httpj:identifiedThreadingParameters>
 
+=======
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:cxf="http://cxf.apache.org/core" xmlns:httpj="http://cxf.apache.org/transports/http-jetty/configuration" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd http://cxf.apache.org/transports/http-jetty/configuration http://cxf.apache.org/schemas/configuration/http-jetty.xsd ">
+    <httpj:engine-factory bus="cxf">
+>>>>>>> 707fa4f3c3f3aa40979e57468a9ac3eb3102a71f
         <!-- The server runs on port 9000 -->
         <httpj:engine port="9000">
             <httpj:handlers>

@@ -6,7 +6,7 @@ using JAX-RS 2.0 (JSR-339). In this demo, the Swagger2Feature is configured usin
 
 Building and running the demo
 ---------------------------------------
-(Note this demo currently uses the snapshot version of some componens)
+(Note this demo currently uses the snapshot version of some components)
 
 From the base directory of this sample (i.e., where this README file is
 located), the Maven pom.xml file can be used to build and run the demo. 
@@ -15,7 +15,6 @@ located), the Maven pom.xml file can be used to build and run the demo.
 Using either UNIX or Windows:
 
   mvn install
-
 
 Starting Karaf (refer to http://karaf.apache.org/manual/latest-3.0.x/quick-start.html)
 
@@ -47,7 +46,7 @@ for this demo bundle.
   feature:install cxf-rs-description-swagger2
 
 Install this demo bundle (using the appropriate bundle version number)
-
+  
   install -s mvn:org.apache.cxf.samples/jax_rs_description_swagger2_osgi/3.n.m
 
 You can verify if the CXF JAX-RS Swagger2 Blueprint Demo is installed and started.

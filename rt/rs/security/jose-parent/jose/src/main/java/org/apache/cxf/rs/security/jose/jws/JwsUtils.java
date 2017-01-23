@@ -35,7 +35,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.apache.cxf.Bus;
 import org.apache.cxf.common.logging.LogUtils;
+import org.apache.cxf.common.util.PropertyUtils;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.phase.PhaseInterceptorChain;
@@ -245,8 +247,19 @@ public final class JwsUtils {
         return KeyManagementUtils.loadStoreProperties(m, required, propertiesName, null);
         
     }
+    public static Properties loadSignatureProperties(String propertiesLoc, Bus bus) {
+        try {
+            return JoseUtils.loadProperties(propertiesLoc, bus);
+        } catch (Exception ex) {
+            throw new JwsException(JwsException.Error.NO_INIT_PROPERTIES, ex);
+        }
+    }
     public static JwsSignatureVerifier loadSignatureVerifier(boolean required) {
         return loadSignatureVerifier(null, required);
+    }
+    public static JwsSignatureVerifier loadSignatureVerifier(String propertiesLoc, Bus bus) {
+        Properties props = loadSignatureProperties(propertiesLoc, bus);
+        return loadSignatureVerifier(props, null);
     }
     public static JwsSignatureVerifier loadSignatureVerifier(JwsHeaders headers, boolean required) {
         Properties props = loadSignatureInProperties(required);
@@ -304,8 +317,18 @@ public final class JwsUtils {
     public static JwsSignatureProvider loadSignatureProvider(Properties props,
                                                              JwsHeaders headers) {
         return loadSignatureProvider(PhaseInterceptorChain.getCurrentMessage(),
-                                     props, headers, false);
+                                     props, headers);
     }
+    public static JwsSignatureProvider loadSignatureProvider(Message m, 
+                                                              Properties props,
+                                                              JwsHeaders headers) {
+        return loadSignatureProvider(m, props, headers, false);
+    }
+    public static JwsSignatureProvider loadSignatureProvider(String propertiesLoc, Bus bus) {
+        Properties props = loadSignatureProperties(propertiesLoc, bus);
+        return loadSignatureProvider(props, null);
+    }
+    
     private static JwsSignatureProvider loadSignatureProvider(Message m, 
                                                              Properties props,
                                                              JwsHeaders headers,
@@ -316,7 +339,9 @@ public final class JwsUtils {
                 m, JoseConstants.RSSEC_SIGNATURE_INCLUDE_CERT, false);
         boolean includeCertSha1 = headers != null && MessageUtils.getContextualBoolean(
                 m, JoseConstants.RSSEC_SIGNATURE_INCLUDE_CERT_SHA1, false);
-        
+        boolean includeKeyId = headers != null && MessageUtils.getContextualBoolean(
+                m, JoseConstants.RSSEC_SIGNATURE_INCLUDE_KEY_ID, false);
+                                                                                
         if (JoseConstants.HEADER_JSON_WEB_KEY.equals(props.get(JoseConstants.RSSEC_KEY_STORE_TYPE))) {
             JsonWebKey jwk = JwkUtils.loadJsonWebKey(m, props, KeyOperation.SIGN);
             if (jwk != null) {
@@ -328,8 +353,6 @@ public final class JwsUtils {
                 
                 boolean includePublicKey = headers != null && MessageUtils.getContextualBoolean(
                     m, JoseConstants.RSSEC_SIGNATURE_INCLUDE_PUBLIC_KEY, false);
-                boolean includeKeyId = headers != null && MessageUtils.getContextualBoolean(
-                    m, JoseConstants.RSSEC_SIGNATURE_INCLUDE_KEY_ID, false);
                 
                 if (includeCert) {
                     JwkUtils.includeCertChain(jwk, headers, signatureAlgo.getJwaName());
@@ -343,7 +366,7 @@ public final class JwsUtils {
                 if (includePublicKey) {
                     JwkUtils.includePublicKey(jwk, headers, signatureAlgo.getJwaName());
                 }
-                if (includeKeyId && jwk.getKeyId() != null && headers != null) {
+                if (includeKeyId && jwk.getKeyId() != null) {
                     headers.setKeyId(jwk.getKeyId());
                 }
             }
@@ -362,6 +385,9 @@ public final class JwsUtils {
                     if (digest != null) {
                         headers.setX509Thumbprint(digest);
                     }
+                }
+                if (includeKeyId && props.containsKey(JoseConstants.RSSEC_KEY_STORE_ALIAS)) {
+                    headers.setKeyId(props.getProperty(JoseConstants.RSSEC_KEY_STORE_ALIAS));
                 }
             }
         }
@@ -529,10 +555,17 @@ public final class JwsUtils {
         if ("jwk".equals(storeType)) {
             return JwkUtils.loadPublicJwkSet(m, props);
         } else {
-            //TODO: consider loading all the public keys in the store
-            PublicKey key = KeyManagementUtils.loadPublicKey(m, props);
+            X509Certificate[] certs = null;
+            if (PropertyUtils.isTrue(props.get(JoseConstants.RSSEC_SIGNATURE_INCLUDE_CERT))) {
+                certs = KeyManagementUtils.loadX509CertificateOrChain(m, props);
+            }
+            PublicKey key = certs != null && certs.length > 0 
+                ? certs[0].getPublicKey() : KeyManagementUtils.loadPublicKey(m, props); 
             JsonWebKey jwk = JwkUtils.fromPublicKey(key, props, JoseConstants.RSSEC_SIGNATURE_ALGORITHM);
             jwk.setPublicKeyUse(PublicKeyUse.SIGN);
+            if (certs != null) {
+                jwk.setX509Chain(KeyManagementUtils.encodeX509CertificateChain(certs));
+            }
             return new JsonWebKeys(jwk);
         }
     }

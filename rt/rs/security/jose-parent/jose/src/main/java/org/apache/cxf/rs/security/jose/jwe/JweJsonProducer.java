@@ -113,7 +113,7 @@ public class JweJsonProducer {
                     LOG.warning("union and recipient unprotected headers have duplicate values");
                     throw new JweException(JweException.Error.INVALID_JSON_JWE);
                 }
-                jsonHeaders = new JweHeaders(unionHeaders.asMap());
+                jsonHeaders = new JweHeaders(new LinkedHashMap<String, Object>(unionHeaders.asMap()));
                 jsonHeaders.asMap().putAll(perRecipientUnprotected.asMap());
             } else {  
                 jsonHeaders = unionHeaders;
@@ -123,6 +123,7 @@ public class JweJsonProducer {
             JweEncryptionInput input = createEncryptionInput(jsonHeaders);
             if (i > 0) {    
                 input.setContent(null);
+                input.setContentEncryptionRequired(false);
             }
             JweEncryptionOutput state = encryptor.getEncryptionOutput(input);
             byte[] currentCipherText = state.getEncryptedContent();

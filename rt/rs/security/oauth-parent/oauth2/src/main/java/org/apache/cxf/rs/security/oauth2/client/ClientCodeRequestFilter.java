@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
@@ -36,6 +37,7 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.Base64UrlUtility;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.MessageContext;
@@ -55,6 +57,7 @@ import org.apache.cxf.rt.security.crypto.CryptoUtils;
 @PreMatching
 @Priority(Priorities.AUTHENTICATION + 1)
 public class ClientCodeRequestFilter implements ContainerRequestFilter {
+    protected static final Logger LOG = LogUtils.getL7dLogger(ClientCodeRequestFilter.class);
     @Context
     private MessageContext mc;
     
@@ -74,38 +77,73 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
     private boolean applicationCanHandleAccessDenied;
     private CodeVerifierTransformer codeVerifierTransformer;
     private OAuthJoseJwtProducer codeRequestJoseProducer;
+    private boolean useAuthorizationHeader = true;
         
     @Override
     public void filter(ContainerRequestContext rc) throws IOException {
         checkSecurityContextStart(rc);
         UriInfo ui = rc.getUriInfo();
         String absoluteRequestUri = ui.getAbsolutePath().toString();
-        
-        boolean sameUriRedirect = false;
+        boolean sameRedirectUri = false;
         if (completeUri == null) {
             String referer = rc.getHeaderString("Referer");
             if (referer != null && referer.startsWith(authorizationServiceUri)) {
                 completeUri = absoluteRequestUri;
-                sameUriRedirect = true;
-            }
+                sameRedirectUri = true;
+            } 
         }
         
-        if (!sameUriRedirect && absoluteRequestUri.endsWith(startUri)) {
+        if (isStartUriMatched(ui, absoluteRequestUri, sameRedirectUri)) {
             ClientTokenContext request = getClientTokenContext(rc);
             if (request != null) {
                 setClientCodeRequest(request);
                 if (completeUri != null) {
                     rc.setRequestUri(URI.create(completeUri));
                 }
+                // let the request continue if the token context is already available
                 return;
             }
-            Response codeResponse = createCodeResponse(rc,  ui);
+            // start the code flow
+            Response codeResponse = createCodeResponse(rc, ui);
             rc.abortWith(codeResponse);
-        } else if (absoluteRequestUri.endsWith(completeUri)) {
+            return;
+        } else {
+            // complete the code flow if possible
             MultivaluedMap<String, String> requestParams = toRequestState(rc, ui);
-            processCodeResponse(rc, ui, requestParams);
-            checkSecurityContextEnd(rc, requestParams);
+            if (codeResponseQueryParamsAvailable(requestParams)
+                && (completeUri == null || absoluteRequestUri.endsWith(completeUri))) {
+                processCodeResponse(rc, ui, requestParams);
+                checkSecurityContextEnd(rc, requestParams);
+                // let the request continue
+                return;
+            }
+        } 
+        // neither the start nor the end of the flow 
+        rc.abortWith(Response.status(401).build());
+    }
+
+    protected boolean isStartUriMatched(UriInfo ui, String absoluteRequestUri, boolean sameRedirectUri) {
+        // If all request URIs can initiate a code flow then it is a match 
+        // unless the current request URI matches a non-null completeUri 
+        if (startUri == null && completeUri != null && !absoluteRequestUri.endsWith(completeUri)) {
+            return true;
         }
+        // If completeUri is null or startUri equals to it then check the code flow
+        // response properties, if code parameters are set then it is the end of the flow
+        if (completeUri == null || startUri != null && startUri.equals(completeUri)) {
+            MultivaluedMap<String, String> queries = ui.getQueryParameters();
+            if (codeResponseQueryParamsAvailable(queries)) {
+                return false;
+            }
+        }
+        // Finally compare start URI with the request URI
+        return startUri == null && !sameRedirectUri 
+            || startUri != null && absoluteRequestUri.endsWith(startUri);
+    }
+
+    private boolean codeResponseQueryParamsAvailable(MultivaluedMap<String, String> queries) {
+        return queries.containsKey(OAuthConstants.AUTHORIZATION_CODE_VALUE) 
+            || queries.containsKey(OAuthConstants.ERROR_KEY);
     }
 
     protected void checkSecurityContextStart(ContainerRequestContext rc) {
@@ -199,7 +237,7 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
         if (codeParam != null) {
             AuthorizationCodeGrant grant = prepareCodeGrant(codeParam, getAbsoluteRedirectUri(ui));
             grant.setCodeVerifier(state.getFirst(OAuthConstants.AUTHORIZATION_CODE_VERIFIER));
-            at = OAuthClientUtils.getAccessToken(accessTokenServiceClient, consumer, grant);
+            at = OAuthClientUtils.getAccessToken(accessTokenServiceClient, consumer, grant, useAuthorizationHeader);
         }
         ClientTokenContext tokenContext = initializeClientTokenContext(rc, at, requestParams, state);
         if (at != null && clientTokenContextManager != null) {
@@ -382,5 +420,9 @@ public class ClientCodeRequestFilter implements ContainerRequestFilter {
 
     public void setCodeRequestJoseProducer(OAuthJoseJwtProducer codeRequestJoseProducer) {
         this.codeRequestJoseProducer = codeRequestJoseProducer;
+    }
+    
+    public void setUseAuthorizationHeader(boolean useAuthorizationHeader) {
+        this.useAuthorizationHeader = useAuthorizationHeader;
     }
 }

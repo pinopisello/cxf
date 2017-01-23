@@ -265,6 +265,19 @@ public class UriBuilderImplTest extends Assert {
             .build("valueA", "valueB");
         assertEquals("/index.jsp?a=valueA&b=valueB", uri.toString());        
     }
+    
+    @Test
+    public void testResolveTemplateInQuery() {
+        String uri = UriBuilder.fromPath("my/path").queryParam("qp",
+            "{param}").resolveTemplate("param", "value").toTemplate();
+        assertEquals("my/path?qp=value", uri);        
+    }
+    
+    @Test
+    public void testResolveTemplateInQuery2() {
+        String uri = UriBuilder.fromUri("my/path?qp={param}").resolveTemplate("param", "value").toTemplate();
+        assertEquals("my/path?qp=value", uri);        
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testQueryParamWithMissingTemplateValues() {

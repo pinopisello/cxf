@@ -47,9 +47,8 @@ public class JwtAuthenticationFilter extends JoseJwtConsumer implements Containe
     
     private static final String DEFAULT_AUTH_SCHEME = "JWT";
     private String expectedAuthScheme = DEFAULT_AUTH_SCHEME;
-    private int clockOffset;
     private String roleClaim;
-    private int ttl;
+    private boolean validateAudience = true;
     
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -97,17 +96,9 @@ public class JwtAuthenticationFilter extends JoseJwtConsumer implements Containe
     
     @Override
     protected void validateToken(JwtToken jwt) {
-        JwtUtils.validateTokenClaims(jwt.getClaims(), ttl, clockOffset, true);
+        JwtUtils.validateTokenClaims(jwt.getClaims(), getTtl(), getClockOffset(), isValidateAudience());
     }
 
-    public int getClockOffset() {
-        return clockOffset;
-    }
-
-    public void setClockOffset(int clockOffset) {
-        this.clockOffset = clockOffset;
-    }
-    
     public String getRoleClaim() {
         return roleClaim;
     }
@@ -116,11 +107,11 @@ public class JwtAuthenticationFilter extends JoseJwtConsumer implements Containe
         this.roleClaim = roleClaim;
     }
 
-    public int getTtl() {
-        return ttl;
+    public boolean isValidateAudience() {
+        return validateAudience;
     }
 
-    public void setTtl(int ttl) {
-        this.ttl = ttl;
+    public void setValidateAudience(boolean validateAudience) {
+        this.validateAudience = validateAudience;
     }
 }

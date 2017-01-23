@@ -44,11 +44,12 @@ import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
 import org.apache.cxf.rs.security.oauth2.common.OAuthAuthorizationData;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
+import org.apache.cxf.rs.security.oidc.utils.OidcUtils;
 import org.apache.cxf.systest.jaxrs.security.oauth2.common.OAuth2TestUtils;
 import org.apache.cxf.systest.jaxrs.security.oauth2.common.OAuth2TestUtils.AuthorizationCodeParameters;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.apache.cxf.testutil.common.TestUtil;
-import org.apache.wss4j.common.util.Loader;
+import org.apache.xml.security.utils.ClassLoaderUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
@@ -368,6 +369,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         JwtToken jwt = jwtConsumer.getJwtToken();
         Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
         Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
+        OidcUtils.validateAccessTokenHash(accessToken, jwt, true);
     }
     
     @org.junit.Test
@@ -436,6 +438,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         String address = "https://localhost:" + PORT + "/services/";
         WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
                                             "alice", "security", busFile.toString());
+        WebClient.getConfig(client).getHttpConduit().getClient().setReceiveTimeout(100000000);
         // Save the Cookie for the second request...
         WebClient.getConfig(client).getRequestContext().put(
             org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
@@ -459,6 +462,10 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         String idToken = OAuth2TestUtils.getSubstring(location, "id_token");
         assertNotNull(idToken);
         validateIdToken(idToken, "123456789");
+        // check the code hash is returned from the implicit authorization endpoint
+        JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
+        JwtToken jwt = jwtConsumer.getJwtToken();
+        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
         
         // Now get the access token
         client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
@@ -476,6 +483,10 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         idToken = accessToken.getParameters().get("id_token");
         assertNotNull(idToken);
         validateIdToken(idToken, null);
+        // check the code hash is returned from the token endpoint
+        jwtConsumer = new JwsJwtCompactConsumer(idToken);
+        jwt = jwtConsumer.getJwtToken();
+        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
     }
     
     @org.junit.Test
@@ -499,14 +510,42 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
       
         String location = OAuth2TestUtils.getLocation(client, parameters);
         assertNotNull(location);
-        
+                
         // Check code
         String code = OAuth2TestUtils.getSubstring(location, "code");
         assertNotNull(code);
         
+        // Check id_token
+        String idToken = OAuth2TestUtils.getSubstring(location, "id_token");
+        assertNull(idToken);
+        
         // Check Access Token
-        String accessToken = OAuth2TestUtils.getSubstring(location, "access_token");
-        assertNotNull(accessToken);
+        String implicitAccessToken = OAuth2TestUtils.getSubstring(location, "access_token");
+        assertNotNull(implicitAccessToken);
+        
+        idToken = OAuth2TestUtils.getSubstring(location, "id_token");
+        assertNull(idToken);
+        
+        // Now get the access token with the code
+        client = WebClient.create(address, OAuth2TestUtils.setupProviders(), 
+                                  "consumer-id", "this-is-a-secret", busFile.toString());
+        // Save the Cookie for the second request...
+        WebClient.getConfig(client).getRequestContext().put(
+            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
+        
+        ClientAccessToken accessToken = 
+            OAuth2TestUtils.getAccessTokenWithAuthorizationCode(client, code);
+        assertNotNull(accessToken.getTokenKey());
+        assertTrue(accessToken.getApprovedScope().contains("openid"));
+        
+        // Check id_token from the token endpoint
+        idToken = accessToken.getParameters().get("id_token");
+        assertNotNull(idToken);
+        validateIdToken(idToken, null);
+        // check the code hash is returned from the token endpoint
+        JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
+        // returning c_hash in the id_token returned after exchanging the code is optional
+        Assert.assertNull(jwtConsumer.getJwtClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
     }
     
     @org.junit.Test
@@ -540,9 +579,20 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         assertNotNull(idToken);
         validateIdToken(idToken, "123456789");
         
+        // check the code hash is returned from the implicit authorization endpoint
+        JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
+        JwtToken jwt = jwtConsumer.getJwtToken();
+        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
+        
         // Check Access Token
         String accessToken = OAuth2TestUtils.getSubstring(location, "access_token");
         assertNotNull(accessToken);
+        
+        jwtConsumer = new JwsJwtCompactConsumer(idToken);
+        jwt = jwtConsumer.getJwtToken();
+        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
+        OidcUtils.validateAccessTokenHash(accessToken, jwt, true);
+        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
     }
     
     @org.junit.Test
@@ -699,7 +749,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         }
         
         KeyStore keystore = KeyStore.getInstance("JKS");
-        keystore.load(Loader.getResource("org/apache/cxf/systest/jaxrs/security/certs/alice.jks").openStream(), 
+        keystore.load(ClassLoaderUtils.getResourceAsStream("keys/alice.jks", this.getClass()), 
                       "password".toCharArray());
         Certificate cert = keystore.getCertificate("alice");
         Assert.assertNotNull(cert);

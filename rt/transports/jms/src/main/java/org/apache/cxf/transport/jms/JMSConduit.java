@@ -211,7 +211,7 @@ public class JMSConduit extends AbstractConduit implements JMSExchangeSender, Me
             String jmsMessageID = sendMessage(request, outMessage, replyToDestination, correlationId, closer,
                                               session);
             boolean useSyncReceive = ((correlationId == null || userCID != null) && !jmsConfig.isPubSubDomain())
-                || !replyToDestination.equals(staticReplyDestination);
+                || (!replyToDestination.equals(staticReplyDestination) && headers.getJMSReplyTo() != null);
             if (correlationId == null) {
                 correlationId = jmsMessageID;
                 correlationMap.put(correlationId, exchange);
@@ -230,10 +230,10 @@ public class JMSConduit extends AbstractConduit implements JMSExchangeSender, Me
                     try {
                         exchange.wait(jmsConfig.getReceiveTimeout());
                     } catch (InterruptedException e) {
-                        throw new RuntimeException("Interrupted while correlating", e);
+                        throw new JMSException("Interrupted while correlating " +  e.getMessage());
                     }
-                    if (exchange.get(CORRELATED) != Boolean.TRUE) {
-                        throw new RuntimeException("Timeout receiving message with correlationId "
+                    if (!Boolean.TRUE.equals(exchange.get(CORRELATED))) {
+                        throw new JMSException("Timeout receiving message with correlationId "
                                                    + correlationId);
                     }
 

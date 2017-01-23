@@ -19,8 +19,15 @@
 package org.apache.cxf.systest.jaxrs.reactive;
 
 public class HelloWorldBean {
-    private String greeting = "Hello";
+    private String greeting;
     private String audience = "World";
+    public HelloWorldBean() {
+        this("Hello");
+    }
+    public HelloWorldBean(String greeting) {
+        this.greeting = greeting;
+    }
+    
     public String getGreeting() {
         return greeting;
     }

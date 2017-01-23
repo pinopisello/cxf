@@ -22,6 +22,7 @@ package org.apache.cxf.jaxrs.utils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -60,7 +61,6 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Cookie;
@@ -72,6 +72,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -167,8 +168,14 @@ public final class JAXRSUtils {
     private static final String NO_CONTENT_EXCEPTION = "javax.ws.rs.core.NoContentException";
     private static final String HTTP_CHARSET_PARAM = "charset";
     private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0]; 
+    private static final Set<Class<?>> STREAMING_OUT_TYPES = new HashSet<Class<?>>(
+        Arrays.asList(InputStream.class, Reader.class, StreamingOutput.class));
     
     private JAXRSUtils() {        
+    }
+    
+    public static boolean isStreamingOutType(Class<?> type) {
+        return STREAMING_OUT_TYPES.contains(type);
     }
     
     public static List<PathSegment> getPathSegments(String thePath, boolean decode) {
@@ -811,8 +818,7 @@ public final class JAXRSUtils {
 
         if (parameter.getType() == ParameterType.REQUEST_BODY) {
             
-            if (parameterClass == AsyncResponse.class 
-                && AnnotationUtils.getAnnotation(parameterAnns, Suspended.class) != null) {
+            if (parameterClass == AsyncResponse.class) {
                 return new AsyncResponseImpl(message);
             }
             
@@ -1243,6 +1249,15 @@ public final class JAXRSUtils {
                                            String sep, 
                                            boolean decode,
                                            boolean decodePlus) {
+        getStructuredParams(queries, query, sep, decode, decodePlus, false);
+    }
+        
+    public static void getStructuredParams(MultivaluedMap<String, String> queries,
+                                           String query, 
+                                           String sep, 
+                                           boolean decode,
+                                           boolean decodePlus,
+                                           boolean valueIsCollection) {    
         if (!StringUtils.isEmpty(query)) {            
             List<String> parts = Arrays.asList(StringUtils.split(query, sep));
             for (String part : parts) {
@@ -1255,17 +1270,34 @@ public final class JAXRSUtils {
                 } else {
                     name = part.substring(0, index);
                     value =  index < part.length() ? part.substring(index + 1) : "";
-                    if (decodePlus && value.contains("+")) {
-                        value = value.replace('+', ' ');
-                    }
-                    if (decode) {
-                        value = (";".equals(sep))
-                            ? HttpUtils.pathDecode(value) : HttpUtils.urlDecode(value); 
-                    }
                 }
-                queries.add(HttpUtils.urlDecode(name), value);
+                if (valueIsCollection) {
+                    for (String s : value.split(",")) {
+                        addStructuredPartToMap(queries, sep, name, s, decode, decodePlus);
+                    }
+                } else {
+                    addStructuredPartToMap(queries, sep, name, value, decode, decodePlus);
+                }
             }
         }
+    }
+    
+    private static void addStructuredPartToMap(MultivaluedMap<String, String> queries,
+                                               String sep, 
+                                               String name,
+                                               String value,
+                                               boolean decode,
+                                               boolean decodePlus) {    
+        
+        if (decodePlus && value.contains("+")) {
+            value = value.replace('+', ' ');
+        }
+        if (decode) {
+            value = (";".equals(sep))
+                ? HttpUtils.pathDecode(value) : HttpUtils.urlDecode(value); 
+        }
+        
+        queries.add(HttpUtils.urlDecode(name), value);
     }
 
     private static Object readFromMessageBody(Class<?> targetTypeClass,
@@ -1409,16 +1441,16 @@ public final class JAXRSUtils {
         List<MediaType> acceptValues = new ArrayList<MediaType>();
         
         if (types != null) {
-            while (types.length() > 0) {
-                String tp = types;
-                int index = types.indexOf(',');
-                if (index != -1) {
-                    tp = types.substring(0, index);
-                    types = types.substring(index + 1).trim();
-                } else {
-                    types = "";
-                }
-                acceptValues.add(toMediaType(tp));
+            int x = 0;
+            int y = types.indexOf(',');
+            while (y > 0) {
+                acceptValues.add(toMediaType(types.substring(x, y).trim()));
+                x = y + 1;
+                y = types.indexOf(',', x);
+            }
+            String lastMediaType = types.substring(x).trim();
+            if (!lastMediaType.isEmpty()) {
+                acceptValues.add(toMediaType(lastMediaType));
             }
         } else {
             acceptValues.add(ALL_TYPES);

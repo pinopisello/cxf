@@ -152,15 +152,21 @@ public abstract class ProviderFactory {
                      new MultipartProvider());
         Object prop = factory.getBus().getProperty("skip.default.json.provider.registration");
         if (!PropertyUtils.isTrue(prop)) {
-            factory.setProviders(false, false, createProvider(JSON_PROVIDER_NAME));
+            factory.setProviders(false, false, createProvider(JSON_PROVIDER_NAME, factory.getBus()));
         }
             
     }
     
-    protected static Object createProvider(String className) {
+    protected static Object createProvider(String className, Bus bus) {
         
         try {
-            return ClassLoaderUtils.loadClass(className, ProviderFactory.class).newInstance();
+            Class<?> cls = ClassLoaderUtils.loadClass(className, ProviderFactory.class);
+            for (Constructor<?> c : cls.getConstructors()) {
+                if (c.getParameterTypes().length == 1 && c.getParameterTypes()[0] == Bus.class) {
+                    return c.newInstance(bus);
+                }
+            }
+            return cls.newInstance();
         } catch (Throwable ex) {
             String message = "Problem with creating the default provider " + className;
             if (ex.getMessage() != null) {
@@ -520,16 +526,12 @@ public abstract class ProviderFactory {
     
     protected void setBusProviders() {
         List<Object> extensions = new LinkedList<Object>(); 
-        final String alreadySetProp = "bus.providers.set." + this.hashCode();
-        if (bus.getProperty(alreadySetProp) == null) {
-            addBusExtension(extensions,
-                            MessageBodyReader.class,
-                            MessageBodyWriter.class,
-                            ExceptionMapper.class);
-            if (!extensions.isEmpty()) {
-                setProviders(true, true, extensions.toArray());
-                bus.setProperty(alreadySetProp, "");
-            }
+        addBusExtension(extensions,
+                        MessageBodyReader.class,
+                        MessageBodyWriter.class,
+                        ExceptionMapper.class);
+        if (!extensions.isEmpty()) {
+            setProviders(true, true, extensions.toArray());
         }
     }
     

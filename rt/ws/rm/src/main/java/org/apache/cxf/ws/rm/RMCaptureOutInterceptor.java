@@ -19,8 +19,9 @@
 
 package org.apache.cxf.ws.rm;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -35,10 +36,13 @@ import org.apache.cxf.binding.Binding;
 import org.apache.cxf.binding.soap.interceptor.SoapOutInterceptor;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.endpoint.Endpoint;
+import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.interceptor.AbstractOutDatabindingInterceptor;
 import org.apache.cxf.interceptor.AttachmentOutInterceptor;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.interceptor.LoggingOutInterceptor;
+import org.apache.cxf.io.CachedOutputStream;
+import org.apache.cxf.io.WriteOnCloseOutputStream;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.ExchangeImpl;
 import org.apache.cxf.message.FaultMode;
@@ -198,6 +202,14 @@ public class RMCaptureOutInterceptor extends AbstractRMInterceptor<Message>  {
         
         // capture message if retransmission possible
         if (isApplicationMessage && !isPartialResponse) {
+            OutputStream os = msg.getContent(OutputStream.class);
+            // We need to ensure that we have an output stream which won't start writing the 
+            // message until connection is setup
+            if (!(os instanceof WriteOnCloseOutputStream)) {
+                WriteOnCloseOutputStream cached = new WriteOnCloseOutputStream(os);
+                msg.setContent(OutputStream.class, cached);
+                os = cached;
+            }
             getManager().initializeInterceptorChain(msg);
             //doneCaptureMessage(msg);
             captureMessage(msg);
@@ -216,7 +228,7 @@ public class RMCaptureOutInterceptor extends AbstractRMInterceptor<Message>  {
         message.getInterceptorChain().add(new CaptureEnd());
     }    
     
-    private class CaptureStart extends AbstractPhaseInterceptor<Message> {
+    private static class CaptureStart extends AbstractPhaseInterceptor<Message> {
         CaptureStart() {
             super(Phase.PRE_PROTOCOL);
         }
@@ -255,8 +267,11 @@ public class RMCaptureOutInterceptor extends AbstractRMInterceptor<Message>  {
                 }
                 
                 // save message for potential retransmission
-                ByteArrayInputStream bis = cw.getOutputStream().createInputStream();
-                message.put(RMMessageConstants.SAVED_CONTENT, RewindableInputStream.makeRewindable(bis));
+                CachedOutputStream cos = new CachedOutputStream();
+                IOUtils.copyAndCloseInput(cw.getOutputStream().createInputStream(), cos);
+                cos.flush();
+                InputStream is = cos.getInputStream();
+                message.put(RMMessageConstants.SAVED_CONTENT, cos);
                 RMManager manager = getManager();
                 manager.getRetransmissionQueue().start();
                 manager.getRetransmissionQueue().addUnacknowledged(message);
@@ -276,7 +291,8 @@ public class RMCaptureOutInterceptor extends AbstractRMInterceptor<Message>  {
                     }
                     // serializes the message content and the attachments into
                     // the RMMessage content
-                    PersistenceUtils.encodeRMContent(msg, message, bis);
+                    msg.setCreatedTime(rmps.getCreatedTime());
+                    PersistenceUtils.encodeRMContent(msg, message, is);
                     store.persistOutgoing(ss, msg);
                 }
                     
@@ -303,7 +319,7 @@ public class RMCaptureOutInterceptor extends AbstractRMInterceptor<Message>  {
     private String getAddressingNamespace(AddressingProperties maps) {
         String wsaNamespace = maps.getNamespaceURI();
         if (wsaNamespace == null) {
-            getManager().getConfiguration().getAddressingNamespace();
+            return getManager().getConfiguration().getAddressingNamespace();
         }
         return wsaNamespace;
     }

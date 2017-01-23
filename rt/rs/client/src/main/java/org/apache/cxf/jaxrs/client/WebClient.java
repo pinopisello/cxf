@@ -20,9 +20,8 @@ package org.apache.cxf.jaxrs.client;
 
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,14 +29,18 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.AsyncInvoker;
+import javax.ws.rs.client.CompletionStageRxInvoker;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.InvocationCallback;
+import javax.ws.rs.client.RxInvoker;
 import javax.ws.rs.client.SyncInvoker;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.EntityTag;
@@ -50,6 +53,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
@@ -57,6 +61,7 @@ import org.apache.cxf.bus.spring.SpringBusFactory;
 import org.apache.cxf.common.classloader.ClassLoaderUtils;
 import org.apache.cxf.common.classloader.ClassLoaderUtils.ClassLoaderHolder;
 import org.apache.cxf.common.util.ClassHelper;
+import org.apache.cxf.common.util.PropertyUtils;
 import org.apache.cxf.feature.Feature;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.interceptor.Fault;
@@ -67,25 +72,23 @@ import org.apache.cxf.jaxrs.impl.UriBuilderImpl;
 import org.apache.cxf.jaxrs.model.ParameterType;
 import org.apache.cxf.jaxrs.model.URITemplate;
 import org.apache.cxf.jaxrs.utils.HttpUtils;
-import org.apache.cxf.jaxrs.utils.InjectionUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.jaxrs.utils.ParameterizedCollectionType;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
-import org.apache.cxf.phase.AbstractPhaseInterceptor;
-import org.apache.cxf.phase.Phase;
 
 
 /**
  * Http-centric web client
  *
  */
-public class WebClient extends AbstractClient {
+public class WebClient extends AbstractClient implements AsyncClient {
     private static final String REQUEST_CLASS = "request.class";
     private static final String REQUEST_TYPE = "request.type";
     private static final String REQUEST_ANNS = "request.annotations";
     private static final String RESPONSE_CLASS = "response.class";
     private static final String RESPONSE_TYPE = "response.type";
+    private static final String WEB_CLIENT_OPERATION_REPORTING = "enable.webclient.operation.reporting";
     private BodyWriter bodyWriter = new BodyWriter();
     protected WebClient(String baseAddress) {
         this(convertStringToURI(baseAddress));
@@ -899,34 +902,6 @@ public class WebClient extends AbstractClient {
         return r;
     }
     
-    private ParameterizedType findCallbackType(Class<?> cls) {
-        if (cls == null || cls == Object.class) {
-            return null;
-        }
-        for (Type c2 : cls.getGenericInterfaces()) {
-            if (c2 instanceof ParameterizedType) {
-                ParameterizedType pt = (ParameterizedType)c2;
-                if (InvocationCallback.class.equals(pt.getRawType())) {
-                    return pt;
-                }
-            }
-        }
-        return findCallbackType(cls.getSuperclass());
-    }
-    private Type getCallbackType(InvocationCallback<?> callback) {
-        Class<?> cls = callback.getClass();
-        ParameterizedType pt = findCallbackType(cls);
-        Type actualType = null;
-        for (Type tp : pt.getActualTypeArguments()) {
-            actualType = tp;
-            break;
-        }
-        if (actualType instanceof TypeVariable) { 
-            actualType = InjectionUtils.getSuperType(cls, (TypeVariable<?>)actualType);
-        }
-        return actualType;
-    }
-    
     protected <T> Future<T> doInvokeAsyncCallback(String httpMethod, 
                                                   Object body, 
                                                   Class<?> requestClass,
@@ -934,20 +909,7 @@ public class WebClient extends AbstractClient {
                                                   InvocationCallback<T> callback) {
         
         Type outType = getCallbackType(callback);
-        Class<?> respClass = null;
-        if (outType instanceof Class) {
-            respClass = (Class<?>)outType;
-        } else if (outType instanceof ParameterizedType) { 
-            ParameterizedType pt = (ParameterizedType)outType;
-            if (pt.getRawType() instanceof Class) {
-                respClass = (Class<?>)pt.getRawType();
-            }
-        } else if (outType == null) { 
-            respClass = Response.class;
-        }
-        
-       
-        
+        Class<?> respClass = getCallbackClass(outType);
         return doInvokeAsync(httpMethod, body, requestClass, inType, respClass, outType, callback);
     }
     
@@ -958,6 +920,29 @@ public class WebClient extends AbstractClient {
                                           Class<?> respClass,
                                           Type outType,
                                           InvocationCallback<T> callback) {
+        JaxrsClientCallback<T> cb = new JaxrsClientCallback<T>(callback, respClass, outType);
+        prepareAsyncClient(httpMethod, body, requestClass, inType, respClass, outType, cb);        
+        return cb.createFuture();
+    }
+    
+    protected <T> CompletionStage<T> doInvokeAsyncStage(String httpMethod, 
+                                          Object body, 
+                                          Class<?> respClass,
+                                          Type outType,
+                                          ExecutorService ex) {
+        JaxrsClientStageCallback<T> cb = new JaxrsClientStageCallback<T>(respClass, outType, ex);
+        prepareAsyncClient(httpMethod, body, null, null, respClass, outType, cb);
+        return cb.getCompletionStage();
+    }
+    
+    @Override
+    public void prepareAsyncClient(String httpMethod, 
+                                   Object body,
+                                   Class<?> requestClass,
+                                   Type inType,
+                                   Class<?> respClass,
+                                   Type outType,
+                                   JaxrsClientCallback<?> cb) {
         Annotation[] inAnns = null;
         if (body instanceof Entity) {
             Entity<?> entity = (Entity<?>)body;
@@ -966,28 +951,24 @@ public class WebClient extends AbstractClient {
             requestClass = body.getClass();
             inType = body.getClass();
             inAnns = entity.getAnnotations();
-        }
-        
+        } 
         if (body instanceof GenericEntity) {
             GenericEntity<?> genericEntity = (GenericEntity<?>)body;
             body = genericEntity.getEntity();
             requestClass = genericEntity.getRawType();
             inType = genericEntity.getType();
         }
-        
+      
         MultivaluedMap<String, String> headers = prepareHeaders(respClass, body);
         resetResponse();
 
         Message m = finalizeMessage(httpMethod, headers, body, requestClass, inType, 
-                                    inAnns, respClass, outType, null, null);
-        
+                                  inAnns, respClass, outType, null, null);
+      
         m.getExchange().setSynchronous(false);
-        JaxrsClientCallback<T> cb = new JaxrsClientCallback<T>(callback, respClass, outType);
         m.getExchange().put(JaxrsClientCallback.class, cb);
-        
+      
         doRunInterceptorChain(m);
-        
-        return cb.createFuture();
     }
 
     
@@ -1006,53 +987,33 @@ public class WebClient extends AbstractClient {
         return headers;
     }
     
-    private void handleAsyncResponse(Message message) {
-        JaxrsClientCallback<?> cb = message.getExchange().get(JaxrsClientCallback.class);
-        Response r = null;
-        try {
-            Object[] results = preProcessResult(message);
-            if (results != null && results.length == 1) {
-                r = (Response)results[0];
+    class ClientAsyncResponseInterceptor extends AbstractClientAsyncResponseInterceptor {
+        @Override
+        protected void doHandleAsyncResponse(Message message, Response r, JaxrsClientCallback<?> cb) {
+            if (r == null) {
+                try {
+                    r = handleResponse(message.getExchange().getOutMessage(),
+                                       cb.getResponseClass(),
+                                       cb.getOutGenericType());
+                } catch (Throwable t) {
+                    cb.handleException(message, t);
+                    return;
+                } finally {
+                    completeExchange(message.getExchange(), false);
+                }
             }
-        } catch (Exception ex) {
-            Throwable t = ex instanceof WebApplicationException 
-                ? (WebApplicationException)ex 
-                : ex instanceof ProcessingException 
-                ? (ProcessingException)ex : new ProcessingException(ex);
-            cb.handleException(message, t);
-            return;
-        }
-        if (r == null) {
-            try {
-                r = handleResponse(message.getExchange().getOutMessage(),
-                                   cb.getResponseClass(),
-                                   cb.getOutGenericType());
-            } catch (Throwable t) {
-                cb.handleException(message, t);
-                return;
-            } finally {
-                completeExchange(message.getExchange(), false);
+            if (cb.getResponseClass() == null || Response.class.equals(cb.getResponseClass())) {
+                cb.handleResponse(message, new Object[] {r});
+            } else if (r.getStatus() >= 300) {
+                cb.handleException(message, convertToWebApplicationException(r));
+            } else {
+                cb.handleResponse(message, new Object[] {r.getEntity()});
+                closeAsyncResponseIfPossible(r, message, cb);
             }
-        }
-        if (cb.getResponseClass() == null || Response.class.equals(cb.getResponseClass())) {
-            cb.handleResponse(message, new Object[] {r});
-        } else if (r.getStatus() >= 300) {
-            cb.handleException(message, convertToWebApplicationException(r));
-        } else {
-            cb.handleResponse(message, new Object[] {r.getEntity()});
-            closeAsyncResponseIfPossible(r, message, cb);
         }
     }
     
-    private void closeAsyncResponseIfPossible(Response r, Message outMessage, JaxrsClientCallback<?> cb) {
-        if (responseStreamCanBeClosed(outMessage, cb.getResponseClass())) {
-            r.close();
-        }
-    }
     
-    private void handleAsyncFault(Message message) {
-    }
-
 
     //TODO: retry invocation will not work in case of async request failures for the moment
     @Override
@@ -1137,10 +1098,23 @@ public class WebClient extends AbstractClient {
             m.put(Type.class, inGenericType);
         }
         m.getInterceptorChain().add(bodyWriter);
-        setPlainOperationNameProperty(m, httpMethod + ":" + uri.toString());
+        
+        setWebClientOperationProperty(m, httpMethod);
+        
         return m;
     }
     
+    private void setWebClientOperationProperty(Message m, String httpMethod) {
+        Object prop = m.getContextualProperty(WEB_CLIENT_OPERATION_REPORTING);
+        // Enable the operation reporting by default
+        if (prop == null || PropertyUtils.isTrue(prop)) {
+            UriBuilder absPathUri = super.getCurrentBuilder().clone();
+            absPathUri.replaceQuery(null);
+            setPlainOperationNameProperty(m, httpMethod + ":" + absPathUri.build().toString());
+        }
+        
+    }
+
     protected Response doResponse(Message m, 
                                   Class<?> responseClass, 
                                   Type outGenericType) {
@@ -1294,27 +1268,35 @@ public class WebClient extends AbstractClient {
         return new SyncInvokerImpl();
     }
     
-    class ClientAsyncResponseInterceptor extends AbstractPhaseInterceptor<Message> {
-        ClientAsyncResponseInterceptor() {
-            super(Phase.UNMARSHAL);
-        }
-
-        @Override
-        public void handleMessage(Message message) throws Fault {
-            if (message.getExchange().isSynchronous()) {
-                return;
+    // Link to JAX-RS 2.1 CompletionStageRxInvoker
+    public CompletionStageRxInvoker rx() {
+        return rx((ExecutorService)null);
+    }
+    public CompletionStageRxInvoker rx(ExecutorService ex) {
+        return new CompletionStageRxInvokerImpl(ex);
+    }
+    // Link to JAX-RS 2.1 RxInvoker extensions
+    @SuppressWarnings("rawtypes")
+    public <T extends RxInvoker> T rx(Class<T> clazz) {
+        return rx(clazz, (ExecutorService)null);
+    }
+    @SuppressWarnings({
+     "rawtypes", "unchecked"
+    })
+    public <T extends RxInvoker> T rx(Class<T> clazz, ExecutorService executorService) {
+        if (clazz == CompletionStageRxInvoker.class) {
+            return (T)rx(executorService);
+        } else {
+            String implClassName = clazz.getName() + "Impl";
+            try {
+                Constructor c = ClassLoaderUtils.loadClass(implClassName, WebClient.class)
+                    .getConstructor(AsyncClient.class, ExecutorService.class);
+                return (T)c.newInstance(this, executorService);
+            } catch (Throwable t) {
+                throw new ProcessingException(t);
             }
-            handleAsyncResponse(message);
         }
-
-        @Override
-        public void handleFault(Message message) {
-            if (message.getExchange().isSynchronous()) {
-                return;
-            }
-            handleAsyncFault(message);
-        }
-
+        
     }
     
     private void setEntityHeaders(Entity<?> entity) {
@@ -1639,5 +1621,138 @@ public class WebClient extends AbstractClient {
         public <T> T method(String method, Entity<?> entity, GenericType<T> genericType) {
             return invoke(method, entity, genericType);
         }
+    }
+    
+    class CompletionStageRxInvokerImpl implements CompletionStageRxInvoker {
+        private ExecutorService ex;
+        CompletionStageRxInvokerImpl(ExecutorService ex) {
+            this.ex = ex;
+        }
+        
+        @Override
+        public CompletionStage<Response> get() {
+            return get(Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> get(Class<T> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
+
+        @Override
+        public <T> CompletionStage<T> get(GenericType<T> responseType) {
+            return method(HttpMethod.GET, responseType);
+        }
+
+        @Override
+        public CompletionStage<Response> put(Entity<?> entity) {
+            return put(entity, Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> put(Entity<?> entity, Class<T> responseType) {
+            return method(HttpMethod.PUT, entity, responseType);
+        }
+
+        @Override
+        public <T> CompletionStage<T> put(Entity<?> entity, GenericType<T> responseType) {
+            return method(HttpMethod.PUT, entity, responseType);
+        }
+
+        @Override
+        public CompletionStage<Response> post(Entity<?> entity) {
+            return post(entity, Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> post(Entity<?> entity, Class<T> responseType) {
+            return method(HttpMethod.POST, entity, responseType);
+        }
+
+        @Override
+        public <T> CompletionStage<T> post(Entity<?> entity, GenericType<T> responseType) {
+            return method(HttpMethod.POST, entity, responseType);
+        }
+
+        @Override
+        public CompletionStage<Response> delete() {
+            return delete(Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> delete(Class<T> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
+
+        @Override
+        public <T> CompletionStage<T> delete(GenericType<T> responseType) {
+            return method(HttpMethod.DELETE, responseType);
+        }
+
+        @Override
+        public CompletionStage<Response> head() {
+            return method(HttpMethod.HEAD);
+        }
+
+        @Override
+        public CompletionStage<Response> options() {
+            return options(Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> options(Class<T> responseType) {
+            return method(HttpMethod.OPTIONS, responseType);
+        }
+
+        @Override
+        public <T> CompletionStage<T> options(GenericType<T> responseType) {
+            return method(HttpMethod.OPTIONS, responseType);
+        }
+
+        @Override
+        public CompletionStage<Response> trace() {
+            return trace(Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> trace(Class<T> responseType) {
+            return method("TRACE", responseType);
+        }
+
+        @Override
+        public <T> CompletionStage<T> trace(GenericType<T> responseType) {
+            return method("TRACE", responseType);
+        }
+
+        @Override
+        public CompletionStage<Response> method(String name) {
+            return method(name, Response.class);
+        }
+
+        @Override
+        public CompletionStage<Response> method(String name, Entity<?> entity) {
+            return method(name, entity, Response.class);
+        }
+
+        @Override
+        public <T> CompletionStage<T> method(String name, Entity<?> entity, Class<T> responseType) {
+            return doInvokeAsyncStage(name, entity, responseType, responseType, ex);
+        }
+
+        @Override
+        public <T> CompletionStage<T> method(String name, Entity<?> entity, GenericType<T> responseType) {
+            return doInvokeAsyncStage(name, entity, responseType.getRawType(), responseType.getType(), ex);
+        }
+
+        @Override
+        public <T> CompletionStage<T> method(String name, Class<T> responseType) {
+            return doInvokeAsyncStage(name, null, responseType, responseType, ex);
+        }
+
+        @Override
+        public <T> CompletionStage<T> method(String name, GenericType<T> responseType) {
+            return doInvokeAsyncStage(name, null, responseType.getRawType(), responseType.getType(), ex);
+        }
+             
     }
 }

@@ -181,6 +181,7 @@ public class FaultTest extends AbstractBusClientServerTestBase {
         
         // Creating a DOMSource Object for the request
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document requestDoc = db.newDocument();
         Element root = requestDoc.createElementNS("http://www.example.org/schema/DoubleIt", "ns2:DoubleIt");
@@ -258,4 +259,39 @@ public class FaultTest extends AbstractBusClientServerTestBase {
         bus.shutdown(true);
     }
     
+    // See DoubleItPortTypeImplJavaFirst
+    @org.junit.Test
+    public void testJavaFirst() throws Exception {
+
+        SpringBusFactory bf = new SpringBusFactory();
+        URL busFile = FaultTest.class.getResource("client.xml");
+
+        Bus bus = bf.createBus(busFile.toString());
+        SpringBusFactory.setDefaultBus(bus);
+        SpringBusFactory.setThreadDefaultBus(bus);
+
+        URL wsdl = FaultTest.class.getResource("DoubleItFault.wsdl");
+        Service service = Service.create(wsdl, SERVICE_QNAME);
+        QName portQName = new QName(NAMESPACE, "DoubleItJavaFirstPort");
+        DoubleItPortType utPort = 
+                service.getPort(portQName, DoubleItPortType.class);
+        updateAddressPort(utPort, PORT);
+        
+        // Make a successful invocation
+        ((BindingProvider)utPort).getRequestContext().put("security.username", "alice");
+        utPort.doubleIt(25);
+        
+        // Now make an invocation using another username
+        ((BindingProvider)utPort).getRequestContext().put("security.username", "bob");
+        ((BindingProvider)utPort).getRequestContext().put("security.password", "password");
+        try {
+            utPort.doubleIt(25);
+            fail("Expected failure on bob");
+        } catch (Exception ex) {
+            assertTrue(ex.getMessage().contains("This is a fault"));
+        }
+        
+        ((java.io.Closeable)utPort).close();
+        bus.shutdown(true);
+    }
 }

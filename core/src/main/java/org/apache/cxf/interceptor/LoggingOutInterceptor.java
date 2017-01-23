@@ -19,7 +19,6 @@
 
 package org.apache.cxf.interceptor;
 
-
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -36,11 +35,11 @@ import org.apache.cxf.io.CachedOutputStreamCallback;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.Phase;
 
-
 /**
- * 
+ * @deprecated use the logging module rt/features/logging instead
  */
 @NoJSR250Annotations
+@Deprecated
 public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
     private static final Logger LOG = LogUtils.getLogger(LoggingOutInterceptor.class);
     private static final String LOG_SETUP = LoggingOutInterceptor.class.getName() + ".log-setup";
@@ -189,7 +188,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             } catch (Exception ex) {
                 //ignore
             }
-            log(logger, buffer.toString());
+            log(logger, formatLoggingMessage(buffer));
             message.setContent(Writer.class, out);
             super.close();
         }
@@ -228,7 +227,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             }
             if (!isShowMultipartContent() && isMultipartContent(ct)) {
                 buffer.getMessage().append(MULTIPART_CONTENT_MESSAGE).append('\n');
-                log(logger, buffer.toString());
+                log(logger, formatLoggingMessage(buffer));
                 return;
             }
             
@@ -259,8 +258,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             } catch (Exception ex) {
                 //ignore
             }
-            message.setContent(OutputStream.class, 
-                               origStream);
+            message.setContent(OutputStream.class, origStream);
         }
     }
 

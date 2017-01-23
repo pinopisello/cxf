@@ -311,7 +311,7 @@ public class JAXBElementProvider<T> extends AbstractJAXBProvider<T>  {
         MediaType m, MultivaluedMap<String, Object> headers, OutputStream os) 
         throws IOException {
         try {
-            String encoding = HttpUtils.getSetEncoding(m, headers, null);
+            String encoding = HttpUtils.getSetEncoding(m, headers, StandardCharsets.UTF_8.name());
             if (InjectionUtils.isSupportedCollectionOrArray(cls)) {
                 marshalCollection(cls, obj, genericType, encoding, os, m, anns);
             } else {
@@ -521,7 +521,7 @@ public class JAXBElementProvider<T> extends AbstractJAXBProvider<T>  {
         Collection<Attachment> attachments = getAttachments(true);
         if (attachments != null) {
             Object value = getContext().getContextualProperty(Message.MTOM_THRESHOLD);
-            Integer threshold = value != null ? Integer.valueOf(value.toString()) : 0;
+            Integer threshold = value != null ? Integer.valueOf(value.toString()) : Integer.valueOf(0);
             ms.setAttachmentMarshaller(new JAXBAttachmentMarshaller(
                 attachments, threshold));
         }

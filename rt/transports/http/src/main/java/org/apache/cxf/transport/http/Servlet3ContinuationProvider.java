@@ -24,6 +24,8 @@ import java.io.IOException;
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncEvent;
 import javax.servlet.AsyncListener;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -32,6 +34,7 @@ import org.apache.cxf.continuations.Continuation;
 import org.apache.cxf.continuations.ContinuationCallback;
 import org.apache.cxf.continuations.ContinuationProvider;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.phase.PhaseInterceptorChain;
 
 /**
  * 
@@ -87,7 +90,7 @@ public class Servlet3ContinuationProvider implements ContinuationProvider {
                              inMessage.getExchange().getInMessage());
             callback = inMessage.getExchange().get(ContinuationCallback.class);
             blockRestart = PropertyUtils.isTrue(inMessage.getContextualProperty(BLOCK_RESTART));
-            context = req.startAsync(req, resp);
+            context = req.startAsync();
             context.addListener(this);
         }
 
@@ -116,7 +119,16 @@ public class Servlet3ContinuationProvider implements ContinuationProvider {
             isResumed = false;
             
             context.setTimeout(timeout);
-            inMessage.getExchange().getInMessage().getInterceptorChain().suspend();
+            
+            Message currentMessage = PhaseInterceptorChain.getCurrentMessage();
+            if (currentMessage.get(WriteListener.class) != null) {
+                // CXF Continuation WriteListener will likely need to be introduced
+                // for NIO supported with non-Servlet specific mechanisms
+                getOutputStream().setWriteListener(currentMessage.get(WriteListener.class));
+                currentMessage.getInterceptorChain().suspend();
+            } else {
+                inMessage.getExchange().getInMessage().getInterceptorChain().suspend();
+            }
             
             return true;
         }
@@ -184,6 +196,8 @@ public class Servlet3ContinuationProvider implements ContinuationProvider {
                     callback.onError(ex);
                 }
             }
+            isResumed = false;
+            isPending = false;
         }
         public void onError(AsyncEvent event) throws IOException {
             if (callback != null) {
@@ -214,6 +228,18 @@ public class Servlet3ContinuationProvider implements ContinuationProvider {
                 return false;
             }
         }
+
+        @Override
+        public boolean isReadyForWrite() {
+            return getOutputStream().isReady();
+        }
         
+        private ServletOutputStream getOutputStream() {
+            try {
+                return resp.getOutputStream();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
     }
 }

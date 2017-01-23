@@ -20,13 +20,18 @@
 package org.apache.cxf.systest.jaxrs.reactive;
 
 import java.util.Collections;
-import java.util.concurrent.Future;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.GenericType;
+
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.model.AbstractResourceInfo;
-import org.apache.cxf.jaxrs.provider.rx.ObservableReader;
+import org.apache.cxf.jaxrs.rx.client.ObservableRxInvoker;
+import org.apache.cxf.jaxrs.rx.provider.ObservableReader;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 
 import org.junit.BeforeClass;
@@ -70,28 +75,83 @@ public class JAXRSReactiveTest extends AbstractBusClientServerTestBase {
         obs.subscribe(s -> assertResponse(s));
     }
     
-    @Test
-    public void testGetHelloWorldAsyncObservable() throws Exception {
-        String address = "http://localhost:" + PORT + "/reactive/textAsync";
-        WebClient wc = WebClient.create(address);
-        Observable<String> obs = 
-            getObservable(wc.accept("text/plain").async().get(String.class));
-        obs.subscribe(s -> assertResponse(s));
-    }
-    
     private void assertResponse(String s) {
         assertEquals("Hello, world!", s);
     }
     @Test
     public void testGetHelloWorldJson() throws Exception {
         String address = "http://localhost:" + PORT + "/reactive/textJson";
-        WebClient wc = WebClient.create(address);
-        String text = wc.accept("application/json").get(String.class);
-        assertTrue("{\"audience\":\"World\",\"greeting\":\"Hello\"}".equals(text)
-                   || "{\"greeting\":\"Hello\",\"audience\":\"World\"}".equals(text));
+        WebClient wc = WebClient.create(address,
+                                        Collections.singletonList(new JacksonJsonProvider()));
+        HelloWorldBean bean = wc.accept("application/json").get(HelloWorldBean.class);
+        assertEquals("Hello", bean.getGreeting());
+        assertEquals("World", bean.getAudience());
+    }
+    @Test
+    public void testGetHelloWorldJsonList() throws Exception {
+        String address = "http://localhost:" + PORT + "/reactive/textJsonList";
+        doTestGetHelloWorldJsonList(address);
+    }
+    @Test
+    public void testGetHelloWorldJsonImplicitList() throws Exception {
+        String address = "http://localhost:" + PORT + "/reactive/textJsonImplicitList";
+        doTestGetHelloWorldJsonList(address);
+    }
+    @Test
+    public void testGetHelloWorldJsonImplicitListAsync() throws Exception {
+        String address = "http://localhost:" + PORT + "/reactive/textJsonImplicitListAsync";
+        doTestGetHelloWorldJsonList(address);
+    }
+    @Test
+    public void testGetHelloWorldJsonImplicitListAsyncStream() throws Exception {
+        String address = "http://localhost:" + PORT + "/reactive/textJsonImplicitListAsyncStream";
+        doTestGetHelloWorldJsonList(address);
+    }
+    private void doTestGetHelloWorldJsonList(String address) throws Exception {
+        WebClient wc = WebClient.create(address,
+                                        Collections.singletonList(new JacksonJsonProvider()));
+        WebClient.getConfig(wc).getHttpConduit().getClient().setReceiveTimeout(10000000);
+        GenericType<List<HelloWorldBean>> genericResponseType = new GenericType<List<HelloWorldBean>>() {        
+        };
+        
+        List<HelloWorldBean> beans = wc.accept("application/json").get(genericResponseType);
+        assertEquals(2, beans.size());
+        assertEquals("Hello", beans.get(0).getGreeting());
+        assertEquals("World", beans.get(0).getAudience());
+        assertEquals("Ciao", beans.get(1).getGreeting());
+        assertEquals("World", beans.get(1).getAudience());
     }
     
-    private Observable<String> getObservable(Future<String> future) {
-        return Observable.from(future);
+    @Test
+    public void testGetHelloWorldAsyncObservable() throws Exception {
+        String address = "http://localhost:" + PORT + "/reactive/textAsync";
+        WebClient wc = WebClient.create(address);
+        Observable<String> obs = wc.accept("text/plain")
+            .rx(ObservableRxInvoker.class)
+            .get(String.class);
+        obs.map(s -> { 
+            return s + s; 
+        });
+        
+        Thread.sleep(3000);
+        
+        obs.subscribe(s -> assertDuplicateResponse(s));
+    }
+    @Test
+    public void testGetHelloWorldAsyncObservable404() throws Exception {
+        String address = "http://localhost:" + PORT + "/reactive/textAsync404";
+        WebClient wc = WebClient.create(address);
+        wc.rx(ObservableRxInvoker.class).get(String.class).subscribe(
+            s -> {
+                fail("Exception expected");
+            },
+            t -> validateT((ExecutionException)t));
+    }
+    
+    private void validateT(ExecutionException t) {
+        assertTrue(t.getCause() instanceof NotFoundException);
+    }
+    private void assertDuplicateResponse(String s) {
+        assertEquals("Hello, world!Hello, world!", s);
     }
 }

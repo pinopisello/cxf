@@ -546,7 +546,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
         );
         properties.put("org.apache.wss4j.crypto.merlin.keystore.password", "stsspass");
         if (unrestrictedPoliciesInstalled) {
-            properties.put("org.apache.wss4j.crypto.merlin.keystore.file", "stsstore.jks");
+            properties.put("org.apache.wss4j.crypto.merlin.keystore.file", "keys/stsstore.jks");
         } else {
             properties.put("org.apache.wss4j.crypto.merlin.keystore.file", "restricted/stsstore.jks");
         }

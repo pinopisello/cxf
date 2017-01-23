@@ -25,8 +25,10 @@ import java.util.Map;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
+import javax.persistence.OrderColumn;
 
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.UserSubject;
@@ -39,7 +41,7 @@ import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 @Entity
 public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
     private static final long serialVersionUID = -5004608901535459036L;
-    
+
     private long issuedAt;
     private long expiresIn;
     private Client client;
@@ -47,25 +49,26 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
     private List<String> requestedScopes = new LinkedList<String>();
     private UserSubject subject;
     private String audience;
+    private String responseType;
     private String clientCodeChallenge;
     private String nonce;
     private boolean preauthorizedTokenAvailable;
     private Map<String, String> extraProperties = new LinkedHashMap<String, String>();
-    
+
     public ServerAuthorizationCodeGrant() {
-        
+
     }
-    
-    public ServerAuthorizationCodeGrant(Client client, 
+
+    public ServerAuthorizationCodeGrant(Client client,
                                         long lifetime) {
         this(client, OAuthUtils.generateRandomTokenKey(), lifetime,
-             OAuthUtils.getIssuedAt());
+                OAuthUtils.getIssuedAt());
     }
-    
-    public ServerAuthorizationCodeGrant(Client client, 
-                                  String code,
-                                  long expiresIn, 
-                                  long issuedAt) {
+
+    public ServerAuthorizationCodeGrant(Client client,
+                                        String code,
+                                        long expiresIn,
+                                        long issuedAt) {
         super(code);
         this.client = client;
         this.expiresIn = expiresIn;
@@ -79,7 +82,7 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
     public long getIssuedAt() {
         return issuedAt;
     }
-    
+
     public void setIssuedAt(long issuedAt) {
         this.issuedAt = issuedAt;
     }
@@ -91,7 +94,7 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
     public long getExpiresIn() {
         return expiresIn;
     }
-    
+
     public void setExpiresIn(long expiresIn) {
         this.expiresIn = expiresIn;
     }
@@ -108,35 +111,27 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
     public void setClient(Client c) {
         this.client = c;
     }
-    
-    /**
-     * Sets the scopes explicitly approved by the end user.
-     * If this list is empty then the end user had no way to down-scope. 
-     * @param approvedScope the approved scopes
-     */
-    
-    public void setApprovedScopes(List<String> scopes) {
-        this.approvedScopes = scopes;
-    }
 
     /**
      * Gets the scopes explicitly approved by the end user
      * @return the approved scopes
      */
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @OrderColumn
     public List<String> getApprovedScopes() {
         return approvedScopes;
     }
 
-
     /**
-     * Sets the user subject representing the end user
-     * @param subject the subject
+     * Sets the scopes explicitly approved by the end user.
+     * If this list is empty then the end user had no way to down-scope.
+     * @param scopes the approved scopes
      */
-    public void setSubject(UserSubject subject) {
-        this.subject = subject;
+
+    public void setApprovedScopes(List<String> scopes) {
+        this.approvedScopes = scopes;
     }
-    
+
     /**
      * Gets the user subject representing the end user
      * @return the subject
@@ -144,6 +139,14 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
     @ManyToOne
     public UserSubject getSubject() {
         return subject;
+    }
+
+    /**
+     * Sets the user subject representing the end user
+     * @param subject the subject
+     */
+    public void setSubject(UserSubject subject) {
+        this.subject = subject;
     }
 
     public String getAudience() {
@@ -162,7 +165,8 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
         this.clientCodeChallenge = clientCodeChallenge;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @OrderColumn
     public List<String> getRequestedScopes() {
         return requestedScopes;
     }
@@ -187,7 +191,7 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
         this.preauthorizedTokenAvailable = preauthorizedTokenAvailable;
     }
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @MapKeyColumn(name = "extraPropName")
     public Map<String, String> getExtraProperties() {
         return extraProperties;
@@ -195,5 +199,13 @@ public class ServerAuthorizationCodeGrant extends AuthorizationCodeGrant {
 
     public void setExtraProperties(Map<String, String> extraProperties) {
         this.extraProperties = extraProperties;
+    }
+
+    public String getResponseType() {
+        return responseType;
+    }
+
+    public void setResponseType(String responseType) {
+        this.responseType = responseType;
     }
 }

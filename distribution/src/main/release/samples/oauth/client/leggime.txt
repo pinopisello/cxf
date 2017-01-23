@@ -1,0 +1,14 @@
+https://hueniverse.com/oauth/guide/intro/ e' una guida x oauth 1.0
+
+Questo progetto  non ha profile: mvn jetty:run lancia la webapp .
+
+L applicazione e' una serie di jsp+java che guida alla creazione di oauth tokens.
+
+http://127.0.0.1:8080/app/temporaryCredentials
+
+
+
+
+
+
+

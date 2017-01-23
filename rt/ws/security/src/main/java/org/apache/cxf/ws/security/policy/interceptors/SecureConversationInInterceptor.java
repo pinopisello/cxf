@@ -20,6 +20,7 @@
 package org.apache.cxf.ws.security.policy.interceptors;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -58,6 +59,7 @@ import org.apache.cxf.ws.security.trust.STSUtils;
 import org.apache.cxf.ws.security.wss4j.PolicyBasedWSS4JInInterceptor;
 import org.apache.cxf.ws.security.wss4j.WSS4JInInterceptor;
 import org.apache.cxf.ws.security.wss4j.WSS4JStaxInInterceptor;
+import org.apache.cxf.ws.security.wss4j.WSS4JUtils;
 import org.apache.neethi.All;
 import org.apache.neethi.Assertion;
 import org.apache.neethi.ExactlyOne;
@@ -75,7 +77,6 @@ import org.apache.wss4j.policy.model.SignedParts;
 import org.apache.wss4j.policy.model.Trust10;
 import org.apache.wss4j.policy.model.Trust13;
 import org.apache.xml.security.stax.impl.util.IDGenerator;
-import org.apache.xml.security.utils.Base64;
 
 class SecureConversationInInterceptor extends AbstractPhaseInterceptor<SoapMessage> {
     
@@ -330,7 +331,7 @@ class SecureConversationInInterceptor extends AbstractPhaseInterceptor<SoapMessa
 
             byte clientEntropy[] = null;
             int keySize = 256;
-            long ttl = 300000L;
+            long ttl = WSS4JUtils.getSecurityTokenLifetime(exchange.getOutMessage());
             String tokenType = null;
             Element el = DOMUtils.getFirstElement(requestEl);
             while (el != null) {
@@ -339,7 +340,7 @@ class SecureConversationInInterceptor extends AbstractPhaseInterceptor<SoapMessa
                     if ("Entropy".equals(localName)) {
                         Element bs = DOMUtils.getFirstElement(el);
                         if (bs != null) {
-                            clientEntropy = Base64.decode(bs.getTextContent());
+                            clientEntropy = Base64.getMimeDecoder().decode(bs.getTextContent());
                         }
                     } else if ("KeySize".equals(localName)) {
                         keySize = Integer.parseInt(el.getTextContent());

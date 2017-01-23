@@ -41,11 +41,12 @@ public class RealmProperties {
     
     private static final Logger LOG = LogUtils.getL7dLogger(RealmProperties.class);
     
+    private String name;
     private String issuer;
     private String signatureAlias;
     private Crypto signatureCrypto;
     private SignatureProperties signatureProperties;
-    private String signaturePropertiesFile;
+    private Object signatureCryptoProperties;
     private String callbackHandlerClass;
     private CallbackHandler callbackHandler;
     
@@ -57,6 +58,22 @@ public class RealmProperties {
         return issuer;
     }
     
+    /**
+     * Get the name of this realm
+     * @return realmA
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Set the name of this realm
+     * @param name the name of this realm
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
     /**
      * Set the issuer of this realm
      * @param issuer the issuer of this realm
@@ -93,10 +110,20 @@ public class RealmProperties {
      * Set the String corresponding to the signature Properties class
      * @param signaturePropertiesFile the String corresponding to the signature properties file
      */
+    @Deprecated
     public void setSignaturePropertiesFile(String signaturePropertiesFile) {
-        this.signaturePropertiesFile = signaturePropertiesFile;
+        setSignatureCryptoProperties(signaturePropertiesFile);
+    }
+    
+    /**
+     * Set the Object corresponding to the signature Properties class. It can be a String
+     * corresponding to a filename, a Properties object, or a URL.
+     * @param signatureCryptoProperties the object corresponding to the signature properties
+     */
+    public void setSignatureCryptoProperties(Object signatureCryptoProperties) {
+        this.signatureCryptoProperties = signatureCryptoProperties;
         if (LOG.isLoggable(Level.FINE)) {
-            LOG.fine("Setting signature properties: " + signaturePropertiesFile);
+            LOG.fine("Setting signature crypto properties: " + signatureCryptoProperties);
         }
     }
     
@@ -122,10 +149,10 @@ public class RealmProperties {
      * @return the signature Crypto object
      */
     public Crypto getSignatureCrypto() {
-        if (signatureCrypto == null && signaturePropertiesFile != null) {
-            Properties sigProperties = SecurityUtils.loadProperties(signaturePropertiesFile);
+        if (signatureCrypto == null && signatureCryptoProperties != null) {
+            Properties sigProperties = SecurityUtils.loadProperties(signatureCryptoProperties);
             if (sigProperties == null) {
-                LOG.fine("Cannot load signature properties using: " + signaturePropertiesFile);
+                LOG.fine("Cannot load signature properties using: " + signatureCryptoProperties);
                 throw new STSException("Configuration error: cannot load signature properties");
             }
             try {

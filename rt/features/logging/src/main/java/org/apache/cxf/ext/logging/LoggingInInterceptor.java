@@ -26,6 +26,7 @@ import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.ext.logging.event.DefaultLogEventMapper;
 import org.apache.cxf.ext.logging.event.LogEvent;
 import org.apache.cxf.ext.logging.event.LogEventSender;
+import org.apache.cxf.ext.logging.slf4j.Slf4jEventSender;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.io.CachedWriter;
@@ -38,6 +39,10 @@ import org.apache.cxf.phase.Phase;
 @NoJSR250Annotations
 public class LoggingInInterceptor extends AbstractLoggingInterceptor {
 
+    public LoggingInInterceptor() {
+        this(new Slf4jEventSender());
+    }
+    
     public LoggingInInterceptor(LogEventSender sender) {
         super(Phase.PRE_INVOKE, sender);
     }
@@ -45,6 +50,15 @@ public class LoggingInInterceptor extends AbstractLoggingInterceptor {
     public void handleMessage(Message message) throws Fault {
         createExchangeId(message);
         final LogEvent event = new DefaultLogEventMapper().map(message);
+        if (shouldLogContent(event)) {
+            addContent(message, event);
+        } else {
+            event.setPayload(AbstractLoggingInterceptor.CONTENT_SUPPRESSED);
+        }
+        sender.send(event);
+    }
+
+    private void addContent(Message message, final LogEvent event) {
         try {
             CachedOutputStream cos = message.getContent(CachedOutputStream.class);
             if (cos != null) {
@@ -58,8 +72,6 @@ public class LoggingInInterceptor extends AbstractLoggingInterceptor {
         } catch (IOException e) {
             throw new Fault(e);
         }
-
-        sender.send(event);
     }
 
     private void handleOutputStream(final LogEvent event, Message message, CachedOutputStream cos) throws IOException {

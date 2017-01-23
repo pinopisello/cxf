@@ -37,7 +37,22 @@ import org.junit.Test;
 
 public class JwsUtilsTest extends Assert {
     @Test
-    public void testLoadVerificationKeys() throws Exception {
+    public void testLoadSignatureProviderFromJKS() throws Exception {
+        Properties p = new Properties();
+        p.put(JoseConstants.RSSEC_KEY_STORE_FILE, 
+            "org/apache/cxf/rs/security/jose/jws/alice.jks");
+        p.put(JoseConstants.RSSEC_KEY_STORE_PSWD, "password");
+        p.put(JoseConstants.RSSEC_KEY_PSWD, "password");
+        p.put(JoseConstants.RSSEC_KEY_STORE_ALIAS, "alice");
+        JwsHeaders headers = new JwsHeaders();
+        JwsSignatureProvider jws = JwsUtils.loadSignatureProvider(createMessage(),
+                                                                  p, 
+                                                                  headers);
+        assertNotNull(jws);
+        assertEquals("alice", headers.getKeyId());
+    }
+    @Test
+    public void testLoadVerificationKey() throws Exception {
         Properties p = new Properties();
         p.put(JoseConstants.RSSEC_KEY_STORE_FILE, 
             "org/apache/cxf/rs/security/jose/jws/alice.jks");
@@ -53,6 +68,29 @@ public class JwsUtilsTest extends Assert {
         assertNotNull(key.getKeyProperty(JsonWebKey.RSA_PUBLIC_EXP));
         assertNotNull(key.getKeyProperty(JsonWebKey.RSA_MODULUS));
         assertNull(key.getKeyProperty(JsonWebKey.RSA_PRIVATE_EXP));
+        assertNull(key.getX509Chain());
+    }
+    @Test
+    public void testLoadVerificationKeyWithCert() throws Exception {
+        Properties p = new Properties();
+        p.put(JoseConstants.RSSEC_KEY_STORE_FILE, 
+            "org/apache/cxf/rs/security/jose/jws/alice.jks");
+        p.put(JoseConstants.RSSEC_KEY_STORE_PSWD, "password");
+        p.put(JoseConstants.RSSEC_KEY_STORE_ALIAS, "alice");
+        p.put(JoseConstants.RSSEC_SIGNATURE_INCLUDE_CERT, true);
+        JsonWebKeys keySet = JwsUtils.loadPublicVerificationKeys(createMessage(), p);
+        assertEquals(1, keySet.asMap().size());
+        List<JsonWebKey> keys = keySet.getRsaKeys();
+        assertEquals(1, keys.size());
+        JsonWebKey key = keys.get(0);
+        assertEquals(KeyType.RSA, key.getKeyType());
+        assertEquals("alice", key.getKeyId());
+        assertNotNull(key.getKeyProperty(JsonWebKey.RSA_PUBLIC_EXP));
+        assertNotNull(key.getKeyProperty(JsonWebKey.RSA_MODULUS));
+        assertNull(key.getKeyProperty(JsonWebKey.RSA_PRIVATE_EXP));
+        List<String> chain = key.getX509Chain();
+        assertNotNull(chain);
+        assertEquals(2, chain.size());
     }
     
     private Message createMessage() {
@@ -60,6 +98,7 @@ public class JwsUtilsTest extends Assert {
         Exchange e = new ExchangeImpl();
         e.put(Bus.class, BusFactory.getThreadDefaultBus());
         m.setExchange(e);
+        m.put(JoseConstants.RSSEC_SIGNATURE_INCLUDE_KEY_ID, "true");
         e.setInMessage(m);
         return m;
     }

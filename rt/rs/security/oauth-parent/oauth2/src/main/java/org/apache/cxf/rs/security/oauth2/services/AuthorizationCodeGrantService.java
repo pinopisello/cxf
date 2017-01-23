@@ -22,12 +22,12 @@ package org.apache.cxf.rs.security.oauth2.services;
 import java.util.List;
 
 import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.cxf.rs.security.oauth2.common.Client;
+import org.apache.cxf.rs.security.oauth2.common.FormAuthorizationResponse;
 import org.apache.cxf.rs.security.oauth2.common.OAuthAuthorizationData;
 import org.apache.cxf.rs.security.oauth2.common.OAuthPermission;
 import org.apache.cxf.rs.security.oauth2.common.OAuthRedirectionState;
@@ -105,13 +105,20 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
         }
         String grantCode = processCodeGrant(client, grant.getCode(), grant.getSubject());
         if (state.getRedirectUri() == null) {
-            OOBAuthorizationResponse oobResponse = new OOBAuthorizationResponse();
-            oobResponse.setClientId(client.getClientId());
-            oobResponse.setClientDescription(client.getApplicationDescription());
-            oobResponse.setAuthorizationCode(grant.getCode());
-            oobResponse.setUserId(userSubject.getLogin());
-            oobResponse.setExpiresIn(grant.getExpiresIn());
-            return deliverOOBResponse(oobResponse);
+            OOBAuthorizationResponse bean = new OOBAuthorizationResponse();
+            bean.setClientId(client.getClientId());
+            bean.setClientDescription(client.getApplicationDescription());
+            bean.setAuthorizationCode(grantCode);
+            bean.setUserId(userSubject.getLogin());
+            bean.setExpiresIn(grant.getExpiresIn());
+            return deliverOOBResponse((OOBAuthorizationResponse)bean);    
+        } else if (isFormResponse(state)) {
+            FormAuthorizationResponse bean = new FormAuthorizationResponse();
+            bean.setAuthorizationCode(grantCode);
+            bean.setExpiresIn(grant.getExpiresIn());
+            bean.setState(state.getState());
+            bean.setRedirectUri(state.getRedirectUri());
+            return createHtmlResponse(bean);
         } else {
             // return the code by appending it as a query parameter to the redirect URI
             UriBuilder ub = getRedirectUriBuilder(state.getState(), state.getRedirectUri());
@@ -120,7 +127,7 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
         }
     }
     
-    protected ServerAuthorizationCodeGrant getGrantRepresentation(OAuthRedirectionState state,
+    public ServerAuthorizationCodeGrant getGrantRepresentation(OAuthRedirectionState state,
                            Client client,
                            List<String> requestedScope,
                            List<String> approvedScope,
@@ -141,21 +148,6 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
         return grant;
     }
     
-    public String getGrantCode(OAuthRedirectionState state,
-                               Client client,
-                               List<String> requestedScope,
-                               List<String> approvedScope,
-                               UserSubject userSubject,
-                               ServerAccessToken preauthorizedToken) {
-        ServerAuthorizationCodeGrant grant =  getGrantRepresentation(state,
-                                      client,
-                                      requestedScope,
-                                      approvedScope,
-                                      userSubject,
-                                      preauthorizedToken);
-        return processCodeGrant(client, grant.getCode(), grant.getSubject());
-    }
-    
     protected AuthorizationCodeRegistration createCodeRegistration(OAuthRedirectionState state, 
                                                                    Client client, 
                                                                    List<String> requestedScope, 
@@ -167,11 +159,13 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
         codeReg.setClient(client);
         codeReg.setRedirectUri(state.getRedirectUri());
         codeReg.setRequestedScope(requestedScope);
+        codeReg.setResponseType(state.getResponseType());
         codeReg.setApprovedScope(getApprovedScope(requestedScope, approvedScope));
         codeReg.setSubject(userSubject);
         codeReg.setAudience(state.getAudience());
         codeReg.setNonce(state.getNonce());
         codeReg.setClientCodeChallenge(state.getClientCodeChallenge());
+        codeReg.getExtraProperties().putAll(state.getExtraProperties());
         return codeReg;
     }
     protected String processCodeGrant(Client client, String code, UserSubject endUser) {
@@ -184,7 +178,7 @@ public class AuthorizationCodeGrantService extends RedirectionBasedGrantService 
         if (oobDeliverer != null) {    
             return oobDeliverer.deliver(response);
         } else {
-            return Response.ok(response).type(MediaType.TEXT_HTML).build();
+            return createHtmlResponse(response);
         }
     }
     
