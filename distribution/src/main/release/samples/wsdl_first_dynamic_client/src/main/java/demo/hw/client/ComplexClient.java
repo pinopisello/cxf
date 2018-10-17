@@ -42,7 +42,9 @@ import org.apache.cxf.service.model.ServiceInfo;
  */
 public final class ComplexClient {
     
-    private static final QName SERVICE_NAME  = new QName("http://Company.com/Application",  "Company_ESB_Application_Biztalk_AgentDetails_4405_AgentDetails_Prt");
+    private static final QName SERVICE_NAME
+        = new QName("http://Company.com/Application",
+                     "Company_ESB_Application_Biztalk_AgentDetails_4405_AgentDetails_Prt");
     
     private ComplexClient() {
     }

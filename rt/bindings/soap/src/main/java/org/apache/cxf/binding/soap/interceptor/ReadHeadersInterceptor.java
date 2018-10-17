@@ -53,6 +53,7 @@ import org.apache.cxf.common.i18n.Message;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.databinding.DataBinding;
+import org.apache.cxf.databinding.DataReader;
 import org.apache.cxf.headers.HeaderManager;
 import org.apache.cxf.headers.HeaderProcessor;
 import org.apache.cxf.helpers.DOMUtils;
@@ -67,31 +68,31 @@ import org.apache.cxf.staxutils.W3CDOMStreamWriter;
 
 
 public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
-    
+
     public static final String ENVELOPE_EVENTS = "envelope.events";
     public static final String BODY_EVENTS = "body.events";
     public static final String ENVELOPE_PREFIX = "envelope.prefix";
     public static final String BODY_PREFIX = "body.prefix";
     /**
-     * 
+     *
      */
     public static class CheckClosingTagsInterceptor extends AbstractSoapInterceptor {
         public CheckClosingTagsInterceptor() {
             super(Phase.POST_LOGICAL);
         }
-        
+
         /** {@inheritDoc}*/
         public void handleMessage(SoapMessage message) throws Fault {
             XMLStreamReader xmlReader = message.getContent(XMLStreamReader.class);
             if (xmlReader != null) {
                 try {
                     while (xmlReader.hasNext()) {
-                        if (xmlReader.next() == XMLStreamReader.END_DOCUMENT) {
+                        if (xmlReader.next() == XMLStreamConstants.END_DOCUMENT) {
                             return;
                         }
                     }
                 } catch (XMLStreamException e) {
-                    throw new SoapFault(e.getMessage(), e, 
+                    throw new SoapFault(e.getMessage(), e,
                                         message.getVersion().getSender());
                 }
             }
@@ -168,15 +169,15 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
         }
 
         try {
-            if (xmlReader.getEventType() == XMLStreamConstants.START_ELEMENT 
+            if (xmlReader.getEventType() == XMLStreamConstants.START_ELEMENT
                 || xmlReader.nextTag() == XMLStreamConstants.START_ELEMENT) {
-                
+
                 SoapVersion soapVersion = readVersion(xmlReader, message);
                 if (soapVersion == Soap12.getInstance()
                     && version == Soap11.getInstance()) {
                     message.setVersion(version);
                     throw new SoapFault(new Message("INVALID_11_VERSION", LOG),
-                                        version.getVersionMismatch());                    
+                                        version.getVersionMismatch());
                 }
 
                 XMLStreamReader filteredReader = new PartialXMLStreamReader(xmlReader, message.getVersion()
@@ -192,7 +193,7 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
                     doc = (Document)nd;
                     StaxUtils.readDocElements(doc, doc, filteredReader, false, false);
                 } else {
-                    final boolean addNC = 
+                    final boolean addNC =
                         MessageUtils.getContextualBoolean(
                             message, "org.apache.cxf.binding.soap.addNamespaceContext", false);
                     Map<String, String> bodyNC = addNC ? new HashMap<String, String>() : null;
@@ -254,9 +255,12 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
                                 obj = hel;
                             } else {
                                 dataBinding = p.getDataBinding();
-                                obj = dataBinding.createReader(Node.class).read(hel);
+                                DataReader<Node> dataReader = dataBinding.createReader(Node.class);
+                                dataReader.setAttachments(message.getAttachments());
+                                dataReader.setProperty(DataReader.ENDPOINT, message.getExchange().getEndpoint());
+                                dataReader.setProperty(Message.class.getName(), message);
+                                obj = dataReader.read(hel);
                             }
-                            // TODO - add the interceptors
 
                             SoapHeader shead = new SoapHeader(new QName(hel.getNamespaceURI(),
                                                                         hel.getLocalName()), obj, dataBinding);
@@ -284,14 +288,14 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
                 }
             }
         } catch (XMLStreamException e) {
-            throw new SoapFault(new Message("XML_STREAM_EXC", LOG, e.getMessage()), e, 
+            throw new SoapFault(new Message("XML_STREAM_EXC", LOG, e.getMessage()), e,
                                 message.getVersion().getSender());
         } finally {
             if (closeNeeded) {
                 try {
                     StaxUtils.close(xmlReader);
                 } catch (XMLStreamException e) {
-                    throw new SoapFault(new Message("XML_STREAM_EXC", LOG, e.getMessage()), e, 
+                    throw new SoapFault(new Message("XML_STREAM_EXC", LOG, e.getMessage()), e,
                                         message.getVersion().getSender());
                 }
             }
@@ -323,7 +327,7 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
         private final String header;
         private final String body;
         private final String envelope;
-        private final List<XMLEvent> events = new ArrayList<XMLEvent>(8);
+        private final List<XMLEvent> events = new ArrayList<>(8);
         private List<XMLEvent> envEvents;
         private List<XMLEvent> bodyEvents;
         private StreamToDOMContext context;
@@ -332,7 +336,7 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
         private QName lastStartElementQName;
         private String envelopePrefix;
         private String bodyPrefix;
-        
+
         static {
             try {
                 eventFactory = XMLEventFactory.newInstance();
@@ -438,12 +442,12 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
                     final String lastEl = lastStartElementQName.getLocalPart();
                     if (body.equals(lastEl) && ns.equals(lastStartElementQName.getNamespaceURI())) {
                         if (bodyEvents == null) {
-                            bodyEvents = new ArrayList<XMLEvent>();
+                            bodyEvents = new ArrayList<>();
                         }
                         bodyEvents.add(event);
                     } else if (envelope.equals(lastEl) && ns.equals(lastStartElementQName.getNamespaceURI())) {
                         if (envEvents == null) {
-                            envEvents = new ArrayList<XMLEvent>();
+                            envEvents = new ArrayList<>();
                         }
                         envEvents.add(event);
                     }
@@ -451,27 +455,25 @@ public class ReadHeadersInterceptor extends AbstractSoapInterceptor {
                 events.add(event);
             }
         }
-        
+
         public List<XMLEvent> getBodyAttributeAndNamespaceEvents() {
             if (bodyEvents == null) {
                 return Collections.emptyList();
-            } else {
-                return Collections.unmodifiableList(bodyEvents);
             }
+            return Collections.unmodifiableList(bodyEvents);
         }
-        
+
         public List<XMLEvent> getEnvAttributeAndNamespaceEvents() {
             if (envEvents == null) {
                 return Collections.emptyList();
-            } else {
-                return Collections.unmodifiableList(envEvents);
             }
+            return Collections.unmodifiableList(envEvents);
         }
-        
+
         public String getEnvelopePrefix() {
             return envelopePrefix;
         }
-        
+
         public String getBodyPrefix() {
             return bodyPrefix;
         }

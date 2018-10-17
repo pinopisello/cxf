@@ -26,18 +26,20 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.InjectionTarget;
 
 import org.apache.cxf.Bus;
-import org.apache.cxf.bus.CXFBusFactory;
+import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.extension.ExtensionManagerBus;
+import org.apache.cxf.common.util.ClassUnwrapper;
+import org.apache.cxf.common.util.SystemPropertyAction;
 
 final class CdiBusBean extends AbstractCXFBean< ExtensionManagerBus > {
     static final String CXF = "cxf";
-    
+
     private final InjectionTarget<ExtensionManagerBus> injectionTarget;
-    
+
     CdiBusBean(final InjectionTarget<ExtensionManagerBus> injectionTarget) {
         this.injectionTarget = injectionTarget;
     }
-    
+
     @Override
     public Class< ? > getBeanClass() {
         return Bus.class;
@@ -59,20 +61,23 @@ final class CdiBusBean extends AbstractCXFBean< ExtensionManagerBus > {
         types.add(Bus.class);
         return types;
     }
-    
+
     @Override
     public ExtensionManagerBus create(final CreationalContext< ExtensionManagerBus > ctx) {
         final ExtensionManagerBus instance = injectionTarget.produce(ctx);
-        CXFBusFactory.possiblySetDefaultBus(instance);
+        if ("true".equals(SystemPropertyAction.getProperty("org.apache.cxf.cdi.unwrap.proxies", "true"))) {
+            instance.setProperty(ClassUnwrapper.class.getName(), new CdiClassUnwrapper());
+        }
+        BusFactory.possiblySetDefaultBus(instance);
         instance.initialize();
-        
+
         injectionTarget.inject(instance, ctx);
         injectionTarget.postConstruct(instance);
         return instance;
     }
 
     @Override
-    public void destroy(final ExtensionManagerBus instance, 
+    public void destroy(final ExtensionManagerBus instance,
             final CreationalContext< ExtensionManagerBus > ctx) {
         injectionTarget.preDestroy(instance);
         injectionTarget.dispose(instance);

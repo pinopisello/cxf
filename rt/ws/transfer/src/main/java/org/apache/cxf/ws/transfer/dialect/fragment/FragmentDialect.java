@@ -28,11 +28,13 @@ import java.util.regex.Pattern;
 import javax.annotation.Resource;
 import javax.xml.bind.JAXBElement;
 import javax.xml.ws.WebServiceContext;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import org.apache.cxf.binding.soap.SoapFault;
 import org.apache.cxf.binding.soap.SoapMessage;
 import org.apache.cxf.binding.soap.SoapVersion;
@@ -68,7 +70,7 @@ public class FragmentDialect implements Dialect {
     private Pattern goodXPathPattern;
 
     public FragmentDialect() {
-        languages = new HashMap<String, FragmentDialectLanguage>();
+        languages = new HashMap<>();
         languages.put(FragmentDialectConstants.QNAME_LANGUAGE_IRI, new FragmentDialectLanguageQName());
         languages.put(FragmentDialectConstants.XPATH10_LANGUAGE_IRI, new FragmentDialectLanguageXPath10());
         if (badXPathPattern == null) {
@@ -97,9 +99,8 @@ public class FragmentDialect implements Dialect {
                 if (languages.containsKey(languageIRI)) {
                     FragmentDialectLanguage language = languages.get(languageIRI);
                     return generateGetResponse(language.getResourceFragment(representation, expression));
-                } else {
-                    throw new UnsupportedLanguage();
                 }
+                throw new UnsupportedLanguage();
             }
         }
         throw new SoapFault("wsf:Expression is not present.", getSoapVersion().getSender());
@@ -132,9 +133,8 @@ public class FragmentDialect implements Dialect {
                         mode = FragmentDialectConstants.FRAGMENT_MODE_ADD;
                     }
                     return modifyRepresentation(resourceFragment, mode, value);
-                } else {
-                    throw new UnsupportedLanguage();
                 }
+                throw new UnsupportedLanguage();
             }
         }
         throw new SoapFault("wsf:Fragment is not present.", getSoapVersion().getSender());
@@ -210,7 +210,7 @@ public class FragmentDialect implements Dialect {
      * @return
      */
     private JAXBElement<ValueType> generateGetResponseNode(Node node) {
-        Document doc = DOMUtils.createDocument();
+        Document doc = DOMUtils.getEmptyDocument();
         ValueType resultValue = new ValueType();
         if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
             Element attrNodeEl = doc.createElementNS(
@@ -270,9 +270,8 @@ public class FragmentDialect implements Dialect {
             }
             expression.getContent().add(expr);
             return expression;
-        } else {
-            throw new InvalidExpression();
         }
+        throw new InvalidExpression();
     }
 
     /**
@@ -287,12 +286,12 @@ public class FragmentDialect implements Dialect {
             String mode,
             ValueType value) {
         if (resourceFragment instanceof Node) {
-            List<Node> nodeList = new ArrayList<Node>();
+            List<Node> nodeList = new ArrayList<>();
             nodeList.add((Node) resourceFragment);
             return modifyRepresentationMode(nodeList, mode, value);
         } else if (resourceFragment instanceof NodeList) {
             NodeList rfNodeList = (NodeList) resourceFragment;
-            List<Node> nodeList = new ArrayList<Node>();
+            List<Node> nodeList = new ArrayList<>();
             for (int i = 0; i < rfNodeList.getLength(); i++) {
                 nodeList.add(rfNodeList.item(i));
             }

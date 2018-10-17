@@ -21,6 +21,7 @@ package org.apache.cxf.ext.logging;
 import java.io.FilterWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 
@@ -29,7 +30,8 @@ import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.ext.logging.event.DefaultLogEventMapper;
 import org.apache.cxf.ext.logging.event.LogEvent;
 import org.apache.cxf.ext.logging.event.LogEventSender;
-import org.apache.cxf.ext.logging.slf4j.Slf4jEventSender;
+import org.apache.cxf.ext.logging.event.PrintWriterEventSender;
+import org.apache.cxf.ext.logging.slf4j.Slf4jVerboseEventSender;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.interceptor.StaxOutInterceptor;
 import org.apache.cxf.io.CacheAndWriteOutputStream;
@@ -39,21 +41,28 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.Phase;
 
 /**
- * 
+ *
  */
 @NoJSR250Annotations
 public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
 
     public LoggingOutInterceptor() {
-        this(new Slf4jEventSender());
+        this(new Slf4jVerboseEventSender());
     }
-    
+
+    public LoggingOutInterceptor(PrintWriter writer) {
+        this(new PrintWriterEventSender(writer));
+    }
+
     public LoggingOutInterceptor(LogEventSender sender) {
         super(Phase.PRE_STREAM, sender);
         addBefore(StaxOutInterceptor.class.getName());
     }
 
     public void handleMessage(Message message) throws Fault {
+        if (isLoggingDisabledNow(message)) {
+            return;
+        }
         createExchangeId(message);
         final OutputStream os = message.getContent(OutputStream.class);
         if (os != null) {
@@ -61,7 +70,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             message.setContent(OutputStream.class, createCachingOut(message, os, callback));
         } else {
             final Writer iowriter = message.getContent(Writer.class);
-            if (iowriter != null) { 
+            if (iowriter != null) {
                 message.setContent(Writer.class, new LogEventSendingWriter(sender, message, iowriter, limit));
             }
         }
@@ -73,10 +82,20 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             newOut.setThreshold(threshold);
         }
         if (limit > 0) {
-            newOut.setCacheLimit(limit);
+            // make the limit for the cache greater than the limit for the truncated payload in the log event,
+            // this is necessary for finding out that the payload was truncated
+            //(see boolean isTruncated = cos.size() > limit && limit != -1;)  in method copyPayload
+            newOut.setCacheLimit(getCacheLimit());
         }
         newOut.registerCallback(callback);
         return newOut;
+    }
+
+    private int getCacheLimit() {
+        if (limit == Integer.MAX_VALUE) {
+            return limit;
+        }
+        return limit + 1;
     }
 
     private class LogEventSendingWriter extends FilterWriter {
@@ -124,9 +143,9 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             final LogEvent event = new DefaultLogEventMapper().map(message);
             StringWriter w2 = out2;
             if (w2 == null) {
-                w2 = (StringWriter)out;
+                w2 = (StringWriter) out;
             }
-            
+
             String payload = shouldLogContent(event) ? getPayload(event, w2) : CONTENT_SUPPRESSED;
             event.setPayload(payload);
             sender.send(event);
@@ -135,23 +154,19 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
         }
 
         private String getPayload(final LogEvent event, StringWriter w2) {
-            String ct = (String)message.get(Message.CONTENT_TYPE);
             StringBuilder payload = new StringBuilder();
-            try {
-                writePayload(payload, w2, ct);
-            } catch (Exception ex) {
-                // ignore
-            }
+            writePayload(payload, w2, event);
             return payload.toString();
         }
-        
-        protected void writePayload(StringBuilder builder, StringWriter stringWriter, String contentType)
-            throws Exception {
+
+        private void writePayload(StringBuilder builder, StringWriter stringWriter, LogEvent event) {
             StringBuffer buffer = stringWriter.getBuffer();
             if (buffer.length() > lim) {
                 builder.append(buffer.subSequence(0, lim));
+                event.setTruncated(true);
             } else {
                 builder.append(buffer);
+                event.setTruncated(false);
             }
         }
     }
@@ -195,17 +210,19 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
 
         private void copyPayload(CachedOutputStream cos, final LogEvent event) {
             try {
-                String encoding = (String)message.get(Message.ENCODING);
+                String encoding = (String) message.get(Message.ENCODING);
                 StringBuilder payload = new StringBuilder();
                 writePayload(payload, cos, encoding, event.getContentType());
                 event.setPayload(payload.toString());
+                boolean isTruncated = cos.size() > limit && limit != -1;
+                event.setTruncated(isTruncated);
             } catch (Exception ex) {
                 // ignore
             }
         }
-        
-        protected void writePayload(StringBuilder builder, CachedOutputStream cos, String encoding,
-                                    String contentType) throws Exception {
+
+        protected void writePayload(StringBuilder builder, CachedOutputStream cos, String encoding, String contentType)
+                throws Exception {
             if (StringUtils.isEmpty(encoding)) {
                 cos.writeCacheTo(builder, lim);
             } else {

@@ -39,6 +39,11 @@ public class Server {
     protected Server() throws Exception {
         System.out.println("Starting Server");
 
+        customers.put("Tom", new Customer.PremiumCustomer("Tom"));
+        customers.put("Rob", new Customer.PreferredCustomer("Rob"));
+        customers.put("Vince", new Customer.RegularCustomer("Vince"));
+        customers.put("Malcolm", new Customer.CheapCustomer("Malcolm"));
+        customers.put("Jonas", new Customer.TrialCustomer("Jonas"));
 
         //==========   JMX   ================
         //abilito jmx [InstrumentationManagerImpl come una bus extension] e pubblia mbean per il bus e uno per l.endpoint SoapPort

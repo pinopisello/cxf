@@ -48,8 +48,8 @@ public final class PublicSuffixMatcher {
     public PublicSuffixMatcher(final Collection<String> rules, final Collection<String> exceptions) {
         this(DomainType.UNKNOWN, rules, exceptions);
     }
-    
-    public PublicSuffixMatcher(final DomainType domainType, 
+
+    public PublicSuffixMatcher(final DomainType domainType,
                                final Collection<String> rules, final Collection<String> exceptions) {
         if (domainType == null) {
             throw new IllegalArgumentException("Domain type is null");
@@ -89,7 +89,7 @@ public final class PublicSuffixMatcher {
         }
     }
 
-    private static boolean hasEntry(final Map<String, DomainType> map, final String rule, 
+    private static boolean hasEntry(final Map<String, DomainType> map, final String rule,
                                     final DomainType expectedType) {
         if (map == null) {
             return false;
@@ -97,9 +97,8 @@ public final class PublicSuffixMatcher {
         final DomainType domainType = map.get(rule);
         if (domainType == null) {
             return false;
-        } else {
-            return expectedType == null || domainType.equals(expectedType);
         }
+        return expectedType == null || domainType.equals(expectedType);
     }
 
     private boolean hasRule(final String rule, final DomainType expectedType) {

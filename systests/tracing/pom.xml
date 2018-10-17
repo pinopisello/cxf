@@ -21,7 +21,7 @@
     <parent>
         <artifactId>cxf-parent</artifactId>
         <groupId>org.apache.cxf</groupId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>3.3.0-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -30,6 +30,11 @@
     <name>Apache CXF Distributed Tracing Integration System Tests</name>
     <description>Apache CXF Distributed Tracing Integration System Tests</description>
     <url>http://cxf.apache.org</url>
+    
+    <properties>
+        <cxf.module.name>org.apache.cxf.systests.tracing</cxf.module.name>
+    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -91,6 +96,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-integration-tracing-opentracing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-testutils</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -126,6 +136,21 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>io.jaegertracing</groupId>
+            <artifactId>jaeger-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -137,48 +162,16 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <archive>
+                                <manifestEntries>
+                                    <Automatic-Module-Name>${cxf.module.name}.tests</Automatic-Module-Name>
+                                </manifestEntries>
+                            </archive>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>java9</id>
-            <activation>
-                <jdk>9</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <version>2.10</version>
-                        <executions>
-                            <execution>
-                                <id>copy</id>
-                                <phase>validate</phase>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>javax.annotation</groupId>
-                                            <artifactId>javax.annotation-api</artifactId>
-                                            <type>jar</type>
-                                            <overWrite>false</overWrite>
-                                            <outputDirectory>${project.basedir}/target/java9</outputDirectory>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <overWriteReleases>false</overWriteReleases>
-                                    <overWriteSnapshots>true</overWriteSnapshots>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

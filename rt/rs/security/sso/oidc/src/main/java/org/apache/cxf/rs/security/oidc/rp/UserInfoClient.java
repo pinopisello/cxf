@@ -39,24 +39,21 @@ public class UserInfoClient extends OidcClaimsValidator {
             if (getUserInfoFromJwt) {
                 String jwt = profileClient.get(String.class);
                 return getUserInfoFromJwt(jwt, idToken, client);
-            } else {
-                UserInfo profile = profileClient.get(UserInfo.class);
-                validateUserInfo(profile, idToken, client);
-                return profile;
             }
-        } else {
-            Form form = new Form().param("access_token", at.getTokenKey());
-            if (getUserInfoFromJwt) {
-                String jwt = profileClient.form(form).readEntity(String.class);
-                return getUserInfoFromJwt(jwt, idToken, client);
-            } else {
-                UserInfo profile = profileClient.form(form).readEntity(UserInfo.class);
-                validateUserInfo(profile, idToken, client);
-                return profile;
-            }
+            UserInfo profile = profileClient.get(UserInfo.class);
+            validateUserInfo(profile, idToken, client);
+            return profile;
         }
+        Form form = new Form().param("access_token", at.getTokenKey());
+        if (getUserInfoFromJwt) {
+            String jwt = profileClient.form(form).readEntity(String.class);
+            return getUserInfoFromJwt(jwt, idToken, client);
+        }
+        UserInfo profile = profileClient.form(form).readEntity(UserInfo.class);
+        validateUserInfo(profile, idToken, client);
+        return profile;
     }
-    public UserInfo getUserInfoFromJwt(String profileJwtToken, 
+    public UserInfo getUserInfoFromJwt(String profileJwtToken,
                                        IdToken idToken,
                                        Consumer client) {
         JwtToken jwt = getUserInfoJwt(profileJwtToken, client);
@@ -86,5 +83,5 @@ public class UserInfoClient extends OidcClaimsValidator {
     public void setGetUserInfoFromJwt(boolean getUserInfoFromJwt) {
         this.getUserInfoFromJwt = getUserInfoFromJwt;
     }
-    
+
 }

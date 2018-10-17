@@ -25,9 +25,10 @@ import java.net.URL;
 import javax.xml.ws.Endpoint;
 
 import org.apache.cxf.Bus;
+import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.spring.SpringBusFactory;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
+import org.apache.cxf.ext.logging.LoggingInInterceptor;
+import org.apache.cxf.ext.logging.LoggingOutInterceptor;
 import org.apache.cxf.testutil.common.AbstractBusTestServerBase;
 
 
@@ -36,7 +37,7 @@ public class UndertowBasicAuthServer extends AbstractBusTestServerBase  {
     static final String ADDRESS = "http://localhost:" + PORT + "/SoapContext/SoapPort";
 
     Endpoint ep;
-    
+
     protected void run()  {
         String configurationFile = "undertowBasicAuthServer.xml";
         URL configure =
@@ -44,23 +45,23 @@ public class UndertowBasicAuthServer extends AbstractBusTestServerBase  {
         Bus bus = new SpringBusFactory().createBus(configure, true);
         bus.getInInterceptors().add(new LoggingInInterceptor());
         bus.getOutInterceptors().add(new LoggingOutInterceptor());
-        SpringBusFactory.setDefaultBus(bus);
+        BusFactory.setDefaultBus(bus);
         setBus(bus);
 
         GreeterImpl implementor = new GreeterImpl();
         ep = Endpoint.publish(ADDRESS, implementor);
     }
-    
+
     public void tearDown() throws Exception {
         if (ep != null) {
             ep.stop();
             ep = null;
         }
     }
-    
+
     public static void main(String[] args) {
-        try { 
-            UndertowBasicAuthServer s = new UndertowBasicAuthServer(); 
+        try {
+            UndertowBasicAuthServer s = new UndertowBasicAuthServer();
             s.start();
         } catch (Exception ex) {
             ex.printStackTrace();

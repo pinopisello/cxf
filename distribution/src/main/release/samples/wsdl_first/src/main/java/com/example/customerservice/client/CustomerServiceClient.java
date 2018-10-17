@@ -28,8 +28,13 @@ public class CustomerServiceClient {
     static String TOMCAT_URL="http://127.0.0.1:8080/wsdl_first/services/CustomerServicePort?wsdl";
     protected CustomerServiceClient() {
     }
+<<<<<<< HEAD
     
     public static void main(String args[]) throws Exception {      
+=======
+
+    public static void main(String args[]) throws Exception {
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         CustomerServiceService customerServiceService;
         if (args.length != 0 && args[0].length() != 0) {
             File wsdlFile = new File(args[0]);
@@ -48,11 +53,11 @@ public class CustomerServiceClient {
         }
 
         CustomerService customerService = customerServiceService.getCustomerServicePort();
-        
+
         // Initialize the test class and call the tests
         CustomerServiceTester client = new CustomerServiceTester();
         client.setCustomerService(customerService);
         client.testCustomerService();
-        System.exit(0); 
+        System.exit(0);
     }
 }

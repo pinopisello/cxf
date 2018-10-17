@@ -32,35 +32,34 @@ import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 public abstract class AbstractSwaggerFeature extends AbstractFeature {
 
     private static final boolean SWAGGER_JAXRS_AVAILABLE;
-    
+
     static {
         SWAGGER_JAXRS_AVAILABLE = isSwaggerJaxRsAvailable();
     }
 
-    protected boolean scan = true;
-    protected boolean runAsFilter;
+    protected boolean licenseWasSet;
+    private boolean runAsFilter;
     private boolean activateOnlyIfJaxrsSupported;
     private String resourcePackage;
-    private String version = "1.0.0";
-    // depending on swagger version basePath is set differently
+    private String version;
     private String basePath;
-    private String title = "Sample REST Application";
-    private String description = "The Application";
-    private String contact = "users@cxf.apache.org";
-    private String license = "Apache 2.0 License";
-    private String licenseUrl = "http://www.apache.org/licenses/LICENSE-2.0.html";
+    private String title;
+    private String description;
+    private String contact;
+    private String license;
+    private String licenseUrl;
     private String termsOfServiceUrl;
     private String filterClass;
-    
+
     private static boolean isSwaggerJaxRsAvailable() {
         try {
             Class.forName("io.swagger.jaxrs.DefaultParameterExtension");
             return true;
         } catch (Throwable ex) {
             return false;
-        }    
+        }
     }
-    
+
     @Override
     public void initialize(Server server, Bus bus) {
         if (!activateOnlyIfJaxrsSupported || SWAGGER_JAXRS_AVAILABLE) {
@@ -81,10 +80,10 @@ public abstract class AbstractSwaggerFeature extends AbstractFeature {
         if (!StringUtils.isEmpty(getResourcePackage())) {
             return;
         }
-        JAXRSServiceFactoryBean serviceFactoryBean = 
+        JAXRSServiceFactoryBean serviceFactoryBean =
             (JAXRSServiceFactoryBean)server.getEndpoint().get(JAXRSServiceFactoryBean.class.getName());
         List<ClassResourceInfo> resourceInfos = serviceFactoryBean.getClassResourceInfo();
-        
+
         if (resourceInfos.size() == 1) {
             setResourcePackage(resourceInfos.get(0).getServiceClass().getPackage().getName());
         } else {
@@ -98,7 +97,7 @@ public abstract class AbstractSwaggerFeature extends AbstractFeature {
             }
         }
     }
-    
+
     protected void calculateDefaultBasePath(Server server) {
         if (getBasePath() == null || getBasePath().length() == 0) {
             String address = server.getEndpoint().getEndpointInfo().getAddress();
@@ -146,6 +145,7 @@ public abstract class AbstractSwaggerFeature extends AbstractFeature {
         return license;
     }
     public void setLicense(String license) {
+        this.licenseWasSet = true;
         this.license = license;
     }
     public String getLicenseUrl() {
@@ -159,12 +159,6 @@ public abstract class AbstractSwaggerFeature extends AbstractFeature {
     }
     public void setTermsOfServiceUrl(String termsOfServiceUrl) {
         this.termsOfServiceUrl = termsOfServiceUrl;
-    }
-    public boolean isScan() {
-        return scan;
-    }
-    public void setScan(boolean scan) {
-        this.scan = scan;
     }
     public String getFilterClass() {
         return filterClass;
@@ -187,5 +181,5 @@ public abstract class AbstractSwaggerFeature extends AbstractFeature {
     public void setActivateOnlyIfJaxrsSupported(boolean activateOnlyIfJaxrsSupported) {
         this.activateOnlyIfJaxrsSupported = activateOnlyIfJaxrsSupported;
     }
-    
+
 }

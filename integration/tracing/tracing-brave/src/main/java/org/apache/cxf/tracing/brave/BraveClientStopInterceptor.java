@@ -18,33 +18,31 @@
  */
 package org.apache.cxf.tracing.brave;
 
-import com.github.kristofa.brave.Brave;
-import com.twitter.zipkin.gen.Span;
-
+import brave.http.HttpTracing;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.Phase;
 
 public class BraveClientStopInterceptor extends AbstractBraveClientInterceptor {
-    public BraveClientStopInterceptor(final Brave brave) {
+    public BraveClientStopInterceptor(final HttpTracing brave) {
         this(Phase.RECEIVE, brave);
     }
-    
-    public BraveClientStopInterceptor(final String phase, final Brave brave) {
+
+    public BraveClientStopInterceptor(final String phase, final HttpTracing brave) {
         super(phase, brave);
     }
 
     @Override
     public void handleMessage(Message message) throws Fault {
         @SuppressWarnings("unchecked")
-        final TraceScopeHolder<Span> holder = 
-            (TraceScopeHolder<Span>)message.getExchange().get(TRACE_SPAN);
-        
+        final TraceScopeHolder<TraceScope> holder =
+            (TraceScopeHolder<TraceScope>)message.getExchange().get(TRACE_SPAN);
+
         Integer responseCode = (Integer)message.get(Message.RESPONSE_CODE);
         if (responseCode == null) {
             responseCode = 200;
         }
-        
+
         super.stopTraceSpan(holder, responseCode);
     }
 }

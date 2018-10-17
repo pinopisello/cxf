@@ -53,7 +53,7 @@ public final class Client implements Runnable {
         this.username = name;
         this.service = service;
     }
-    
+
     @Override
     public void run() {//Invoca Greeter.greetMe() invocazioni_per_client volte a raffica!!!
         long start = System.currentTimeMillis();
@@ -84,15 +84,15 @@ public final class Client implements Runnable {
             //Le 10000 invocazioni sono finite o c'e' stata eccezzione.
             long end = System.currentTimeMillis();
             double rate = x * 1000 / (end - start);
-            System.out.println(username + " finished " + x + " invocations: " + rate + " req/sec " 
+            System.out.println(username + " finished " + x + " invocations: " + rate + " req/sec "
                 + (exceeded ? "(exceeded max)" : ""));
             try {
-                //sleep for a few seconds before the client is closed so things can be seen in JMX 
+                //sleep for a few seconds before the client is closed so things can be seen in JMX
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 //ignore
-            } 
-            
+            }
+
         } catch (Exception e1) {
             e1.printStackTrace();
         }
@@ -102,7 +102,7 @@ public final class Client implements Runnable {
     public void stop() {
         doStop = true;
     }
-    
+
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
             args = new String[] {SOAPService.WSDL_LOCATION.toExternalForm()};
@@ -115,7 +115,7 @@ public final class Client implements Runnable {
         } else {
             wsdlURL = new URL(args[0]);
         }
-        
+
         Map<String, Object> properties = new HashMap<>();
         properties.put("bus.jmx.usePlatformMBeanServer", Boolean.TRUE);
         properties.put("bus.jmx.enabled", Boolean.TRUE);
@@ -123,10 +123,10 @@ public final class Client implements Runnable {
         Bus b = new CXFBusFactory().createBus(null, properties);
         MetricRegistry registry = new MetricRegistry();
         CodahaleMetricsProvider.setupJMXReporter(b, registry);
-        b.setExtension(registry, MetricRegistry.class);        
+        b.setExtension(registry, MetricRegistry.class);
 
         SOAPService ss = new SOAPService(wsdlURL, SERVICE_NAME);
-        List<Client> c = new ArrayList<Client>();
+        List<Client> c = new ArrayList<>();
         Client client;
         
        
@@ -156,7 +156,11 @@ public final class Client implements Runnable {
         client = new Client("Jonas", ss);
         new Thread(client).start();
         c.add(client);
+<<<<<<< HEAD
         */
+=======
+
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         System.out.println("Sleeping on main thread for 60 seconds");
         Thread.sleep(60000);
         for (Client c2 : c) {
@@ -168,6 +172,6 @@ public final class Client implements Runnable {
         //System.exit(0);
     }
 
-    
+
 
 }

@@ -30,7 +30,6 @@ import org.apache.cxf.annotations.EndpointProperty;
 import org.apache.cxf.annotations.FactoryType;
 import org.apache.cxf.annotations.FastInfoset;
 import org.apache.cxf.annotations.GZIP;
-import org.apache.cxf.annotations.Logging;
 import org.apache.cxf.annotations.SchemaValidation;
 import org.apache.cxf.annotations.WSDLDocumentation;
 import org.apache.cxf.annotations.WSDLDocumentation.Placement;
@@ -39,7 +38,6 @@ import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.configuration.ConfiguredBeanLocator;
 import org.apache.cxf.endpoint.Endpoint;
 import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.feature.LoggingFeature;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.interceptor.FIStaxInInterceptor;
 import org.apache.cxf.interceptor.FIStaxOutInterceptor;
@@ -61,12 +59,12 @@ import org.apache.cxf.service.model.OperationInfo;
 import org.apache.cxf.transport.common.gzip.GZIPFeature;
 
 /**
- * 
+ *
  */
 public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
-    
-    private static final String EXTRA_DOCUMENTATION 
-        = AnnotationsFactoryBeanListener.class.getName() + ".EXTRA_DOCS"; 
+
+    private static final String EXTRA_DOCUMENTATION
+        = AnnotationsFactoryBeanListener.class.getName() + ".EXTRA_DOCS";
 
     /** {@inheritDoc}*/
     public void handleEvent(Event ev, AbstractServiceFactoryBean factory, Object... args) {
@@ -97,7 +95,6 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             addSchemaValidationSupport(ep, cls.getAnnotation(SchemaValidation.class));
             addFastInfosetSupport(ep, cls.getAnnotation(FastInfoset.class));
             addGZipSupport(ep, bus, cls.getAnnotation(GZIP.class));
-            addLoggingSupport(ep, bus, cls.getAnnotation(Logging.class));
             addEndpointProperties(ep, bus, cls.getAnnotation(EndpointProperty.class));
             EndpointProperties props = cls.getAnnotation(EndpointProperties.class);
             if (props != null) {
@@ -118,9 +115,9 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             InterfaceInfo i = ep.getEndpointInfo().getInterface();
             List<WSDLDocumentation> docs = CastUtils.cast((List<?>)i.removeProperty(EXTRA_DOCUMENTATION));
             if (docs != null) {
-                addDocumentation(ep, 
+                addDocumentation(ep,
                                  WSDLDocumentation.Placement.SERVICE,
-                                 docs.toArray(new WSDLDocumentation[docs.size()]));
+                                 docs.toArray(new WSDLDocumentation[0]));
             }
             addBindingOperationDocs(ep);
             for (Method method : implCls.getMethods()) {
@@ -139,7 +136,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
                     }
                 }
             }
-            break; 
+            break;
         }
         case SERVER_CREATED: {
             Class<?> cls = (Class<?>)args[2];
@@ -151,7 +148,6 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             addGZipSupport(server.getEndpoint(), bus, cls.getAnnotation(GZIP.class));
             addSchemaValidationSupport(server.getEndpoint(), cls.getAnnotation(SchemaValidation.class));
             addFastInfosetSupport(server.getEndpoint(), cls.getAnnotation(FastInfoset.class));
-            addLoggingSupport(server.getEndpoint(), bus, cls.getAnnotation(Logging.class));
             addEndpointProperties(server.getEndpoint(), bus, cls.getAnnotation(EndpointProperty.class));
             EndpointProperties props = cls.getAnnotation(EndpointProperties.class);
             if (props != null) {
@@ -209,7 +205,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
                     }
                 } else {
                     try {
-                        f = (Factory)scope.factoryClass().getConstructor(Class.class, String[].class)
+                        f = scope.factoryClass().getConstructor(Class.class, String[].class)
                             .newInstance(cls, scope.args());
                     } catch (Throwable t) {
                         throw new ServiceConstructionException(t);
@@ -217,7 +213,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
                 }
                 ((FactoryInvoker)i).setFactory(f);
             }
-            
+
         }
     }
 
@@ -239,9 +235,9 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             } else {
                 obj = s;
             }
-            ep.getEndpointInfo().setProperty(prop.key(), obj);                
+            ep.getEndpointInfo().setProperty(prop.key(), obj);
         }
-        
+
     }
 
     private Object createObject(Class<?> cls, Endpoint ep, Bus bus) {
@@ -253,7 +249,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
                     return cls.getConstructor(Endpoint.class).newInstance(ep);
                 } catch (NoSuchMethodException e2) {
                     return cls.newInstance();
-                }                
+                }
             }
         } catch (Exception ex) {
             throw new ServiceConstructionException(ex);
@@ -262,7 +258,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
 
     private void setDataBinding(AbstractServiceFactoryBean factory,
                                 DataBinding annotation) {
-        if (annotation != null && factory.getDataBinding(false) == null) { 
+        if (annotation != null && factory.getDataBinding(false) == null) {
             try {
                 if (!StringUtils.isEmpty(annotation.ref())) {
                     factory.setDataBinding(factory.getBus().getExtension(ResourceManager.class)
@@ -273,13 +269,6 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             } catch (Exception e) {
                 //REVISIT - log a warning
             }
-        }
-    }
-
-    private void addLoggingSupport(Endpoint endpoint, Bus bus, Logging annotation) {
-        if (annotation != null) {
-            LoggingFeature lf = new LoggingFeature(annotation);
-            lf.initialize(endpoint, bus);
         }
     }
 
@@ -365,9 +354,9 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             inf.setProperty(Message.SCHEMA_VALIDATION_TYPE, annotation.type());
         }
     }
-    
+
     private void addDocumentation(OperationInfo inf, Placement defPlace, WSDLDocumentation ... values) {
-        List<WSDLDocumentation> later = new ArrayList<WSDLDocumentation>();
+        List<WSDLDocumentation> later = new ArrayList<>();
         for (WSDLDocumentation doc : values) {
             WSDLDocumentation.Placement p = doc.placement();
             if (p == WSDLDocumentation.Placement.DEFAULT) {
@@ -383,7 +372,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             case PORT_TYPE_OPERATION_OUTPUT:
                 inf.getOutput().setDocumentation(doc.value());
                 break;
-            case FAULT_MESSAGE: 
+            case FAULT_MESSAGE:
             case PORT_TYPE_OPERATION_FAULT: {
                 for (FaultInfo f : inf.getFaults()) {
                     if (doc.faultClass().equals(f.getProperty(Class.class.getName()))) {
@@ -417,10 +406,10 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
         }
     }
 
-    private void addDocumentation(InterfaceInfo interfaceInfo, 
+    private void addDocumentation(InterfaceInfo interfaceInfo,
                                   WSDLDocumentation.Placement defPlace,
                                   WSDLDocumentation ... values) {
-        List<WSDLDocumentation> later = new ArrayList<WSDLDocumentation>();
+        List<WSDLDocumentation> later = new ArrayList<>();
         for (WSDLDocumentation doc : values) {
             WSDLDocumentation.Placement p = doc.placement();
             if (p == WSDLDocumentation.Placement.DEFAULT) {
@@ -450,7 +439,7 @@ public class AnnotationsFactoryBeanListener implements FactoryBeanListener {
             }
         }
     }
-    private void addDocumentation(Endpoint ep, 
+    private void addDocumentation(Endpoint ep,
                                   WSDLDocumentation.Placement defPlace,
                                   WSDLDocumentation ... values) {
         for (WSDLDocumentation doc : values) {

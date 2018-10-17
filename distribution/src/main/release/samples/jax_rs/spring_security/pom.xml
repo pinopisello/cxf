@@ -19,13 +19,13 @@
 	<parent>
 		<groupId>org.apache.cxf.samples</groupId>
 		<artifactId>cxf-samples</artifactId>
-		<version>3.2.0-SNAPSHOT</version>
+        <version>3.3.0-SNAPSHOT</version>
 		<relativePath>../..</relativePath>
 	</parent>
 	<properties>
 		<cxf.version>${project.version}</cxf.version>
-		<aspectj.version>1.5.4</aspectj.version>
-		<spring.security.version>3.2.5.RELEASE</spring.security.version>
+        <aspectj.version>1.9.1</aspectj.version>
+        <spring.security.version>5.0.3.RELEASE</spring.security.version>
 	</properties>
 	<build>
 		<finalName>JAXRSSpringSecurity</finalName>
@@ -91,7 +91,7 @@
 									<goal>java</goal>
 								</goals>
 								<configuration>
-									<mainClass>demo.jaxrs.client.jax_rs_spring_securityClient</mainClass>
+                                    <mainClass>demo.jaxrs.client.Client</mainClass>
 								</configuration>
 							</execution>
 						</executions>
@@ -104,22 +104,18 @@
 		<dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-transports-http</artifactId>
-			<version>3.2.0-SNAPSHOT</version>
+            <version>3.3.0-SNAPSHOT</version>
 		</dependency>
 		<!-- This dependency is needed if you're using the Jetty container -->
 		<dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-transports-http-jetty</artifactId>
-			<version>3.2.0-SNAPSHOT</version>
+            <version>3.3.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-frontend-jaxrs</artifactId>
-			<version>3.2.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>commons-httpclient</groupId>
-			<artifactId>commons-httpclient</artifactId>
+            <version>3.3.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
@@ -136,10 +132,6 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-dao</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -169,6 +161,10 @@
 			<groupId>org.eclipse.jetty</groupId>
 			<artifactId>jetty-webapp</artifactId>
 		</dependency>
+		<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
 
 		<!-- server a far funzionare tomcat7:run ma sfancula profile server -->
 		<dependency>

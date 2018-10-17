@@ -18,8 +18,8 @@
  */
 package org.apache.cxf.rs.security.oauth2.filters;
 
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -46,9 +46,9 @@ public class AccessTokenIntrospectionClient implements AccessTokenValidator {
     }
 
     public AccessTokenValidation validateAccessToken(MessageContext mc,
-                                                     String authScheme, 
+                                                     String authScheme,
                                                      String authSchemeData,
-                                                     MultivaluedMap<String, String> extraProps) 
+                                                     MultivaluedMap<String, String> extraProps)
         throws OAuthServiceException {
         WebClient client = WebClient.fromClient(tokenValidatorClient, true);
         MultivaluedMap<String, String> props = new MetadataMap<String, String>();
@@ -70,10 +70,14 @@ public class AccessTokenIntrospectionClient implements AccessTokenValidator {
         if (response.getIat() != null) {
             atv.setTokenIssuedAt(response.getIat());
         } else {
-            atv.setTokenIssuedAt(new Date().getTime());
+            Instant now = Instant.now();
+            atv.setTokenIssuedAt(now.toEpochMilli());
         }
         if (response.getExp() != null) {
             atv.setTokenLifetime(response.getExp() - atv.getTokenIssuedAt());
+        }
+        if (response.getNbf() != null) {
+            atv.setTokenNotBefore(response.getNbf());
         }
         if (!StringUtils.isEmpty(response.getAud())) {
             atv.setAudiences(response.getAud());
@@ -84,7 +88,7 @@ public class AccessTokenIntrospectionClient implements AccessTokenValidator {
         if (response.getScope() != null) {
             String[] scopes = response.getScope().split(" ");
             List<OAuthPermission> perms = new LinkedList<OAuthPermission>();
-            for (String s : scopes) {    
+            for (String s : scopes) {
                 if (!StringUtils.isEmpty(s)) {
                     perms.add(new OAuthPermission(s.trim()));
                 }
@@ -94,12 +98,14 @@ public class AccessTokenIntrospectionClient implements AccessTokenValidator {
         if (response.getUsername() != null) {
             atv.setTokenSubject(new UserSubject(response.getUsername()));
         }
+        atv.getExtraProps().putAll(response.getExtensions());
+
         return atv;
     }
 
     public void setTokenValidatorClient(WebClient tokenValidatorClient) {
         this.tokenValidatorClient = tokenValidatorClient;
     }
-    
+
 
 }

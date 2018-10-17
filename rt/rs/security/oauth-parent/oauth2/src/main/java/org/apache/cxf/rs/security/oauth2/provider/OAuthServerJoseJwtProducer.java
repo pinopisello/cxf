@@ -19,7 +19,6 @@
 package org.apache.cxf.rs.security.oauth2.provider;
 
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 
 import org.apache.cxf.rs.security.jose.jwa.ContentAlgorithm;
 import org.apache.cxf.rs.security.jose.jwa.KeyAlgorithm;
@@ -32,30 +31,30 @@ import org.apache.cxf.rt.security.crypto.CryptoUtils;
 
 public class OAuthServerJoseJwtProducer extends OAuthJoseJwtProducer {
     private boolean encryptWithClientCertificates;
-   
+
     public String processJwt(JwtToken jwt, Client client) {
-        return processJwt(jwt, 
+        return processJwt(jwt,
                          getInitializedEncryptionProvider(client),
                          getInitializedSignatureProvider(client));
     }
-    
+
     protected JweEncryptionProvider getInitializedEncryptionProvider(Client c) {
         JweEncryptionProvider theEncryptionProvider = null;
         if (encryptWithClientCertificates && c != null && !c.getApplicationCertificates().isEmpty()) {
-            X509Certificate cert = 
+            X509Certificate cert =
                 (X509Certificate)CryptoUtils.decodeCertificate(c.getApplicationCertificates().get(0));
-            theEncryptionProvider = JweUtils.createJweEncryptionProvider((RSAPublicKey)cert.getPublicKey(), 
-                                                                         KeyAlgorithm.RSA_OAEP, 
-                                                                         ContentAlgorithm.A128GCM, 
+            theEncryptionProvider = JweUtils.createJweEncryptionProvider(cert.getPublicKey(),
+                                                                         KeyAlgorithm.RSA_OAEP,
+                                                                         ContentAlgorithm.A128GCM,
                                                                          null);
         }
         if (theEncryptionProvider == null && c != null && c.getClientSecret() != null) {
             theEncryptionProvider = super.getInitializedEncryptionProvider(c.getClientSecret());
         }
         return theEncryptionProvider;
-        
+
     }
-    
+
     protected JwsSignatureProvider getInitializedSignatureProvider(Client c) {
         if (c == null) {
             return null;
@@ -69,5 +68,5 @@ public class OAuthServerJoseJwtProducer extends OAuthJoseJwtProducer {
         }
         this.encryptWithClientCertificates = encryptWithClientCertificates;
     }
-    
+
 }

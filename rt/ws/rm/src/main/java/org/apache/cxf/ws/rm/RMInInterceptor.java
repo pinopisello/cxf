@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.cxf.common.logging.LogUtils;
+import org.apache.cxf.common.util.PropertyUtils;
 import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.Message;
@@ -37,22 +38,22 @@ import org.apache.cxf.ws.rm.v200702.SequenceType;
 import org.apache.cxf.ws.security.trust.STSUtils;
 
 /**
- * 
+ *
  */
 public class RMInInterceptor extends AbstractRMInterceptor<Message> {
-    
+
     private static final Logger LOG = LogUtils.getL7dLogger(RMInInterceptor.class);
-  
+
     public RMInInterceptor() {
- 
+
         addBefore(MAPAggregator.class.getName());
     }
-   
+
     @Override
     public void handleFault(Message message) {
         message.put(MAPAggregator.class.getName(), true);
         if (RMContextUtils.getProtocolVariation(message) != null) {
-            if (MessageUtils.isTrue(message.get(RMMessageConstants.DELIVERING_ROBUST_ONEWAY))) {
+            if (PropertyUtils.isTrue(message.get(RMMessageConstants.DELIVERING_ROBUST_ONEWAY))) {
                 // revert the delivering entry from the destination sequence
                 try {
                     Destination destination = getManager().getDestination(message);
@@ -65,12 +66,12 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
             } else if (isRedeliveryEnabled(message) && RMContextUtils.isServerSide(message)
                        && isApplicationMessage(message) && hasValidSequence(message)) {
                 getManager().getRedeliveryQueue().addUndelivered(message);
-            } 
+            }
         }
         // make sure the fault is returned for an ws-rm related fault or an invalid ws-rm message
         // note that OneWayProcessingInterceptor handles the robust case, hence not handled here.
         if (isProtocolFault(message)
-            && !MessageUtils.isTrue(message.get(RMMessageConstants.DELIVERING_ROBUST_ONEWAY))) {
+            && !PropertyUtils.isTrue(message.get(RMMessageConstants.DELIVERING_ROBUST_ONEWAY))) {
             Exchange exchange = message.getExchange();
             exchange.setOneWay(false);
 
@@ -105,7 +106,7 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
         }
         return false;
     }
-    
+
     private static boolean isApplicationMessage(Message message) {
         final AddressingProperties maps = RMContextUtils.retrieveMAPs(message, false, false);
         if (null != maps && null != maps.getAction()) {
@@ -116,22 +117,22 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
 
     private boolean isRedeliveryEnabled(Message message) {
         // deprecated redelivery mode check
-        if (MessageUtils.isTrue(message.getContextualProperty("org.apache.cxf.ws.rm.destination.redeliver"))) {
+        if (MessageUtils.getContextualBoolean(message, "org.apache.cxf.ws.rm.destination.redeliver", false)) {
             LOG.warning("Use RetryPolicy to enable the redelivery mode");
             return true;
         }
-        return getManager().getDestinationPolicy() != null 
-            && getManager().getDestinationPolicy().getRetryPolicy() != null; 
+        return getManager().getDestinationPolicy() != null
+            && getManager().getDestinationPolicy().getRetryPolicy() != null;
     }
 
     protected void handle(Message message) throws SequenceFault, RMException {
         LOG.entering(getClass().getName(), "handleMessage");
-        
+
         boolean isServer = RMContextUtils.isServerSide(message);
         LOG.fine("isServerSide: " + isServer);
 
         RMProperties rmps = RMContextUtils.retrieveRMProperties(message, false);
-        // message addressing properties may be null, e.g. in case of a runtime fault 
+        // message addressing properties may be null, e.g. in case of a runtime fault
         // on the server side
         final AddressingProperties maps = ContextUtils.retrieveMAPs(message, false, false, false);
         if (null == maps) {
@@ -140,10 +141,9 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
                 org.apache.cxf.common.i18n.Message msg = new org.apache.cxf.common.i18n.Message(
                     "WSA_REQUIRED_EXC", LOG);
                 LOG.log(Level.INFO, msg.toString());
-                throw new RMException(msg);                
-            } else {
-                return;
+                throw new RMException(msg);
             }
+            return;
         }
 
         String action = null;
@@ -154,20 +154,20 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine("Action: " + action);
         }
-        
+
         // RM does not apply to WS-Trust messages, as used by WS-SecureConversation
         if (action != null && action.contains("/RST/SCT")
             && (action.startsWith(STSUtils.WST_NS_05_02) || action.startsWith(STSUtils.WST_NS_05_12))) {
             return;
         }
-        
+
         Object originalRequestor = message.get(RMMessageConstants.ORIGINAL_REQUESTOR_ROLE);
         if (null != originalRequestor) {
             LOG.fine("Restoring original requestor role to: " + originalRequestor);
             message.put(Message.REQUESTOR_ROLE, originalRequestor);
         }
 
-        // get the wsa and wsrm namespaces from the message 
+        // get the wsa and wsrm namespaces from the message
         String rmUri = rmps.getNamespaceURI();
         String addrUri = maps.getNamespaceURI();
 
@@ -179,16 +179,17 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
             throw new RMException(msg);
         }
         RMContextUtils.setProtocolVariation(message, protocol);
-        
+
         boolean isApplicationMessage = !RMContextUtils.isRMProtocolMessage(action);
         LOG.fine("isApplicationMessage: " + isApplicationMessage);
-        
+
         // for application AND out of band messages
-        
+
         RMEndpoint rme = getManager().getReliableEndpoint(message);
         Destination destination = getManager().getDestination(message);
-        
-        if (isApplicationMessage) {                        
+
+        assertReliability(message);
+        if (isApplicationMessage) {
             if (null != rmps) {
                 processAcknowledgments(rme, rmps, protocol);
                 processAcknowledgmentRequests(destination, message);
@@ -207,7 +208,7 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
             CachedOutputStream cos = (CachedOutputStream)message.get(RMMessageConstants.SAVED_CONTENT);
             if (null != cos) {
                 cos.releaseTempFileHold();
-            }           
+            }
             rme.receivedControlMessage();
             if (RM10Constants.SEQUENCE_ACKNOWLEDGMENT_ACTION.equals(action)
                 || RM11Constants.SEQUENCE_ACKNOWLEDGMENT_ACTION.equals(action)) {
@@ -225,19 +226,17 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
                 return;
             }
         }
-        
-        assertReliability(message);
     }
-    
-    void processAcknowledgments(RMEndpoint rme, RMProperties rmps, ProtocolVariation protocol) 
+
+    void processAcknowledgments(RMEndpoint rme, RMProperties rmps, ProtocolVariation protocol)
         throws SequenceFault, RMException {
-        
+
         Collection<SequenceAcknowledgement> acks = rmps.getAcks();
         Source source = rme.getSource();
         if (null != acks) {
             for (SequenceAcknowledgement ack : acks) {
                 Identifier id = ack.getIdentifier();
-                SourceSequence ss = source.getSequence(id);                
+                SourceSequence ss = source.getSequence(id);
                 if (null != ss) {
                     ss.setAcknowledged(ack);
                 } else {
@@ -249,23 +248,23 @@ public class RMInInterceptor extends AbstractRMInterceptor<Message> {
         }
     }
 
-    void processAcknowledgmentRequests(Destination destination, Message message) 
+    void processAcknowledgmentRequests(Destination destination, Message message)
         throws SequenceFault, RMException {
-        destination.ackRequested(message); 
+        destination.ackRequested(message);
     }
-    
-    void processSequence(Destination destination, Message message) 
+
+    void processSequence(Destination destination, Message message)
         throws SequenceFault, RMException {
         final boolean robust =
-            MessageUtils.isTrue(message.getContextualProperty(Message.ROBUST_ONEWAY));
+            MessageUtils.getContextualBoolean(message, Message.ROBUST_ONEWAY, false);
         if (robust) {
             // set this property to change the acknowledging behavior
             message.put(RMMessageConstants.DELIVERING_ROBUST_ONEWAY, Boolean.TRUE);
         }
         destination.acknowledge(message);
     }
-    
+
     void processDeliveryAssurance(RMProperties rmps) {
-        
+
     }
 }

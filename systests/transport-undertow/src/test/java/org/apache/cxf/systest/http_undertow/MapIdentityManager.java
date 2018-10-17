@@ -36,7 +36,7 @@ import io.undertow.security.idm.PasswordCredential;
 import io.undertow.util.HexConverter;
 
 class MapIdentityManager implements IdentityManager {
-    
+
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
     private final Map<String, char[]> users;
@@ -63,7 +63,6 @@ class MapIdentityManager implements IdentityManager {
 
     @Override
     public Account verify(Credential credential) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -100,6 +99,7 @@ class MapIdentityManager implements IdentityManager {
         if (users.containsKey(id)) {
             return new Account() {
 
+                private static final long serialVersionUID = 1L;
                 private final Principal principal = new Principal() {
 
                     @Override

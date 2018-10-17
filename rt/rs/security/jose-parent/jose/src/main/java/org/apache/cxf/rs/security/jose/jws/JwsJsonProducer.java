@@ -38,6 +38,7 @@ import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 public class JwsJsonProducer {
     protected static final Logger LOG = LogUtils.getL7dLogger(JwsJsonProducer.class);
     private boolean supportFlattened;
+    private boolean supportDetached;
     private String plainPayload;
     private String encodedPayload;
     private List<JwsJsonSignatureEntry> signatures = new LinkedList<JwsJsonSignatureEntry>();
@@ -46,27 +47,36 @@ public class JwsJsonProducer {
         this(tbsDocument, false);
     }
     public JwsJsonProducer(String tbsDocument, boolean supportFlattened) {
-        this.supportFlattened = supportFlattened;
-        this.plainPayload = tbsDocument;
+        this(tbsDocument, supportFlattened, false);
     }
     
+    public JwsJsonProducer(String tbsDocument, boolean supportFlattened, boolean supportDetached) {
+        this.plainPayload = tbsDocument;
+        this.supportFlattened = supportFlattened;
+        this.supportDetached = supportDetached;
+    }
+
     public String getPlainPayload() {
         return plainPayload;
     }
     public String getUnsignedEncodedPayload() {
-        if (encodedPayload == null) { 
+        if (encodedPayload == null) {
             encodedPayload = Base64UrlUtility.encode(getPlainPayload());
         }
         return encodedPayload;
     }
     public String getJwsJsonSignedDocument() {
-        return getJwsJsonSignedDocument(false);
+        return doGetJwsJsonSignedDocument(supportDetached);
     }
+    @Deprecated
     public String getJwsJsonSignedDocument(boolean detached) {
-        if (signatures.isEmpty()) { 
+        return doGetJwsJsonSignedDocument(detached);
+    }
+    private String doGetJwsJsonSignedDocument(boolean detached) {    
+        if (signatures.isEmpty()) {
             return null;
         }
-        
+
         Boolean b64Status = validateB64Status(signatures);
         StringBuilder sb = new StringBuilder();
         sb.append("{");
@@ -93,19 +103,19 @@ public class JwsJsonProducer {
     public List<JwsJsonSignatureEntry> getSignatureEntries() {
         return signatures;
     }
-    
+
     public String signWith(List<JwsSignatureProvider> signers) {
         for (JwsSignatureProvider signer : signers) {
-            signWith(signer);    
+            signWith(signer);
         }
-        return getJwsJsonSignedDocument(); 
+        return getJwsJsonSignedDocument();
     }
     public String signWith(JwsSignatureProvider signer) {
         JwsHeaders headers = new JwsHeaders();
         headers.setSignatureAlgorithm(signer.getAlgorithm());
         return signWith(signer, headers);
     }
-    public String signWith(JwsSignatureProvider signer, 
+    public String signWith(JwsSignatureProvider signer,
                            JwsHeaders protectedHeader) {
         return signWith(signer, protectedHeader, null);
     }
@@ -122,15 +132,15 @@ public class JwsJsonProducer {
                            JwsHeaders protectedHeader,
                            JwsHeaders unprotectedHeader) {
         JwsHeaders unionHeaders = new JwsHeaders();
-         
+
         if (protectedHeader != null) {
             unionHeaders.asMap().putAll(protectedHeader.asMap());
         }
         if (unprotectedHeader != null) {
-            checkUnprotectedHeaders(unprotectedHeader, 
+            checkUnprotectedHeaders(unprotectedHeader,
                                     JoseConstants.HEADER_CRITICAL,
                                     JoseConstants.JWS_HEADER_B64_STATUS_HEADER);
-            if (!Collections.disjoint(unionHeaders.asMap().keySet(), 
+            if (!Collections.disjoint(unionHeaders.asMap().keySet(),
                                      unprotectedHeader.asMap().keySet())) {
                 LOG.warning("Protected and unprotected headers have duplicate values");
                 throw new JwsException(JwsException.Error.INVALID_JSON_JWS);
@@ -142,8 +152,8 @@ public class JwsJsonProducer {
             throw new JwsException(JwsException.Error.INVALID_JSON_JWS);
         }
         String sequenceToBeSigned;
-        String actualPayload = protectedHeader != null 
-            ? getActualPayload(protectedHeader.getPayloadEncodingStatus()) 
+        String actualPayload = protectedHeader != null
+            ? getActualPayload(protectedHeader.getPayloadEncodingStatus())
             : getUnsignedEncodedPayload();
         if (protectedHeader != null) {
             sequenceToBeSigned = Base64UrlUtility.encode(writer.toJson(protectedHeader))
@@ -152,9 +162,9 @@ public class JwsJsonProducer {
             sequenceToBeSigned = "." + getUnsignedEncodedPayload();
         }
         byte[] bytesToBeSigned = StringUtils.toBytesUTF8(sequenceToBeSigned);
-        
+
         byte[] signatureBytes = signer.sign(unionHeaders, bytesToBeSigned);
-        
+
         String encodedSignatureBytes = Base64UrlUtility.encode(signatureBytes);
         JwsJsonSignatureEntry signature;
         if (protectedHeader != null) {
@@ -171,7 +181,7 @@ public class JwsJsonProducer {
         return updateJwsJsonSignedDocument(signature);
     }
     private String getActualPayload(Boolean payloadEncodingStatus) {
-        return Boolean.FALSE == payloadEncodingStatus 
+        return Boolean.FALSE == payloadEncodingStatus
             ? getPlainPayload() : this.getUnsignedEncodedPayload();
     }
     private String updateJwsJsonSignedDocument(JwsJsonSignatureEntry signature) {
@@ -181,7 +191,7 @@ public class JwsJsonProducer {
     private static void checkUnprotectedHeaders(JoseHeaders unprotected, String... headerNames) {
         for (String headerName : headerNames) {
             if (unprotected.containsHeader(headerName)) {
-                LOG.warning("Unprotected headers contain a header \"" 
+                LOG.warning("Unprotected headers contain a header \""
                     + headerName + "\" which must be protected");
                 throw new JwsException(JwsException.Error.INVALID_JSON_JWS);
             }

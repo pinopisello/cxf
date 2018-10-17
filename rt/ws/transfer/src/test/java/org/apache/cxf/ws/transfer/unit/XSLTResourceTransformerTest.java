@@ -20,33 +20,37 @@
 package org.apache.cxf.ws.transfer.unit;
 
 import java.io.InputStream;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.stream.StreamSource;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
 import org.apache.cxf.staxutils.StaxUtils;
 import org.apache.cxf.ws.transfer.Representation;
 import org.apache.cxf.ws.transfer.validationtransformation.ResourceTransformer;
 import org.apache.cxf.ws.transfer.validationtransformation.XSLTResourceTransformer;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 public class XSLTResourceTransformerTest {
-    
+
     private Representation loadRepresentation(InputStream input) throws XMLStreamException {
         Document doc = StaxUtils.read(input);
         Representation representation = new Representation();
         representation.setAny(doc.getDocumentElement());
         return representation;
     }
-    
+
     @Test
     public void transformTest() throws XMLStreamException {
         ResourceTransformer transformer = new XSLTResourceTransformer(new StreamSource(
                 getClass().getResourceAsStream("/xml/xsltresourcetransformer/stylesheet.xsl")));
         Representation representation = loadRepresentation(
                 getClass().getResourceAsStream("/xml/xsltresourcetransformer/representation.xml"));
-        
+
         transformer.transform(representation, null);
 
         Element representationEl = (Element) representation.getAny();

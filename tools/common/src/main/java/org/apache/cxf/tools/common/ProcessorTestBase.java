@@ -45,8 +45,10 @@ import javax.xml.namespace.QName;
 
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.FileUtils;
+import org.apache.cxf.helpers.JavaUtils;
 import org.apache.cxf.tools.util.ToolsStaxUtils;
 import org.apache.ws.commons.schema.constants.Constants;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -76,24 +78,24 @@ public class ProcessorTestBase extends Assert {
 
     protected File output;
     protected ToolContext env = new ToolContext();
-    protected Map<QName, Set<String>> qnameAtts = new HashMap<QName, Set<String>>();
-    
+    protected Map<QName, Set<String>> qnameAtts = new HashMap<>();
+
     public ProcessorTestBase() {
         addQNameAttribute(new QName(Constants.URI_2001_SCHEMA_XSD, "element"), "type");
     }
-    
+
     protected final void addQNameAttribute(QName element, String local) {
         Set<String> a = qnameAtts.get(element);
         if (a == null) {
-            qnameAtts.put(element, new HashSet<String>());
+            qnameAtts.put(element, new HashSet<>());
             a = qnameAtts.get(element);
         }
         a.add(local);
     }
-    
+
     @Before
     public void setUp() throws Exception {
-        if (System.getProperty("java.version").startsWith("9")) {
+        if (JavaUtils.isJava9Compatible()) {
             System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
         }
     }
@@ -102,7 +104,7 @@ public class ProcessorTestBase extends Assert {
     public void tearDown() {
         env = null;
     }
-    
+
 
     protected boolean isMOXy() {
         try {
@@ -135,7 +137,7 @@ public class ProcessorTestBase extends Assert {
                                 int idx = fileName.indexOf(' ');
                                 if (idx != -1) {
                                     fileName = fileName.substring(0, idx);
-                                    cp =  cp.substring(idx + 1).trim();
+                                    cp = cp.substring(idx + 1).trim();
                                 } else {
                                     cp = null;
                                 }
@@ -179,7 +181,7 @@ public class ProcessorTestBase extends Assert {
         // So, when we encounter a mismatch, put the unmatched token in a
         // list and check this list when matching subsequent tokens.
         // It would be much better to do a proper xml comparison.
-        List<String> unmatched = new ArrayList<String>();
+        List<String> unmatched = new ArrayList<>();
         while (st1.hasMoreTokens()) {
             String tok1 = st1.nextToken();
             String tok2 = null;
@@ -192,9 +194,8 @@ public class ProcessorTestBase extends Assert {
 
                 if (tok1.equals(tok2)) {
                     break;
-                } else {
-                    unmatched.add(tok2);
                 }
+                unmatched.add(tok2);
             }
             assertEquals("Compare failed " + location1.getAbsolutePath()
                          + " != " + location2.getAbsolutePath(), tok1, tok2);

@@ -19,8 +19,10 @@
 
 package org.apache.cxf.tools.java2wsdl;
 
+import org.apache.cxf.tools.common.CommandInterfaceUtils;
 import org.apache.cxf.tools.common.ToolTestBase;
 import org.apache.cxf.tools.java2ws.JavaToWS;
+
 import org.junit.After;
 import org.junit.Test;
 
@@ -34,14 +36,28 @@ public class JavaToWSFlagTest extends ToolTestBase {
     @Test
     public void testVersionOutput() throws Exception {
         String[] args = new String[] {"-v"};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertNotNull(getStdOut());
     }
 
     @Test
     public void testHelpOutput() {
         String[] args = new String[] {"-help"};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertNotNull(getStdOut());
     }
 
@@ -51,14 +67,28 @@ public class JavaToWSFlagTest extends ToolTestBase {
         String[] args = new String[] {"-o",
                                       getLocation("normal.wsdl"),
                                       "org.apache.hello_world_soap_http.Greeter"};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertNotNull(getStdOut());
     }
 
     @Test
     public void testBadUsage() {
         String[] args = new String[] {"-ttt", "a.ww"};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertNotNull(getStdOut());
 
     }
@@ -66,9 +96,15 @@ public class JavaToWSFlagTest extends ToolTestBase {
     @Test
     public void testValidArgs() {
         String[] args = new String[] {"a.ww"};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertNotNull(getStdOut());
-
     }
 
     @Test
@@ -76,14 +112,28 @@ public class JavaToWSFlagTest extends ToolTestBase {
         String[] args = new String[] {"-o",
                                       getLocation("nooutput.wsdl"),
                                       "org.apache.hello_world_soap_http.Greeter"};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertNotNull(getStdOut());
     }
 
     @Test
     public void testNoArg() {
         String[] args = new String[] {};
-        JavaToWS.main(args);
+        CommandInterfaceUtils.commandCommonMain();
+        JavaToWS j2w = new JavaToWS(args);
+        try {
+            j2w.run();
+        } catch (Throwable ex) {
+            System.err.println("JavaToWS Error: " + ex.toString());
+            System.err.println();
+        }
         assertEquals(-1, getStdOut().indexOf("Caused by:"));
     }
 }

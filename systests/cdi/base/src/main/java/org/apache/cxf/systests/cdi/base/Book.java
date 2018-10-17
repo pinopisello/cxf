@@ -19,7 +19,9 @@
 package org.apache.cxf.systests.cdi.base;
 
 import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlRootElement;
 
+@XmlRootElement
 public class Book {
     @NotNull private String name;
     private String id;

@@ -19,6 +19,8 @@
 
 package org.apache.cxf.jaxrs.provider;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,22 +30,28 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 
+import org.apache.cxf.common.util.SystemPropertyAction;
 import org.apache.cxf.jaxrs.model.ProviderInfo;
 
 public class ProviderCache {
-    private static final int MAX_PROVIDER_CACHE_SIZE = 
-        Integer.getInteger("org.apache.cxf.jaxrs.max_provider_cache_size", 100);
+    private static final int MAX_PROVIDER_CACHE_SIZE =
+        AccessController.doPrivileged(new PrivilegedAction<Integer>() {
+            @Override
+            public Integer run() {
+                return SystemPropertyAction.getInteger("org.apache.cxf.jaxrs.max_provider_cache_size", 100);
+            } }).intValue();
+
     private final Map<String, List<ProviderInfo<MessageBodyReader<?>>>>
         readerProviderCache = new ConcurrentHashMap<String, List<ProviderInfo<MessageBodyReader<?>>>>();
 
     private final Map<String, List<ProviderInfo<MessageBodyWriter<?>>>>
         writerProviderCache = new ConcurrentHashMap<String, List<ProviderInfo<MessageBodyWriter<?>>>>();
-    
+
     private boolean checkAllCandidates;
     public ProviderCache(boolean checkAllCandidates) {
         this.checkAllCandidates = checkAllCandidates;
     }
-    
+
     public List<ProviderInfo<MessageBodyReader<?>>> getReaders(Class<?> type, MediaType mt) {
         if (readerProviderCache.isEmpty()) {
             return Collections.emptyList();
@@ -57,7 +65,7 @@ public class ProviderCache {
         if (writerProviderCache.isEmpty()) {
             return Collections.emptyList();
         }
-        
+
         String key = getKey(type, mt);
 
         List<ProviderInfo<MessageBodyWriter<?>>> list = writerProviderCache.get(key);
@@ -69,9 +77,9 @@ public class ProviderCache {
             return;
         }
         checkCacheSize(readerProviderCache);
-        
+
         String key = getKey(type, mt);
-        readerProviderCache.put(key, candidates);       
+        readerProviderCache.put(key, candidates);
     }
 
     public void putWriters(Class<?> type, MediaType mt, List<ProviderInfo<MessageBodyWriter<?>>> candidates) {
@@ -79,9 +87,9 @@ public class ProviderCache {
             return;
         }
         checkCacheSize(writerProviderCache);
-        
+
         String key = getKey(type, mt);
-        writerProviderCache.put(key, candidates);       
+        writerProviderCache.put(key, candidates);
     }
 
     public void destroy() {

@@ -19,14 +19,17 @@
 package org.apache.cxf.ws.transfer.dialect.fragment.language;
 
 import java.util.Iterator;
+
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathException;
 import javax.xml.xpath.XPathFactory;
+
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.ws.transfer.Representation;
 import org.apache.cxf.ws.transfer.dialect.fragment.ExpressionType;
@@ -51,9 +54,8 @@ public class FragmentDialectLanguageXPath10 implements FragmentDialectLanguage {
                 if (prefix != null && !prefix.isEmpty()) {
                     Element resource = (Element) representation.getAny();
                     return resource.getAttribute("xmlns:" + prefix);
-                } else {
-                    return null;
                 }
+                return null;
             }
 
             @Override
@@ -75,38 +77,35 @@ public class FragmentDialectLanguageXPath10 implements FragmentDialectLanguage {
                 expressionStr, resource, XPathConstants.NODESET);
             if (checkResultConstraints(result)) {
                 if (result.getLength() == 0) {
-                    return  null;
-                } else {
-                    return result;
+                    return null;
                 }
-            } else {
-                return result.item(0);
+                return result;
             }
+            return result.item(0);
         } catch (XPathException ex) {
             // See https://www.java.net/node/681793
         }
 
         try {
-            return (String) xPath.evaluate(
+            return xPath.evaluate(
                 expressionStr, representation.getAny(), XPathConstants.STRING);
         } catch (XPathException ex) {
             throw new InvalidExpression();
         }
     }
-    
+
     /**
      * Get XPath from the Expression element.
      * @param expression
-     * @return 
+     * @return
      */
     private String getXPathFromExpression(ExpressionType expression) {
         if (expression.getContent().size() == 1) {
             return (String) expression.getContent().get(0);
-        } else {
-            throw new InvalidExpression();
         }
+        throw new InvalidExpression();
     }
-    
+
     /**
      * Check if result from evaluation of XPath expression fullfils constraints
      * defined in the specification.
@@ -147,12 +146,12 @@ public class FragmentDialectLanguageXPath10 implements FragmentDialectLanguage {
         }
         return true;
     }
-    
+
     /**
      * Helper method for equation two strings, which can be nullable.
      * @param str1
      * @param str2
-     * @return 
+     * @return
      */
     private boolean stringEquals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);

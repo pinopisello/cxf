@@ -32,7 +32,6 @@ import org.apache.aries.blueprint.mutable.MutableBeanMetadata;
 import org.apache.cxf.bus.blueprint.BusDefinitionParser;
 import org.apache.cxf.configuration.blueprint.SimpleBPBeanDefinitionParser;
 import org.apache.cxf.feature.FastInfosetFeature;
-import org.apache.cxf.feature.LoggingFeature;
 import org.apache.cxf.workqueue.AutomaticWorkQueueImpl;
 import org.osgi.service.blueprint.reflect.ComponentMetadata;
 import org.osgi.service.blueprint.reflect.Metadata;
@@ -44,8 +43,8 @@ import org.osgi.service.blueprint.reflect.Metadata;
              "http://schemas.xmlsoap.org/wsdl/",
              "http://www.w3.org/2005/08/addressing",
              "http://schemas.xmlsoap.org/ws/2004/08/addressing"})
-public class CXFAPINamespaceHandler implements NamespaceHandler {    
-    
+public class CXFAPINamespaceHandler implements NamespaceHandler {
+
     public URL getSchemaLocation(String namespace) {
         String location = null;
 
@@ -55,7 +54,7 @@ public class CXFAPINamespaceHandler implements NamespaceHandler {
 
         if ("http://cxf.apache.org/configuration/beans".equals(namespace)
                 || "http://cxf.apache.org/schemas/configuration/cxf-beans.xsd".equals(namespace)) {
-            location = "schemas/configuration/cxf-beans.xsd";           
+            location = "schemas/configuration/cxf-beans.xsd";
         } else if ("http://cxf.apache.org/configuration/parameterized-types".equals(namespace)
                 || "http://cxf.apache.org/schemas/configuration/parameterized-types.xsd".equals(namespace)) {
             location = "schemas/configuration/parameterized-types.xsd";
@@ -80,6 +79,7 @@ public class CXFAPINamespaceHandler implements NamespaceHandler {
     }
 
 
+    @SuppressWarnings("deprecation")
     public Metadata parse(Element element, ParserContext context) {
         String s = element.getLocalName();
         if ("bus".equals(s)) {
@@ -87,7 +87,8 @@ public class CXFAPINamespaceHandler implements NamespaceHandler {
             return new BusDefinitionParser().parse(element, context);
         } else if ("logging".equals(s)) {
             //logging feature
-            return new SimpleBPBeanDefinitionParser(LoggingFeature.class).parse(element, context);
+            return new SimpleBPBeanDefinitionParser(org.apache.cxf.feature.LoggingFeature.class)
+                .parse(element, context);
         } else if ("fastinfoset".equals(s)) {
             //fastinfosetfeature
             return new SimpleBPBeanDefinitionParser(FastInfosetFeature.class).parse(element, context);
@@ -96,7 +97,7 @@ public class CXFAPINamespaceHandler implements NamespaceHandler {
                 public String getId(Element element, ParserContext context) {
                     String id = element.hasAttribute("id") ? element.getAttribute("id") : null;
                     if (id == null) {
-                        id = "cxf.workqueue."; 
+                        id = "cxf.workqueue.";
                         id += element.hasAttribute("name") ? element.getAttribute("name") : "def";
                     }
                     return id;
@@ -119,5 +120,5 @@ public class CXFAPINamespaceHandler implements NamespaceHandler {
     public ComponentMetadata decorate(Node node, ComponentMetadata component, ParserContext context) {
         return null;
     }
-    
+
 }

@@ -19,47 +19,105 @@
 package org.apache.cxf.jaxrs.sse;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.ws.rs.sse.OutboundSseEvent;
 import javax.ws.rs.sse.SseBroadcaster;
-import javax.ws.rs.sse.SseEventOutput;
+import javax.ws.rs.sse.SseEventSink;
 
-public class SseBroadcasterImpl implements SseBroadcaster {
-    private final Set<SseEventOutput> outputs = new CopyOnWriteArraySet<>();
-    private final Set<Listener> listeners = new CopyOnWriteArraySet<>();
-            
+public final class SseBroadcasterImpl implements SseBroadcaster {
+    private final Set<SseEventSink> subscribers = new CopyOnWriteArraySet<>();
+    private final Set<Consumer<SseEventSink>> closers = new CopyOnWriteArraySet<>();
+    private final Set<BiConsumer<SseEventSink, Throwable>> exceptioners = new CopyOnWriteArraySet<>();
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
     @Override
-    public boolean register(Listener listener) {
-        return listeners.add(listener);
+    public void register(SseEventSink sink) {
+        assertNotClosed();
+
+        final SseEventSinkImpl sinkImpl = (SseEventSinkImpl)sink;
+        final AsyncContext ctx = sinkImpl.getAsyncContext();
+
+        ctx.addListener(new AsyncListener() {
+            @Override
+            public void onComplete(AsyncEvent asyncEvent) throws IOException {
+                subscribers.remove(sink);
+                // The SseEventSinkImpl completes the asynchronous operation on close() method call.
+                closers.forEach(closer -> closer.accept(sink));
+            }
+
+            @Override
+            public void onTimeout(AsyncEvent asyncEvent) throws IOException {
+                subscribers.remove(sink);
+            }
+
+            @Override
+            public void onError(AsyncEvent asyncEvent) throws IOException {
+                subscribers.remove(sink);
+                // Propagate the error from SseEventSinkImpl asynchronous context
+                exceptioners.forEach(exceptioner -> exceptioner.accept(sink, asyncEvent.getThrowable()));
+            }
+
+            @Override
+            public void onStartAsync(AsyncEvent asyncEvent) throws IOException {
+
+            }
+        });
+
+        subscribers.add(sink);
     }
 
     @Override
-    public boolean register(SseEventOutput output) {
-        return outputs.add(output);
-    }
+    public CompletionStage<?> broadcast(OutboundSseEvent event) {
+        assertNotClosed();
 
-    @Override
-    public void broadcast(OutboundSseEvent event) {
-        for (final SseEventOutput output: outputs) {
+        final Collection<CompletableFuture<?>> futures = new ArrayList<>();
+        for (SseEventSink sink: subscribers) {
             try {
-                output.write(event);
-            } catch (final IOException ex) {
-                listeners.forEach(listener -> listener.onException(output, ex));
+                futures.add(sink.send(event).toCompletableFuture());
+            } catch (final Exception ex) {
+                exceptioners.forEach(exceptioner -> exceptioner.accept(sink, ex));
             }
         }
+        
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    @Override
+    public void onClose(Consumer<SseEventSink> subscriber) {
+        assertNotClosed();
+        closers.add(subscriber);
+    }
+
+    @Override
+    public void onError(BiConsumer<SseEventSink, Throwable> exceptioner) {
+        assertNotClosed();
+        exceptioners.add(exceptioner);
     }
 
     @Override
     public void close() {
-        for (final SseEventOutput output: outputs) {
-            try {
-                output.close();
-                listeners.forEach(listener -> listener.onClose(output));
-            } catch (final IOException ex) {
-                listeners.forEach(listener -> listener.onException(output, ex));
-            }
+        if (closed.compareAndSet(false, true)) {
+            subscribers.forEach(subscriber -> {
+                subscriber.close();
+            });
+        }
+    }
+
+    private void assertNotClosed() {
+        if (closed.get()) {
+            throw new IllegalStateException("The SSE broadcaster is already closed");
         }
     }
 }

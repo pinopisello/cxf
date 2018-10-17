@@ -48,9 +48,8 @@ public class HTTPJettyTransportNamespaceHandler extends BaseNamespaceHandler {
         if (JETTY_TRANSPORT.equals(s)) {
             return getClass().getClassLoader().
                 getResource("schemas/configuration/http-jetty.xsd");
-        } else {
-            return super.findCoreSchemaLocation(s);
         }
+        return super.findCoreSchemaLocation(s);
     }
 
     @SuppressWarnings("rawtypes")
@@ -74,8 +73,8 @@ public class HTTPJettyTransportNamespaceHandler extends BaseNamespaceHandler {
         return null;
     }
 
-    public ComponentMetadata decorate(Node node, 
-                                      ComponentMetadata componentMetadata, 
+    public ComponentMetadata decorate(Node node,
+                                      ComponentMetadata componentMetadata,
                                       ParserContext parserContext) {
         LOG.info("Decorating node " + node + " " + componentMetadata);
         return componentMetadata;

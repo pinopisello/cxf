@@ -28,6 +28,7 @@ import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.soap.SOAPPart;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.dom.DOMSource;
@@ -40,6 +41,7 @@ import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.ExchangeImpl;
 import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.staxutils.StaxUtils;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -61,11 +63,11 @@ public class ParseBodyTest extends Assert {
         //System.out.println("Original[" + n + "]: " + data);
 
         xmlReader = StaxUtils.createXMLStreamReader(new ByteArrayInputStream(data.getBytes("utf-8")));
-        
-        //reader should be on the start element for the 
-        assertEquals(XMLStreamReader.START_ELEMENT, xmlReader.next());
+
+        //reader should be on the start element for the
+        assertEquals(XMLStreamConstants.START_ELEMENT, xmlReader.next());
         assertEquals("Body", xmlReader.getLocalName());
-        
+
         factory = MessageFactory.newInstance();
         soapMessage = factory.createMessage();
     }
@@ -84,16 +86,16 @@ public class ParseBodyTest extends Assert {
     public void testUsingStaxUtilsCopyWithSAAJWriterData2() throws Exception {
         testUsingStaxUtilsCopyWithSAAJWriter(2);
     }
-    
+
     @Test
     public void testReadSOAPFault() throws Exception {
         InputStream inStream = getClass().getResourceAsStream("soap12-fault.xml");
         Document doc = StaxUtils.read(inStream);
-        
+
         SoapMessage msg = new SoapMessage(new MessageImpl());
         Exchange ex = new ExchangeImpl();
         ex.setInMessage(msg);
-        
+
         SOAPMessage saajMsg = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL).createMessage();
         SOAPPart part = saajMsg.getSOAPPart();
         SAAJStreamWriter writer = new SAAJStreamWriter(part);
@@ -101,14 +103,14 @@ public class ParseBodyTest extends Assert {
         //Source s = new StaxSource(StaxUtils.createXMLStreamReader(doc));
         //part.setContent(s);
         saajMsg.saveChanges();
-        
+
         msg.setContent(SOAPMessage.class, saajMsg);
         doc = part;
-        
+
         // System.out.println("OUTPUT: " + StaxUtils.toString(doc));
-        
+
         byte[] docbytes = getMessageBytes(doc);
-        
+
         // System.out.println("OUTPUT: " + new String(docbytes));
         XMLStreamReader reader = StaxUtils.createXMLStreamReader(new ByteArrayInputStream(docbytes));
 
@@ -139,7 +141,7 @@ public class ParseBodyTest extends Assert {
         //System.out.println("UsingStaxUtilsCopyWithSAAJWriter: " + result);
         assertEquals(DATA[n], result);
     }
-    
+
     private byte[] getMessageBytes(Document doc) throws Exception {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 

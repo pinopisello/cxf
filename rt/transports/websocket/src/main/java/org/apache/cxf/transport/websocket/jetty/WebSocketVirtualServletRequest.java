@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -54,9 +55,10 @@ import javax.servlet.http.Part;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.transport.websocket.InvalidPathException;
 import org.apache.cxf.transport.websocket.WebSocketUtils;
+import org.eclipse.jetty.websocket.api.Session;
 
 /**
- * 
+ *
  */
 public class WebSocketVirtualServletRequest implements HttpServletRequest {
     private static final Logger LOG = LogUtils.getL7dLogger(WebSocketVirtualServletRequest.class);
@@ -65,13 +67,19 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
     private InputStream in;
     private Map<String, String> requestHeaders;
     private Map<String, Object> attributes;
-    
-    public WebSocketVirtualServletRequest(WebSocketServletHolder websocket, InputStream in) 
+
+    public WebSocketVirtualServletRequest(WebSocketServletHolder websocket, InputStream in, Session session)
         throws IOException {
         this.webSocketHolder = websocket;
         this.in = in;
 
+        Map<String, List<String>> ugHeaders = session.getUpgradeRequest().getHeaders();
         this.requestHeaders = WebSocketUtils.readHeaders(in);
+        for (Map.Entry<String, List<String>> ent : ugHeaders.entrySet()) {
+            if (!requestHeaders.containsKey(ent.getKey())) {
+                requestHeaders.put(ent.getKey(), ent.getValue().get(0));
+            }
+        }
         String path = requestHeaders.get(WebSocketUtils.URI_KEY);
         String origin = websocket.getRequestURI();
         if (!path.startsWith(origin)) {
@@ -106,7 +114,6 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
 
     @Override
     public String getCharacterEncoding() {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "getCharacterEncoding()");
         return null;
     }
@@ -191,7 +198,6 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
 
     @Override
     public String getParameter(String name) {
-        // TODO Auto-generated method stub
         if (LOG.isLoggable(Level.FINE)) {
             LOG.log(Level.FINE, "getParameter({0})", name);
         }
@@ -200,21 +206,18 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "getParameterMap()");
         return null;
     }
 
     @Override
     public Enumeration<String> getParameterNames() {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "getParameterNames()");
         return null;
     }
 
     @Override
     public String[] getParameterValues(String name) {
-        // TODO Auto-generated method stub
         if (LOG.isLoggable(Level.FINE)) {
             LOG.log(Level.FINE, "getParameterValues({0})", name);
         }
@@ -235,7 +238,6 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
 
     @Override
     public String getRealPath(String path) {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "getRealPath");
         return null;
     }
@@ -260,7 +262,6 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
 
     @Override
     public RequestDispatcher getRequestDispatcher(String path) {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "getRequestDispatcher");
         return null;
     }
@@ -332,14 +333,12 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
 
     @Override
     public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "startAsync");
         return null;
     }
 
     @Override
     public boolean authenticate(HttpServletResponse servletResponse) throws IOException, ServletException {
-        // TODO Auto-generated method stub
         LOG.log(Level.FINE, "authenticate");
         return false;
     }
@@ -417,7 +416,7 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
     @Override
     public String getPathInfo() {
         String uri = requestHeaders.get(WebSocketUtils.URI_KEY);
-        String servletpath = webSocketHolder.getServletPath(); 
+        String servletpath = webSocketHolder.getServletPath();
         if (LOG.isLoggable(Level.FINE)) {
             LOG.log(Level.FINE, "getPathInfo " + servletpath + " " + uri);
         }
@@ -534,7 +533,7 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
     @Override
     public void login(String username, String password) throws ServletException {
         LOG.log(Level.FINE, "login");
-        
+
     }
 
     @Override

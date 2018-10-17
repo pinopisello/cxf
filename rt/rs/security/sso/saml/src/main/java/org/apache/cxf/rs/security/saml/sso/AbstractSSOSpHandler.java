@@ -19,7 +19,9 @@
 package org.apache.cxf.rs.security.saml.sso;
 
 import java.io.IOException;
-import java.util.Date;
+import java.sql.Date;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,9 +41,9 @@ import org.apache.wss4j.common.ext.WSSecurityException;
 import org.apache.wss4j.common.saml.OpenSAMLUtil;
 
 public class AbstractSSOSpHandler {
-    private static final Logger LOG = 
+    private static final Logger LOG =
             LogUtils.getL7dLogger(AbstractSSOSpHandler.class);
-    
+
     private SPStateManager stateProvider;
     private long stateTimeToLive = SSOConstants.DEFAULT_STATE_TIME;
     private Crypto signatureCrypto;
@@ -52,11 +54,11 @@ public class AbstractSSOSpHandler {
     private String idpServiceAddress;
     private String issuerId;
     private boolean supportUnsolicited;
-    
+
     static {
         OpenSAMLUtil.initSamlEngine();
     }
-    
+
     @PreDestroy
     public void close() {
         if (stateProvider != null) {
@@ -68,11 +70,11 @@ public class AbstractSSOSpHandler {
             stateProvider = null;
         }
     }
-    
+
     public void setSignatureCrypto(Crypto crypto) {
         signatureCrypto = crypto;
     }
-    
+
     /**
      * Set the String corresponding to the signature Properties class
      * @param signaturePropertiesFile the String corresponding to the signature properties file
@@ -81,31 +83,31 @@ public class AbstractSSOSpHandler {
         this.signaturePropertiesFile = signaturePropertiesFile;
         LOG.fine("Setting signature properties: " + signaturePropertiesFile);
     }
-    
+
     /**
-     * Set the CallbackHandler object. 
-     * @param callbackHandler the CallbackHandler object. 
+     * Set the CallbackHandler object.
+     * @param callbackHandler the CallbackHandler object.
      */
     public void setCallbackHandler(CallbackHandler callbackHandler) {
         this.callbackHandler = callbackHandler;
         LOG.fine("Setting callbackHandler: " + callbackHandler);
     }
-    
+
     /**
-     * Set the String corresponding to the CallbackHandler class. 
-     * @param callbackHandlerClass the String corresponding to the CallbackHandler class. 
+     * Set the String corresponding to the CallbackHandler class.
+     * @param callbackHandlerClass the String corresponding to the CallbackHandler class.
      */
     public void setCallbackHandlerClass(String callbackHandlerClass) {
         this.callbackHandlerClass = callbackHandlerClass;
         LOG.fine("Setting callbackHandlerClass: " + callbackHandlerClass);
     }
-    
+
     //TODO: support attaching a signature to the cookie value
-    protected String createCookie(String name, 
-                                  String value, 
+    protected String createCookie(String name,
+                                  String value,
                                   String path,
-                                  String domain) { 
-        
+                                  String domain) {
+
         String contextCookie = name + "=" + value;
         // Setting a specific path restricts the browsers
         // to return a cookie only to the web applications
@@ -113,35 +115,30 @@ public class AbstractSSOSpHandler {
         if (path != null) {
             contextCookie += ";Path=" + path;
         }
-        
+
         // Setting a specific domain further restricts the browsers
         // to return a cookie only to the web applications
         // listening on the specific context path within a particular domain
         if (domain != null) {
             contextCookie += ";Domain=" + domain;
         }
-        
-        // Keep the cookie across the browser restarts until it actually expires.
-        // Note that the Expires property has been deprecated but apparently is 
-        // supported better than 'max-age' property by different browsers 
-        // (Firefox, IE, etc)
-        Date expiresDate = new Date(System.currentTimeMillis() + stateTimeToLive);
-        String cookieExpires = HttpUtils.getHttpDateFormat().format(expiresDate);
-        contextCookie += ";Expires=" + cookieExpires;
-        //TODO: Consider adding an 'HttpOnly' attribute        
-        
+
+        if (stateTimeToLive > 0) {
+            // Keep the cookie across the browser restarts until it actually expires.
+            // Note that the Expires property has been deprecated but apparently is
+            // supported better than 'max-age' property by different browsers
+            // (Firefox, IE, etc)
+            Instant expires = Instant.ofEpochMilli(System.currentTimeMillis() + stateTimeToLive);
+            String cookieExpires =
+                HttpUtils.getHttpDateFormat().format(Date.from(expires.atZone(ZoneOffset.UTC).toInstant()));
+            contextCookie += ";Expires=" + cookieExpires;
+        }
+
+        //TODO: Consider adding an 'HttpOnly' attribute
+
         return contextCookie;
     }
-    
-    protected boolean isStateExpired(long stateCreatedAt, long expiresAt) {
-        Date currentTime = new Date();
-        if (currentTime.after(new Date(stateCreatedAt + getStateTimeToLive()))) {
-            return true;
-        }
-        
-        return expiresAt > 0 && currentTime.after(new Date(expiresAt));
-    }
-    
+
     public void setStateProvider(SPStateManager stateProvider) {
         this.stateProvider = stateProvider;
     }
@@ -157,7 +154,7 @@ public class AbstractSSOSpHandler {
     public long getStateTimeToLive() {
         return stateTimeToLive;
     }
-    
+
     protected Crypto getSignatureCrypto() {
         if (signatureCrypto == null && signaturePropertiesFile != null) {
             Properties sigProperties = SecurityUtils.loadProperties(signaturePropertiesFile);
@@ -174,7 +171,7 @@ public class AbstractSSOSpHandler {
         }
         return signatureCrypto;
     }
-    
+
     protected CallbackHandler getCallbackHandler() {
         if (callbackHandler == null && callbackHandlerClass != null) {
             try {
@@ -190,7 +187,7 @@ public class AbstractSSOSpHandler {
         }
         return callbackHandler;
     }
-    
+
     /**
      * Set the username/alias to use to sign any request
      * @param signatureUsername the username/alias to use to sign any request
@@ -199,7 +196,7 @@ public class AbstractSSOSpHandler {
         this.signatureUsername = signatureUsername;
         LOG.fine("Setting signatureUsername: " + signatureUsername);
     }
-    
+
     /**
      * Get the username/alias to use to sign any request
      * @return the username/alias to use to sign any request
@@ -207,7 +204,7 @@ public class AbstractSSOSpHandler {
     public String getSignatureUsername() {
         return signatureUsername;
     }
-    
+
     public void setIdpServiceAddress(String idpServiceAddress) {
         this.idpServiceAddress = idpServiceAddress;
     }
@@ -215,19 +212,18 @@ public class AbstractSSOSpHandler {
     public String getIdpServiceAddress() {
         return idpServiceAddress;
     }
-    
+
     public void setIssuerId(String issuerId) {
         this.issuerId = issuerId;
     }
-    
+
     protected String getIssuerId(Message m) {
         if (issuerId == null) {
             return new UriInfoImpl(m).getBaseUri().toString();
-        } else {
-            return issuerId;
         }
+        return issuerId;
     }
-    
+
     public boolean isSupportUnsolicited() {
         return supportUnsolicited;
     }

@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 import javax.cache.Cache;
 
 import org.apache.cxf.Bus;
@@ -66,7 +67,7 @@ public class JCacheCodeDataProvider extends JCacheOAuthDataProvider
 
         super.doRemoveClient(c);
     }
-    
+
     @Override
     public ServerAuthorizationCodeGrant createCodeGrant(AuthorizationCodeRegistration reg)
         throws OAuthServiceException {
@@ -85,7 +86,7 @@ public class JCacheCodeDataProvider extends JCacheOAuthDataProvider
             Cache.Entry<String, ServerAuthorizationCodeGrant> entry = it.next();
             ServerAuthorizationCodeGrant grant = entry.getValue();
 
-            if (!isExpired(grant)) {
+            if (isExpired(grant)) {
                 toRemove.add(entry.getKey());
             } else if (AbstractCodeDataProvider.isCodeMatched(grant, c, sub)) {
                 grants.add(grant);
@@ -96,7 +97,7 @@ public class JCacheCodeDataProvider extends JCacheOAuthDataProvider
 
         return grants;
     }
-    
+
     @Override
     public ServerAuthorizationCodeGrant removeCodeGrant(String code) throws OAuthServiceException {
         ServerAuthorizationCodeGrant grant = getCodeGrant(code);
@@ -123,7 +124,7 @@ public class JCacheCodeDataProvider extends JCacheOAuthDataProvider
     protected static boolean isExpired(ServerAuthorizationCodeGrant grant) {
         return System.currentTimeMillis() < (grant.getIssuedAt() + grant.getExpiresIn());
     }
-    
+
     @Override
     public void close() {
         grantCache.close();

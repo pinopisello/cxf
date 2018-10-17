@@ -18,8 +18,8 @@
  */
 package org.apache.cxf.rs.security.oauth2.filters;
 
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +29,10 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.jaxrs.ext.MessageContext;
+import org.apache.cxf.rs.security.jose.common.JoseConstants;
 import org.apache.cxf.rs.security.jose.jwt.JoseJwtConsumer;
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+import org.apache.cxf.rs.security.jose.jwt.JwtConstants;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.oauth2.common.AccessTokenValidation;
 import org.apache.cxf.rs.security.oauth2.common.OAuthPermission;
@@ -43,17 +45,17 @@ import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTokenValidator {
 
     private static final String USERNAME_PROP = "username";
-    
+
     private Map<String, String> jwtAccessTokenClaimMap;
-    
+
     public List<String> getSupportedAuthorizationSchemes() {
         return Collections.singletonList(OAuthConstants.BEARER_AUTHORIZATION_SCHEME);
     }
 
     public AccessTokenValidation validateAccessToken(MessageContext mc,
-                                                     String authScheme, 
+                                                     String authScheme,
                                                      String authSchemeData,
-                                                     MultivaluedMap<String, String> extraProps) 
+                                                     MultivaluedMap<String, String> extraProps)
         throws OAuthServiceException {
         try {
             JwtToken token = super.getJwtToken(authSchemeData);
@@ -74,7 +76,8 @@ public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTo
         if (claims.getIssuedAt() != null) {
             atv.setTokenIssuedAt(claims.getIssuedAt());
         } else {
-            atv.setTokenIssuedAt(new Date().getTime());
+            Instant now = Instant.now();
+            atv.setTokenIssuedAt(now.toEpochMilli());
         }
         if (claims.getExpiryTime() != null) {
             atv.setTokenLifetime(claims.getExpiryTime() - atv.getTokenIssuedAt());
@@ -86,19 +89,22 @@ public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTo
         if (claims.getIssuer() != null) {
             atv.setTokenIssuer(claims.getIssuer());
         }
+        if (claims.getNotBefore() != null) {
+            atv.setTokenNotBefore(claims.getNotBefore());
+        }
         Object scope = claims.getClaim(OAuthConstants.SCOPE);
         if (scope != null) {
-            String[] scopes = scope instanceof String 
+            String[] scopes = scope instanceof String
                 ? scope.toString().split(" ") : CastUtils.cast((List<?>)scope).toArray(new String[]{});
             List<OAuthPermission> perms = new LinkedList<OAuthPermission>();
-            for (String s : scopes) {    
+            for (String s : scopes) {
                 if (!StringUtils.isEmpty(s)) {
                     perms.add(new OAuthPermission(s.trim()));
                 }
             }
             atv.setTokenScopes(perms);
         }
-        String usernameClaimName = 
+        String usernameClaimName =
             JwtTokenUtils.getClaimName(USERNAME_PROP, USERNAME_PROP, jwtAccessTokenClaimMap);
         String username = claims.getStringProperty(usernameClaimName);
         if (username != null) {
@@ -110,6 +116,19 @@ public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTo
         } else if (claims.getSubject() != null) {
             atv.setTokenSubject(new UserSubject(claims.getSubject()));
         }
+        Map<String, String> extraProperties = CastUtils.cast((Map<?, ?>)claims.getClaim("extra_properties"));
+        if (extraProperties != null) {
+            atv.getExtraProps().putAll(extraProperties);
+        }
+
+        Map<String, Object> cnfClaim = CastUtils.cast((Map<?, ?>)claims.getClaim(JwtConstants.CLAIM_CONFIRMATION));
+        if (cnfClaim != null) {
+            Object certCnf = cnfClaim.get(JoseConstants.HEADER_X509_THUMBPRINT_SHA256);
+            if (certCnf != null) {
+                atv.getExtraProps().put(JoseConstants.HEADER_X509_THUMBPRINT_SHA256, certCnf.toString());
+            }
+        }
+
         return atv;
     }
 

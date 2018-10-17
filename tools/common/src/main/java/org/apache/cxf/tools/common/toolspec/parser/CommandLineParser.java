@@ -61,12 +61,12 @@ public class CommandLineParser {
 
     public static String[] getArgsFromString(String s) {
         StringTokenizer toker = new StringTokenizer(s);
-        List<Object> res = new ArrayList<Object>();
+        List<Object> res = new ArrayList<>();
 
         while (toker.hasMoreTokens()) {
             res.add(toker.nextToken());
         }
-        return res.toArray(new String[res.size()]);
+        return res.toArray(new String[0]);
     }
 
     public CommandDocument parseArguments(String args) throws BadUsageException, IOException {
@@ -101,12 +101,12 @@ public class CommandLineParser {
             LOG.log(Level.SEVERE, "FAIL_CREATE_DOM_MSG");
         }
         Element commandEl = resultDoc.createElementNS("http://cxf.apache.org/Xutil/Command", "command");
-        
-        Attr attr = 
-            commandEl.getOwnerDocument().createAttributeNS("http://www.w3.org/2001/XMLSchema-instance", 
+
+        Attr attr =
+            commandEl.getOwnerDocument().createAttributeNS("http://www.w3.org/2001/XMLSchema-instance",
                                                                    "xsi:schemaLocation");
         attr.setValue("http://cxf.apache.org/Xutil/Command http://cxf.apache.org/schema/xutil/commnad.xsd");
-        commandEl.setAttributeNodeNS(attr);     
+        commandEl.setAttributeNodeNS(attr);
         commandEl.setAttribute("xmlns", "http://cxf.apache.org/Xutil/Command");
         commandEl.setAttribute("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
         resultDoc.appendChild(commandEl);
@@ -121,9 +121,9 @@ public class CommandLineParser {
             LOG.fine("Found " + usageForms.size()
                       + " alternative forms of usage, will use default form");
         }
-        if (usageForms.size() > 0) {
+        if (!usageForms.isEmpty()) {
             ErrorVisitor errors = new ErrorVisitor();
-            
+
             for (Element elem : usageForms) {
                 Form form = new Form(elem);
 
@@ -132,19 +132,18 @@ public class CommandLineParser {
                 if (form.accept(tokens, commandEl, errors)) {
                     commandEl.setAttribute("form", form.getName());
                     break;
-                } else {
-                    // if no more left then return null;
-                    tokens.setPosition(pos);
-                    
-                    if (elem.getNextSibling() == null) {
-                        if (LOG.isLoggable(Level.INFO)) {
-                            LOG.info("No more forms left to try, returning null");
-                        }
-                        throwUsage(errors);
-                    }
                 }
-            
-                
+                // if no more left then return null;
+                tokens.setPosition(pos);
+
+                if (elem.getNextSibling() == null) {
+                    if (LOG.isLoggable(Level.INFO)) {
+                        LOG.info("No more forms left to try, returning null");
+                    }
+                    throwUsage(errors);
+                }
+
+
             }
 /*
             for (int i = 0; i < usageForms.getLength(); i++) {
@@ -181,8 +180,7 @@ public class CommandLineParser {
             try {
                 TransformerFactory transformerFactory = TransformerFactory.newInstance();
                 transformerFactory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                Transformer serializer = transformerFactory.newInstance()
-                    .newTransformer(
+                Transformer serializer = transformerFactory.newTransformer(
                                     new StreamSource(Tool.class
                                         .getResourceAsStream("indent-no-xml-declaration.xsl")));
 
@@ -268,7 +266,7 @@ public class CommandLineParser {
                 addWhiteNamespace(strbuffer, optSpan - originalStrs[j].length());
                 strbuffer.append(" ");
                 if (originalStrs[j + 1].length() > totalLen - beforeDesSpan) {
-                    int lastIdx = totalLen - beforeDesSpan; 
+                    int lastIdx = totalLen - beforeDesSpan;
                     int lastIdx2 = splitAndAppendText(strbuffer, originalStrs[j + 1], 0, lastIdx);
                     originalStrs[j + 1] = originalStrs[j + 1].substring(lastIdx2);
                     strbuffer.append(lineSeparator);
@@ -282,13 +280,13 @@ public class CommandLineParser {
                 strbuffer.append(lineSeparator);
             }
             String tmpStr = originalStrs[j + 1];
-            
+
             for (i = 0; i < tmpStr.length(); i = i + (totalLen - beforeDesSpan)) {
                 if (i + totalLen - beforeDesSpan < tmpStr.length()) {
                     addWhiteNamespace(strbuffer, beforeDesSpan);
-                    int lastIdx = i + totalLen - beforeDesSpan; 
+                    int lastIdx = i + totalLen - beforeDesSpan;
                     int lastIdx2 = splitAndAppendText(strbuffer, tmpStr, i, lastIdx);
-                    i += lastIdx2 - lastIdx; 
+                    i += lastIdx2 - lastIdx;
                     strbuffer.append(lineSeparator);
                 } else {
                     addWhiteNamespace(strbuffer, beforeDesSpan);
@@ -311,7 +309,7 @@ public class CommandLineParser {
             lastIdx = origLast;
         }
         buffer.append(tmpStr.substring(idx, lastIdx));
-        
+
         if (Character.isWhitespace(tmpStr.charAt(lastIdx))) {
             lastIdx++;
         }
@@ -328,13 +326,13 @@ public class CommandLineParser {
     public String getDetailedUsage(String id) {
         String result = null;
         Element element = toolspec.getElementById(id);
-        
+
         List<Element> annotations = DOMUtils.findAllElementsByTagNameNS(element,
-                                                                     Tool.TOOL_SPEC_PUBLIC_ID, 
+                                                                     Tool.TOOL_SPEC_PUBLIC_ID,
                                                                      "annotation");
-        
-        
-        if ((annotations != null) && (annotations.size() > 0)) {
+
+
+        if ((annotations != null) && (!annotations.isEmpty())) {
             result = annotations.get(0).getFirstChild().getNodeValue();
         }
         return result;

@@ -35,6 +35,7 @@ public final class CustomerServiceSpringClient {
         
      
         client.testCustomerService();
+        context.close();
         System.exit(0);
     }
 }

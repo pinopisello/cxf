@@ -18,9 +18,7 @@
  */
 package org.apache.cxf.tracing.brave;
 
-import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerSpan;
-
+import brave.http.HttpTracing;
 import org.apache.cxf.common.injection.NoJSR250Annotations;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.message.Message;
@@ -28,17 +26,17 @@ import org.apache.cxf.phase.Phase;
 
 @NoJSR250Annotations
 public class BraveStartInterceptor extends AbstractBraveInterceptor {
-    public BraveStartInterceptor(Brave brave) {
-        super(Phase.PRE_INVOKE, brave, new ServerSpanNameProvider());
+    public BraveStartInterceptor(HttpTracing brave) {
+        super(Phase.PRE_INVOKE, brave);
     }
 
     @Override
-    public void handleMessage(Message message) throws Fault {       
+    public void handleMessage(Message message) throws Fault {
         final ParsedMessage parsed = new ParsedMessage(message);
-        
-        final TraceScopeHolder<ServerSpan> holder = super.startTraceSpan(parsed.getHeaders(), 
+
+        final TraceScopeHolder<TraceScope> holder = super.startTraceSpan(parsed.getHeaders(),
             parsed.getUri(), parsed.getHttpMethod());
-        
+
         if (holder != null) {
             message.getExchange().put(TRACE_SPAN, holder);
         }

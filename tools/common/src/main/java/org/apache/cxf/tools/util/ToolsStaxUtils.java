@@ -21,8 +21,8 @@ package org.apache.cxf.tools.util;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,21 +31,22 @@ import java.util.Set;
 import java.util.Stack;
 
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.cxf.staxutils.StaxUtils;
 import org.apache.cxf.tools.common.Tag;
 
 public final class ToolsStaxUtils {
-   
+
     private ToolsStaxUtils() {
     }
 
     public static List<Tag> getTags(final File source) throws Exception {
-        List<Tag> tags = new ArrayList<Tag>();
+        List<Tag> tags = new ArrayList<>();
         List<String> ignoreEmptyTags = Arrays.asList(new String[]{"sequence"});
 
-        try (InputStream is = new BufferedInputStream(new FileInputStream(source))) {
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(source.toPath()))) {
             XMLStreamReader reader = StaxUtils.createXMLStreamReader(is);
             Tag newTag = null;
             int count = 0;
@@ -60,7 +61,7 @@ public final class ToolsStaxUtils {
                     count++;
                 }
 
-                if (event == XMLStreamReader.START_ELEMENT) {
+                if (event == XMLStreamConstants.START_ELEMENT) {
                     newTag = new Tag();
                     newTag.setName(reader.getName());
 
@@ -69,16 +70,16 @@ public final class ToolsStaxUtils {
                     }
 
                     for (int i = 0; i < reader.getAttributeCount(); i++) {
-                        newTag.getAttributes().put(reader.getAttributeName(i), 
+                        newTag.getAttributes().put(reader.getAttributeName(i),
                                 reader.getAttributeValue(i));
                     }
                     stack.push(newTag);
                 }
-                if (event == XMLStreamReader.CHARACTERS) {
+                if (event == XMLStreamConstants.CHARACTERS) {
                     newTag.setText(reader.getText());
                 }
 
-                if (event == XMLStreamReader.END_ELEMENT) {
+                if (event == XMLStreamConstants.END_ELEMENT) {
                     Tag startTag = stack.pop();
 
                     if (checkingPoint != null && checkingPoint.equals(reader.getName())) {
@@ -100,21 +101,21 @@ public final class ToolsStaxUtils {
     }
 
     public static Tag getTagTree(final File source) throws Exception {
-        return getTagTree(source, new ArrayList<String>());
+        return getTagTree(source, new ArrayList<>());
     }
 
     public static Tag getTagTree(final File source, final List<String> ignoreAttr) throws Exception {
-        try (InputStream is = new BufferedInputStream(new FileInputStream(source))) {
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(source.toPath()))) {
             return getTagTree(is, ignoreAttr, null);
         }
     }
     public static Tag getTagTree(final File source,
                                  final List<String> ignoreAttr,
                                  Map<QName, Set<String>> types) throws Exception {
-        try (InputStream is = new BufferedInputStream(new FileInputStream(source))) {
-            return getTagTree(is, ignoreAttr, types);        
+        try (InputStream is = new BufferedInputStream(Files.newInputStream(source.toPath()))) {
+            return getTagTree(is, ignoreAttr, types);
         }
-    }    
+    }
     public static Tag getTagTree(final InputStream is,
                                  final List<String> ignoreAttr,
                                  Map<QName, Set<String>> types) throws Exception {
@@ -125,11 +126,11 @@ public final class ToolsStaxUtils {
         Tag newTag = null;
 
         Tag currentTag = root;
-        
+
         while (reader.hasNext()) {
             int event = reader.next();
 
-            if (event == XMLStreamReader.START_ELEMENT) {
+            if (event == XMLStreamConstants.START_ELEMENT) {
                 newTag = new Tag();
                 newTag.setName(reader.getName());
                 if (!ignoreAttr.isEmpty()) {
@@ -147,14 +148,14 @@ public final class ToolsStaxUtils {
                             if (ns != null) {
                                 tp = "{" + ns + "}" + tp.substring(idx + 1);
                             }
-                        } else { 
+                        } else {
                             String ns = reader.getNamespaceURI("");
                             if (ns != null) {
                                 tp = "{" + ns + "}" + tp.substring(idx + 1);
                             }
                         }
                     }
-                    newTag.getAttributes().put(reader.getAttributeName(i), 
+                    newTag.getAttributes().put(reader.getAttributeName(i),
                                                tp);
                 }
 
@@ -162,11 +163,11 @@ public final class ToolsStaxUtils {
                 currentTag.getTags().add(newTag);
                 currentTag = newTag;
             }
-            if (event == XMLStreamReader.CHARACTERS) {
+            if (event == XMLStreamConstants.CHARACTERS) {
                 newTag.setText(reader.getText());
             }
 
-            if (event == XMLStreamReader.END_ELEMENT) {
+            if (event == XMLStreamConstants.END_ELEMENT) {
                 currentTag = currentTag.getParent();
             }
         }

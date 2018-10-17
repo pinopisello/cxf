@@ -32,11 +32,11 @@ public class Server {
         Bus bus = factory.createBus("ServerConfig.xml");
         BusFactory.setDefaultBus(bus);
     }
-   
+
     protected Server() throws Exception {
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         sf.setResourceClasses(CustomerServiceImpl.class);
-        sf.setResourceProvider(CustomerServiceImpl.class, 
+        sf.setResourceProvider(CustomerServiceImpl.class,
             new SingletonResourceProvider(new CustomerServiceImpl()));
         sf.setAddress("https://localhost:9002/");
         sf.create();

@@ -18,8 +18,8 @@
  */
 package org.apache.cxf.tracing.brave;
 
-import com.github.kristofa.brave.Brave;
-
+import brave.Tracing;
+import brave.http.HttpTracing;
 import org.apache.cxf.Bus;
 import org.apache.cxf.annotations.Provider;
 import org.apache.cxf.annotations.Provider.Scope;
@@ -34,7 +34,16 @@ public class BraveClientFeature extends AbstractFeature {
     private BraveClientStartInterceptor out;
     private BraveClientStopInterceptor in;
 
-    public BraveClientFeature(Brave brave) {
+    public BraveClientFeature(final Tracing tracing) {
+        this(
+          HttpTracing
+              .newBuilder(tracing)
+              .clientParser(new HttpClientSpanParser())
+              .build()
+        );
+    }
+    
+    public BraveClientFeature(HttpTracing brave) {
         out = new BraveClientStartInterceptor(brave);
         in = new BraveClientStopInterceptor(brave);
     }
@@ -42,9 +51,6 @@ public class BraveClientFeature extends AbstractFeature {
     @Override
     protected void initializeProvider(InterceptorProvider provider, Bus bus) {
         provider.getInInterceptors().add(in);
-        provider.getInFaultInterceptors().add(in);
-
         provider.getOutInterceptors().add(out);
-        provider.getOutFaultInterceptors().add(out);
     }
 }

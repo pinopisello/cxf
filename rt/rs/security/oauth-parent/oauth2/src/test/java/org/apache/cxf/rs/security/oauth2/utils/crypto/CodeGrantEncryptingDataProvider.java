@@ -32,16 +32,16 @@ import org.apache.cxf.rs.security.oauth2.provider.OAuthServiceException;
 public class CodeGrantEncryptingDataProvider extends EncryptingDataProvider
     implements AuthorizationCodeDataProvider {
 
-    private Set<String> grants = new HashSet<String>();
-    
+    private Set<String> grants = new HashSet<>();
+
     public CodeGrantEncryptingDataProvider() throws Exception {
         super();
     }
-    
+
     @Override
     public ServerAuthorizationCodeGrant createCodeGrant(AuthorizationCodeRegistration reg)
         throws OAuthServiceException {
-        ServerAuthorizationCodeGrant grant = 
+        ServerAuthorizationCodeGrant grant =
             new ServerAuthorizationCodeGrant(reg.getClient(), 123);
         grant.setAudience(reg.getAudience());
         String encrypted = ModelEncryptionSupport.encryptCodeGrant(grant, key);
@@ -58,7 +58,6 @@ public class CodeGrantEncryptingDataProvider extends EncryptingDataProvider
 
     @Override
     public List<ServerAuthorizationCodeGrant> getCodeGrants(Client c, UserSubject sub) throws OAuthServiceException {
-        // TODO Auto-generated method stub
         return null;
     }
 }

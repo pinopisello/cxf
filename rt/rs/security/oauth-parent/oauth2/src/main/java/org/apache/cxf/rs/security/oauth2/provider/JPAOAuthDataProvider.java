@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
@@ -59,7 +60,7 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
     }
 
     @Override
-    public Client getClient(final String clientId) throws OAuthServiceException {
+    public Client doGetClient(final String clientId) throws OAuthServiceException {
         return execute(new EntityManagerOperation<Client>() {
             @Override
             public Client execute(EntityManager em) {
@@ -105,7 +106,7 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
             public Void execute(EntityManager em) {
                 if (client.getResourceOwnerSubject() != null) {
                     UserSubject sub =
-                            em.find(UserSubject.class, client.getResourceOwnerSubject().getLogin());
+                            em.find(UserSubject.class, client.getResourceOwnerSubject().getId());
                     if (sub == null) {
                         em.persist(client.getResourceOwnerSubject());
                     } else {
@@ -113,10 +114,9 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
                     }
                 }
                 boolean clientExists = em.createQuery("SELECT count(client) from Client client "
-                                + "where client.clientId = :id",
-                        Long.class)
+                                + "where client.clientId = :id", Long.class)
                         .setParameter("id", client.getClientId())
-                        .getSingleResult() > 0 ? true : false;
+                        .getSingleResult() > 0;
                 if (clientExists) {
                     em.merge(client);
                 } else {
@@ -174,7 +174,13 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
         return execute(new EntityManagerOperation<ServerAccessToken>() {
             @Override
             public ServerAccessToken execute(EntityManager em) {
-                return em.find(BearerAccessToken.class, accessToken);
+                TypedQuery<BearerAccessToken> query = em.createQuery("SELECT t FROM BearerAccessToken t"
+                                      + " WHERE t.tokenKey = :tokenKey", BearerAccessToken.class)
+                                      .setParameter("tokenKey", accessToken);
+                if (query.getResultList().isEmpty()) {
+                    return null;
+                }
+                return query.getSingleResult();
             }
         });
     }
@@ -233,13 +239,13 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
         // this can be the case when using multiple cmt dataProvider operation in a single entityManager
         // lifespan
         if (at.getAudiences() != null) {
-            at.setAudiences(new ArrayList<String>(at.getAudiences()));
+            at.setAudiences(new ArrayList<>(at.getAudiences()));
         }
         if (at.getExtraProperties() != null) {
             at.setExtraProperties(new HashMap<String, String>(at.getExtraProperties()));
         }
         if (at.getScopes() != null) {
-            at.setScopes(new ArrayList<OAuthPermission>(at.getScopes()));
+            at.setScopes(new ArrayList<>(at.getScopes()));
         }
         if (at.getParameters() != null) {
             at.setParameters(new HashMap<String, String>(at.getParameters()));
@@ -263,12 +269,14 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
                 }
                 serverToken.setScopes(perms);
 
-                UserSubject sub = em.find(UserSubject.class, serverToken.getSubject().getLogin());
-                if (sub == null) {
-                    em.persist(serverToken.getSubject());
-                } else {
-                    sub = em.merge(serverToken.getSubject());
-                    serverToken.setSubject(sub);
+                if (serverToken.getSubject() != null) {
+                    UserSubject sub = em.find(UserSubject.class, serverToken.getSubject().getId());
+                    if (sub == null) {
+                        em.persist(serverToken.getSubject());
+                    } else {
+                        sub = em.merge(serverToken.getSubject());
+                        serverToken.setSubject(sub);
+                    }
                 }
                 // ensure we have a managed association
                 // (needed for OpenJPA : InvalidStateException: Encountered unmanaged object)
@@ -309,17 +317,15 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
     protected TypedQuery<Client> getClientsQuery(UserSubject resourceOwnerSubject, EntityManager entityManager) {
         if (resourceOwnerSubject == null) {
             return entityManager.createQuery(CLIENT_QUERY, Client.class);
-        } else {
-            return entityManager.createQuery(CLIENT_QUERY + " WHERE ros.login = :login", Client.class).
-                    setParameter("login", resourceOwnerSubject.getLogin());
         }
+        return entityManager.createQuery(CLIENT_QUERY + " WHERE ros.login = :login", Client.class).
+                setParameter("login", resourceOwnerSubject.getLogin());
     }
 
     protected TypedQuery<BearerAccessToken> getTokensQuery(Client c, UserSubject resourceOwnerSubject,
                                                            EntityManager entityManager) {
         if (c == null && resourceOwnerSubject == null) {
-            return entityManager.createQuery("SELECT t FROM BearerAccessToken t",
-                    BearerAccessToken.class);
+            return entityManager.createQuery("SELECT t FROM BearerAccessToken t", BearerAccessToken.class);
         } else if (c == null) {
             return entityManager.createQuery(
                     "SELECT t FROM BearerAccessToken t"
@@ -346,8 +352,7 @@ public class JPAOAuthDataProvider extends AbstractOAuthDataProvider {
     protected TypedQuery<RefreshToken> getRefreshTokensQuery(Client c, UserSubject resourceOwnerSubject,
                                                              EntityManager entityManager) {
         if (c == null && resourceOwnerSubject == null) {
-            return entityManager.createQuery("SELECT t FROM RefreshToken t",
-                    RefreshToken.class);
+            return entityManager.createQuery("SELECT t FROM RefreshToken t", RefreshToken.class);
         } else if (c == null) {
             return entityManager.createQuery(
                     "SELECT t FROM RefreshToken t"

@@ -20,8 +20,8 @@ package org.apache.cxf.tracing.brave;
 
 import java.util.UUID;
 
-import com.github.kristofa.brave.Brave;
-
+import brave.Tracing;
+import brave.http.HttpTracing;
 import org.apache.cxf.Bus;
 import org.apache.cxf.annotations.Provider;
 import org.apache.cxf.annotations.Provider.Scope;
@@ -39,12 +39,26 @@ public class BraveFeature extends AbstractFeature {
     public BraveFeature() {
         this("cxf-svc-" + UUID.randomUUID().toString());
     }
-    
+
     public BraveFeature(final String name) {
-        this(new Brave.Builder(name).build());
+        this(
+            HttpTracing
+                .newBuilder(Tracing.newBuilder().localServiceName(name).build())
+                .serverParser(new HttpServerSpanParser())
+                .build()
+        );
+    }
+    
+    public BraveFeature(final Tracing tracing) {
+        this(
+          HttpTracing
+              .newBuilder(tracing)
+              .serverParser(new HttpServerSpanParser())
+              .build()
+        );
     }
 
-    public BraveFeature(Brave brave) {
+    public BraveFeature(HttpTracing brave) {
         in = new BraveStartInterceptor(brave);
         out = new BraveStopInterceptor(brave);
     }

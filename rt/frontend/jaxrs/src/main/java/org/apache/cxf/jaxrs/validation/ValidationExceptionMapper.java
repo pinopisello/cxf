@@ -38,16 +38,16 @@ import org.apache.cxf.validation.ResponseConstraintViolationException;
 public class ValidationExceptionMapper implements ExceptionMapper<ValidationException> {
     private static final Logger LOG = LogUtils.getL7dLogger(ValidationExceptionMapper.class);
     private boolean addMessageToResponse;
-    
+
     @Override
     public Response toResponse(ValidationException exception) {
         Response.Status errorStatus = Response.Status.INTERNAL_SERVER_ERROR;
-        if (exception instanceof ConstraintViolationException) { 
-            
+        if (exception instanceof ConstraintViolationException) {
+
             StringBuilder responseBody = addMessageToResponse ? new StringBuilder() : null;
-            
+
             final ConstraintViolationException constraint = (ConstraintViolationException) exception;
-            
+
             for (final ConstraintViolation< ? > violation: constraint.getConstraintViolations()) {
                 String message = buildErrorMessage(violation);
                 if (responseBody != null) {
@@ -55,18 +55,17 @@ public class ValidationExceptionMapper implements ExceptionMapper<ValidationExce
                 }
                 LOG.log(Level.WARNING, message);
             }
-            
+
             if (!(constraint instanceof ResponseConstraintViolationException)) {
                 errorStatus = Response.Status.BAD_REQUEST;
             }
             return buildResponse(errorStatus, responseBody != null ? responseBody.toString() : null);
-        } else {
-            return buildResponse(errorStatus, addMessageToResponse ? exception.getMessage() : null);
         }
+        return buildResponse(errorStatus, addMessageToResponse ? exception.getMessage() : null);
     }
 
     protected String buildErrorMessage(ConstraintViolation<?> violation) {
-        return "Value " 
+        return "Value "
             + (violation.getInvalidValue() != null ? "'" + violation.getInvalidValue().toString() + "'" : "(null)")
             + " of " + violation.getRootBeanClass().getSimpleName()
             + "." + violation.getPropertyPath()

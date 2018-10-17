@@ -26,18 +26,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.AsyncInvoker;
 import javax.ws.rs.client.CompletionStageRxInvoker;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.InvocationCallback;
-import javax.ws.rs.client.NioInvoker;
 import javax.ws.rs.client.RxInvoker;
-import javax.ws.rs.client.RxInvokerProvider;
 import javax.ws.rs.client.SyncInvoker;
 import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.HttpHeaders;
@@ -48,24 +46,28 @@ import javax.ws.rs.ext.RuntimeDelegate;
 import javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate;
 
 import org.apache.cxf.helpers.CastUtils;
+import org.apache.cxf.jaxrs.client.AbstractClient;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.utils.HttpUtils;
 
 public class InvocationBuilderImpl implements Invocation.Builder {
     private static final String PROPERTY_KEY = "jaxrs.filter.properties";
-    
+
     private WebClient webClient;
     private SyncInvoker sync;
-    
-    public InvocationBuilderImpl(WebClient webClient) {
+    private Configuration config;
+
+    public InvocationBuilderImpl(WebClient webClient,
+                                 Configuration config) {
         this.webClient = webClient;
         this.sync = webClient.sync();
+        this.config = config;
     }
-    
+
     public WebClient getWebClient() {
         return this.webClient;
     }
-    
+
     @Override
     public Response delete() {
         return sync.delete();
@@ -207,7 +209,7 @@ public class InvocationBuilderImpl implements Invocation.Builder {
     public Builder acceptEncoding(String... enc) {
         webClient.acceptEncoding(enc);
         return this;
-        
+
     }
 
     @Override
@@ -248,32 +250,35 @@ public class InvocationBuilderImpl implements Invocation.Builder {
         doSetHeader(rd, name, value);
         return this;
     }
-    
+
     @Override
     public Builder headers(MultivaluedMap<String, Object> headers) {
-        RuntimeDelegate rd = HttpUtils.getOtherRuntimeDelegate();
-        for (Map.Entry<String, List<Object>> entry : headers.entrySet()) {
-            for (Object value : entry.getValue()) {
-                doSetHeader(rd, entry.getKey(), value);
+        webClient.removeAllHeaders();
+        if (headers != null) {
+            RuntimeDelegate rd = HttpUtils.getOtherRuntimeDelegate();
+            for (Map.Entry<String, List<Object>> entry : headers.entrySet()) {
+                for (Object value : entry.getValue()) {
+                    doSetHeader(rd, entry.getKey(), value);
+                }
             }
         }
         return this;
     }
 
     private void doSetHeader(RuntimeDelegate rd, String name, Object value) {
-        HeaderDelegate<Object> hd = HttpUtils.getHeaderDelegate(rd, value); 
+        HeaderDelegate<Object> hd = HttpUtils.getHeaderDelegate(rd, value);
         if (hd != null) {
             value = hd.toString(value);
         }
         webClient.header(name, value);
     }
-    
+
     @Override
     public Builder property(String name, Object value) {
         Map<String, Object> contextProps = WebClient.getConfig(webClient).getRequestContext();
         Map<String, Object> filterProps = CastUtils.cast((Map<?, ?>)contextProps.get(PROPERTY_KEY));
         if (filterProps == null) {
-            filterProps = new HashMap<String, Object>();
+            filterProps = new HashMap<>();
             contextProps.put(PROPERTY_KEY, filterProps);
         }
         if (value == null) {
@@ -283,7 +288,7 @@ public class InvocationBuilderImpl implements Invocation.Builder {
         }
         return this;
     }
-    
+
     @Override
     public AsyncInvoker async() {
         return webClient.async();
@@ -318,23 +323,23 @@ public class InvocationBuilderImpl implements Invocation.Builder {
     public Invocation buildPut(Entity<?> entity) {
         return build(HttpMethod.PUT, entity);
     }
-    
+
     private class InvocationImpl implements Invocation {
 
         private Invocation.Builder invBuilder;
         private String httpMethod;
         private Entity<?> entity;
-        
+
         InvocationImpl(String httpMethod) {
             this(httpMethod, null);
         }
-        
+
         InvocationImpl(String httpMethod, Entity<?> entity) {
             this.invBuilder = InvocationBuilderImpl.this;
             this.httpMethod = httpMethod;
             this.entity = entity;
         }
-        
+
         @Override
         public Response invoke() {
             return invBuilder.method(httpMethod, entity);
@@ -379,49 +384,17 @@ public class InvocationBuilderImpl implements Invocation.Builder {
 
     @Override
     public CompletionStageRxInvoker rx() {
-        return rx((ExecutorService)null);
-    }
-
-    @Override
-    public CompletionStageRxInvoker rx(ExecutorService executorService) {
-        return webClient.rx(executorService);
-    }
-
-    
-    @SuppressWarnings("rawtypes")
-    @Override
-    public <T extends RxInvoker> T rx(Class<? extends RxInvokerProvider<T>> pClass) {
-        return rx(pClass, (ExecutorService)null);
+        return webClient.rx(getConfiguredExecutorService());
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public <T extends RxInvoker> T rx(Class<? extends RxInvokerProvider<T>> pClass, ExecutorService execService) {
-        RxInvokerProvider<T> p = null;
-        try {
-            p = pClass.newInstance();
-        } catch (Throwable t) {
-            throw new ProcessingException(t);
-        }
-        return rx(p, execService);
-    }
-    
-    @SuppressWarnings("rawtypes")
-    @Override
-    public <T extends RxInvoker> T rx(RxInvokerProvider<T> p) {
-        return rx(p, (ExecutorService)null);
+    public <T extends RxInvoker> T rx(Class<T> rxCls) {
+        return webClient.rx(rxCls, getConfiguredExecutorService());
     }
 
-    @SuppressWarnings("rawtypes")
-    @Override
-    public <T extends RxInvoker> T rx(RxInvokerProvider<T> p, ExecutorService execService) {
-        return p.getRxInvoker(this, execService);
+    private ExecutorService getConfiguredExecutorService() {
+        return (ExecutorService)config.getProperty(AbstractClient.EXECUTOR_SERVICE_PROPERTY);
     }
-    
-    
-    @Override
-    public NioInvoker nio() {
-        // TODO: Implementation required (JAX-RS 2.1)
-        return null;
-    }
+
 }

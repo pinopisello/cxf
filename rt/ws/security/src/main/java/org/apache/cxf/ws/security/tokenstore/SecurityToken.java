@@ -27,38 +27,38 @@ import java.io.StringReader;
 import java.security.Key;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.w3c.dom.Element;
+
 import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.security.SecurityContext;
 import org.apache.cxf.staxutils.StaxUtils;
 import org.apache.cxf.staxutils.W3CDOMStreamWriter;
+import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.crypto.Crypto;
 import org.apache.wss4j.common.token.Reference;
 import org.apache.wss4j.common.util.DOM2Writer;
 import org.apache.wss4j.common.util.XMLUtils;
-import org.apache.wss4j.dom.WSConstants;
-import org.apache.wss4j.dom.util.XmlSchemaDateFormat;
 
 
 /**
- * 
+ *
  */
 public class SecurityToken implements Serializable {
-    
+
     /**
-     * This tag holds an ID of a Bootstrap SecurityToken stored in the TokenStore 
+     * This tag holds an ID of a Bootstrap SecurityToken stored in the TokenStore
      */
     public static final String BOOTSTRAP_TOKEN_ID = "bootstrap_security_token_id";
-    
+
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -8220267049304000696L;
 
@@ -67,42 +67,42 @@ public class SecurityToken implements Serializable {
      * Token identifier
      */
     private String id;
-    
+
     /**
      * WSU Identifier of the token
      */
     private String wsuId;
-    
+
     /**
      * The actual token in its current state
      */
     private transient Element token;
-    
+
     /**
-     * The String representation of the token (The token can't be serialized as it's a DOM Element) 
+     * The String representation of the token (The token can't be serialized as it's a DOM Element)
      */
     private String tokenStr;
-    
+
     /**
      * The RequestedAttachedReference element
-     * NOTE : The oasis-200401-wss-soap-message-security-1.0 spec allows 
-     * an extensibility mechanism for wsse:SecurityTokenReference and 
-     * wsse:Reference. Hence we cannot limit to the 
-     * wsse:SecurityTokenReference\wsse:Reference case and only hold the URI and 
+     * NOTE : The oasis-200401-wss-soap-message-security-1.0 spec allows
+     * an extensibility mechanism for wsse:SecurityTokenReference and
+     * wsse:Reference. Hence we cannot limit to the
+     * wsse:SecurityTokenReference\wsse:Reference case and only hold the URI and
      * the ValueType values.
      */
     private transient Element attachedReference;
-    
+
     /**
      * The RequestedUnattachedReference element
-     * NOTE : The oasis-200401-wss-soap-message-security-1.0 spec allows 
-     * an extensibility mechanism for wsse:SecurityTokenReference and 
-     * wsse:Reference. Hence we cannot limit to the 
-     * wsse:SecurityTokenReference\wsse:Reference case and only hold the URI and 
+     * NOTE : The oasis-200401-wss-soap-message-security-1.0 spec allows
+     * an extensibility mechanism for wsse:SecurityTokenReference and
+     * wsse:Reference. Hence we cannot limit to the
+     * wsse:SecurityTokenReference\wsse:Reference case and only hold the URI and
      * the ValueType values.
      */
     private transient Element unattachedReference;
-    
+
     /**
      * A bag to hold any other properties
      */
@@ -112,48 +112,48 @@ public class SecurityToken implements Serializable {
      * The secret associated with the Token
      */
     private transient byte[] secret;
-    
+
     /**
      * Some binary data associated with the token
      */
     private byte[] data;
-    
+
     /**
      * A key associated with the token
      */
     private transient Key key;
-    
+
     /**
      * Created time
      */
-    private Date created;
-    
+    private Instant created;
+
     /**
      * Expiration time
      */
-    private Date expires;
-    
+    private Instant expires;
+
     /**
      * Issuer end point address
      */
     private String issuerAddress;
-    
+
     /**
      * If an encrypted key, this contains the sha1 for the key
      */
     private String encrKeySha1Value;
-    
+
     /**
      * A hash code associated with this token.
      */
     private int tokenHash;
-    
+
     /**
      * This holds the identifier of another SecurityToken which represents a transformed
-     * version of this token. 
+     * version of this token.
      */
     private String transformedTokenIdentifier;
-    
+
     /**
      * The tokenType
      */
@@ -162,7 +162,7 @@ public class SecurityToken implements Serializable {
     private X509Certificate x509cert;
 
     private transient Crypto crypto;
-    
+
     /**
      * The principal of this SecurityToken
      */
@@ -171,52 +171,44 @@ public class SecurityToken implements Serializable {
      * The SecurityContext originally associated with this token
      */
     private transient SecurityContext securityContext;
-    
+
     public SecurityToken() {
-        
+
     }
-    
+
     public SecurityToken(String id) {
         this.id = XMLUtils.getIDFromReference(id);
     }
 
-    public SecurityToken(String id, Date created, Date expires) {
+    public SecurityToken(String id, Instant created, Instant expires) {
         this.id = XMLUtils.getIDFromReference(id);
-        
-        if (created != null) {
-            this.created = new Date(created.getTime());
-        }
-        if (expires != null) {
-            this.expires = new Date(expires.getTime());
-        }
+
+        this.created = created;
+        this.expires = expires;
     }
-    
+
     public SecurityToken(String id,
                  Element tokenElem,
-                 Date created,
-                 Date expires) {
+                 Instant created,
+                 Instant expires) {
         this.id = XMLUtils.getIDFromReference(id);
-        
+
         this.token = cloneElement(tokenElem);
-        if (created != null) {
-            this.created = new Date(created.getTime());
-        }
-        if (expires != null) {
-            this.expires = new Date(expires.getTime());
-        }
+        this.created = created;
+        this.expires = expires;
     }
 
     public SecurityToken(String id,
                  Element tokenElem,
                  Element lifetimeElem) {
         this.id = XMLUtils.getIDFromReference(id);
-        
+
         this.token = cloneElement(tokenElem);
         if (lifetimeElem != null) {
             processLifeTime(lifetimeElem);
         }
     }
-    
+
     private static Element cloneElement(Element el) {
         try {
             W3CDOMStreamWriter writer = new W3CDOMStreamWriter();
@@ -230,24 +222,22 @@ public class SecurityToken implements Serializable {
     }
     /**
      * @param lifetimeElem
-     * @throws TrustException 
+     * @throws TrustException
      */
     private void processLifeTime(Element lifetimeElem) {
         try {
-            Element createdElem = 
+            Element createdElem =
                 DOMUtils.getFirstChildWithName(lifetimeElem,
-                                                WSConstants.WSU_NS,
-                                                WSConstants.CREATED_LN);
-            DateFormat zulu = new XmlSchemaDateFormat();
-            
-            this.created = zulu.parse(DOMUtils.getContent(createdElem));
+                                                WSS4JConstants.WSU_NS,
+                                                WSS4JConstants.CREATED_LN);
+            this.created = ZonedDateTime.parse(DOMUtils.getContent(createdElem)).toInstant();
 
-            Element expiresElem = 
+            Element expiresElem =
                 DOMUtils.getFirstChildWithName(lifetimeElem,
-                                                WSConstants.WSU_NS,
-                                                WSConstants.EXPIRES_LN);
-            this.expires = zulu.parse(DOMUtils.getContent(expiresElem));
-        } catch (ParseException e) {
+                                                WSS4JConstants.WSU_NS,
+                                                WSS4JConstants.EXPIRES_LN);
+            this.expires = ZonedDateTime.parse(DOMUtils.getContent(expiresElem)).toInstant();
+        } catch (DateTimeParseException e) {
             //shouldn't happen
         }
     }
@@ -295,14 +285,14 @@ public class SecurityToken implements Serializable {
     public void setTransformedTokenIdentifier(String transformedTokenIdentifier) {
         this.transformedTokenIdentifier = transformedTokenIdentifier;
     }
-    
+
     /**
      * Set the id
      */
     public void setId(String id) {
         this.id = XMLUtils.getIDFromReference(id);
     }
-    
+
     /**
      * @return Returns the id.
      */
@@ -359,44 +349,37 @@ public class SecurityToken implements Serializable {
     /**
      * @return Returns the created.
      */
-    public Date getCreated() {
-        if (created == null) {
-            return null;
-        }
-        return (Date)created.clone();
+    public Instant getCreated() {
+        return created;
     }
 
     /**
      * @return Returns the expires.
      */
-    public Date getExpires() {
-        if (expires == null) {
-            return null;
-        }
-        return (Date)expires.clone();
+    public Instant getExpires() {
+        return expires;
     }
-    
+
     /**
      * Return whether this SecurityToken is expired or not
      */
     public boolean isExpired() {
         if (expires != null) {
-            Date rightNow = new Date();
-            if (expires.before(rightNow)) {
+            Instant now = Instant.now();
+            if (expires.isBefore(now)) {
                 return true;
             }
         }
         return false;
     }
-    
+
     /**
      * Return whether this SecurityToken is about to expire or not
      */
     public boolean isAboutToExpire(long secondsToExpiry) {
         if (expires != null && secondsToExpiry > 0) {
-            Date rightNow = new Date();
-            rightNow.setTime(rightNow.getTime() + (secondsToExpiry * 1000L));
-            if (expires.before(rightNow)) {
+            Instant now = Instant.now().plusSeconds(secondsToExpiry);
+            if (expires.isBefore(now)) {
                 return true;
             }
         }
@@ -406,12 +389,8 @@ public class SecurityToken implements Serializable {
     /**
      * @param expires The expires to set.
      */
-    public void setExpires(Date expires) {
-        if (expires == null) {
-            this.expires = null;
-        } else {
-            this.expires = new Date(expires.getTime());
-        }
+    public void setExpires(Instant expires) {
+        this.expires = expires;
     }
 
     public String getIssuerAddress() {
@@ -421,33 +400,33 @@ public class SecurityToken implements Serializable {
     public void setIssuerAddress(String issuerAddress) {
         this.issuerAddress = issuerAddress;
     }
-    
+
     /**
      * @param sha SHA1 of the encrypted key
      */
     public void setSHA1(String sha) {
         this.encrKeySha1Value = sha;
     }
-    
-    /** 
-     * @return SHA1 value of the encrypted key 
+
+    /**
+     * @return SHA1 value of the encrypted key
      */
     public String getSHA1() {
         return encrKeySha1Value;
     }
-    
+
     public String getTokenType() {
         return tokenType;
     }
-    
+
     public void setTokenType(String s) {
         tokenType = s;
     }
-    
+
     public void setWsuId(String wsuId) {
         this.wsuId = wsuId;
     }
-    
+
     public String getWsuId() {
         if (wsuId != null) {
             return wsuId;
@@ -467,16 +446,16 @@ public class SecurityToken implements Serializable {
             }
         }
         return null;
-    }   
-    
+    }
+
     public static String getIdFromSTR(Element str) {
         Element child = DOMUtils.getFirstElement(str);
         if (child == null) {
             return null;
         }
-        
+
         if ("KeyInfo".equals(child.getLocalName())
-            && WSConstants.SIG_NS.equals(child.getNamespaceURI())) {
+            && WSS4JConstants.SIG_NS.equals(child.getNamespaceURI())) {
             return DOMUtils.getContent(child);
         } else if (Reference.TOKEN.getLocalPart().equals(child.getLocalName())
             && Reference.TOKEN.getNamespaceURI().equals(child.getNamespaceURI())) {
@@ -484,20 +463,20 @@ public class SecurityToken implements Serializable {
         }
         return null;
     }
-    
+
     public void setX509Certificate(X509Certificate cert, Crypto cpt) {
         x509cert = cert;
         crypto = cpt;
     }
-    
+
     public X509Certificate getX509Certificate() {
         return x509cert;
     }
-    
+
     public Crypto getCrypto() {
         return crypto;
     }
-    
+
     /**
      * Set a hash code associated with this token.
      * @param hash a hash code associated with this token
@@ -505,7 +484,7 @@ public class SecurityToken implements Serializable {
     public void setTokenHash(int hash) {
         tokenHash = hash;
     }
-    
+
     /**
      * Get a hash code associated with this token.
      * @return a hash code associated with this token.
@@ -513,7 +492,7 @@ public class SecurityToken implements Serializable {
     public int getTokenHash() {
         return tokenHash;
     }
-    
+
     /**
      * Set the principal associated with this SecurityToken
      * @param principal the principal associated with this SecurityToken
@@ -521,7 +500,7 @@ public class SecurityToken implements Serializable {
     public void setPrincipal(Principal principal) {
         this.principal = principal;
     }
-    
+
     /**
      * Get the principal associated with this SecurityToken
      * @return the principal associated with this SecurityToken
@@ -529,7 +508,7 @@ public class SecurityToken implements Serializable {
     public Principal getPrincipal() {
         return principal;
     }
-    
+
     /**
      * Set the SecurityContext associated with this SecurityToken
      * @param securityContext the SecurityContext associated with this SecurityToken
@@ -537,7 +516,7 @@ public class SecurityToken implements Serializable {
     public void setSecurityContext(SecurityContext securityContext) {
         this.securityContext = securityContext;
     }
-    
+
     /**
      * Get the SecurityContext associated with this SecurityToken
      * @return the SecurityContext associated with this SecurityToken
@@ -561,19 +540,19 @@ public class SecurityToken implements Serializable {
     public void setData(byte[] data) {
         this.data = data;
     }
-    
+
     private void writeObject(ObjectOutputStream stream) throws IOException {
         if (token != null && tokenStr == null) {
             tokenStr = DOM2Writer.nodeToString(token);
         }
         stream.defaultWriteObject();
     }
-    
+
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException, XMLStreamException {
         in.defaultReadObject();
-        
+
         if (token == null && tokenStr != null) {
             token = StaxUtils.read(new StringReader(tokenStr)).getDocumentElement();
         }
     }
-} 
+}

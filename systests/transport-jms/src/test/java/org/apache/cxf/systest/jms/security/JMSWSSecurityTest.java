@@ -36,10 +36,11 @@ import org.apache.cxf.hello_world_jms.HelloWorldService;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.apache.cxf.testutil.common.EmbeddedJMSBrokerLauncher;
 import org.apache.cxf.ws.security.wss4j.WSS4JOutInterceptor;
+import org.apache.wss4j.common.ConfigurationConstants;
 import org.apache.wss4j.common.saml.bean.AudienceRestrictionBean;
 import org.apache.wss4j.common.saml.bean.ConditionsBean;
 import org.apache.wss4j.common.saml.builder.SAML2Constants;
-import org.apache.wss4j.dom.handler.WSHandlerConstants;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -50,10 +51,10 @@ import org.junit.Test;
  */
 public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
     public static final String PORT = allocatePort(JMSWSSecurityTest.class);
- 
+
     private static EmbeddedJMSBrokerLauncher broker;
-    private List<String> wsdlStrings = new ArrayList<String>();
-    
+    private List<String> wsdlStrings = new ArrayList<>();
+
     @BeforeClass
     public static void startServers() throws Exception {
         broker = new EmbeddedJMSBrokerLauncher("tcp://localhost:" + PORT);
@@ -61,17 +62,17 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         launchServer(new Server(broker));
         createStaticBus();
     }
-    
+
     @Before
     public void setUp() throws Exception {
         assertSame(getStaticBus(), BusFactory.getThreadDefaultBus(false));
     }
-   
-    @After 
+
+    @After
     public void tearDown() throws Exception {
         wsdlStrings.clear();
     }
-    
+
     public URL getWSDLURL(String s) throws Exception {
         URL u = getClass().getResource(s);
         if (u == null) {
@@ -82,7 +83,7 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         broker.updateWsdl(getBus(), wsdlString);
         return u;
     }
-    
+
     @Test
     public void testUnsignedSAML2Token() throws Exception {
         QName serviceName = new QName("http://cxf.apache.org/hello_world_jms", "HelloWorldService");
@@ -92,26 +93,26 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
 
         String response = new String("Bonjour");
         HelloWorldPortType greeter = service.getPort(portName, HelloWorldPortType.class);
-        
+
         SamlCallbackHandler callbackHandler = new SamlCallbackHandler();
         callbackHandler.setSignAssertion(true);
         callbackHandler.setConfirmationMethod(SAML2Constants.CONF_BEARER);
-        
-        Map<String, Object> outProperties = new HashMap<String, Object>();
-        outProperties.put(WSHandlerConstants.ACTION, WSHandlerConstants.SAML_TOKEN_UNSIGNED);
-        outProperties.put(WSHandlerConstants.SAML_CALLBACK_REF, callbackHandler);
-        
+
+        Map<String, Object> outProperties = new HashMap<>();
+        outProperties.put(ConfigurationConstants.ACTION, ConfigurationConstants.SAML_TOKEN_UNSIGNED);
+        outProperties.put(ConfigurationConstants.SAML_CALLBACK_REF, callbackHandler);
+
         WSS4JOutInterceptor outInterceptor = new WSS4JOutInterceptor(outProperties);
         Client client = ClientProxy.getClient(greeter);
         client.getOutInterceptors().add(outInterceptor);
-        
+
         String reply = greeter.sayHi();
         assertNotNull("no response received from service", reply);
         assertEquals(response, reply);
 
         ((java.io.Closeable)greeter).close();
     }
-    
+
     @Test
     public void testUnsignedSAML2AudienceRestrictionTokenURI() throws Exception {
         QName serviceName = new QName("http://cxf.apache.org/hello_world_jms", "HelloWorldService");
@@ -121,11 +122,11 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
 
         String response = new String("Bonjour");
         HelloWorldPortType greeter = service.getPort(portName, HelloWorldPortType.class);
-        
+
         SamlCallbackHandler callbackHandler = new SamlCallbackHandler();
         callbackHandler.setSignAssertion(true);
         callbackHandler.setConfirmationMethod(SAML2Constants.CONF_BEARER);
-        
+
         ConditionsBean conditions = new ConditionsBean();
         conditions.setTokenPeriodMinutes(5);
         List<String> audiences = new ArrayList<>();
@@ -133,24 +134,24 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         AudienceRestrictionBean audienceRestrictionBean = new AudienceRestrictionBean();
         audienceRestrictionBean.setAudienceURIs(audiences);
         conditions.setAudienceRestrictions(Collections.singletonList(audienceRestrictionBean));
-        
+
         callbackHandler.setConditions(conditions);
-        
-        Map<String, Object> outProperties = new HashMap<String, Object>();
-        outProperties.put(WSHandlerConstants.ACTION, WSHandlerConstants.SAML_TOKEN_UNSIGNED);
-        outProperties.put(WSHandlerConstants.SAML_CALLBACK_REF, callbackHandler);
-        
+
+        Map<String, Object> outProperties = new HashMap<>();
+        outProperties.put(ConfigurationConstants.ACTION, ConfigurationConstants.SAML_TOKEN_UNSIGNED);
+        outProperties.put(ConfigurationConstants.SAML_CALLBACK_REF, callbackHandler);
+
         WSS4JOutInterceptor outInterceptor = new WSS4JOutInterceptor(outProperties);
         Client client = ClientProxy.getClient(greeter);
         client.getOutInterceptors().add(outInterceptor);
-        
+
         String reply = greeter.sayHi();
         assertNotNull("no response received from service", reply);
         assertEquals(response, reply);
 
         ((java.io.Closeable)greeter).close();
     }
-    
+
     @Test
     public void testUnsignedSAML2AudienceRestrictionTokenBadURI() throws Exception {
         QName serviceName = new QName("http://cxf.apache.org/hello_world_jms", "HelloWorldService");
@@ -159,11 +160,11 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         HelloWorldService service = new HelloWorldService(wsdl, serviceName);
 
         HelloWorldPortType greeter = service.getPort(portName, HelloWorldPortType.class);
-        
+
         SamlCallbackHandler callbackHandler = new SamlCallbackHandler();
         callbackHandler.setSignAssertion(true);
         callbackHandler.setConfirmationMethod(SAML2Constants.CONF_BEARER);
-        
+
         ConditionsBean conditions = new ConditionsBean();
         conditions.setTokenPeriodMinutes(5);
         List<String> audiences = new ArrayList<>();
@@ -171,17 +172,17 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         AudienceRestrictionBean audienceRestrictionBean = new AudienceRestrictionBean();
         audienceRestrictionBean.setAudienceURIs(audiences);
         conditions.setAudienceRestrictions(Collections.singletonList(audienceRestrictionBean));
-        
+
         callbackHandler.setConditions(conditions);
-        
-        Map<String, Object> outProperties = new HashMap<String, Object>();
-        outProperties.put(WSHandlerConstants.ACTION, WSHandlerConstants.SAML_TOKEN_UNSIGNED);
-        outProperties.put(WSHandlerConstants.SAML_CALLBACK_REF, callbackHandler);
-        
+
+        Map<String, Object> outProperties = new HashMap<>();
+        outProperties.put(ConfigurationConstants.ACTION, ConfigurationConstants.SAML_TOKEN_UNSIGNED);
+        outProperties.put(ConfigurationConstants.SAML_CALLBACK_REF, callbackHandler);
+
         WSS4JOutInterceptor outInterceptor = new WSS4JOutInterceptor(outProperties);
         Client client = ClientProxy.getClient(greeter);
         client.getOutInterceptors().add(outInterceptor);
-        
+
         try {
             greeter.sayHi();
             fail("Failure expected on a bad audience restriction");
@@ -191,7 +192,7 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
 
         ((java.io.Closeable)greeter).close();
     }
-    
+
     @Test
     public void testUnsignedSAML2AudienceRestrictionTokenServiceName() throws Exception {
         QName serviceName = new QName("http://cxf.apache.org/hello_world_jms", "HelloWorldService");
@@ -201,11 +202,11 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
 
         String response = new String("Bonjour");
         HelloWorldPortType greeter = service.getPort(portName, HelloWorldPortType.class);
-        
+
         SamlCallbackHandler callbackHandler = new SamlCallbackHandler();
         callbackHandler.setSignAssertion(true);
         callbackHandler.setConfirmationMethod(SAML2Constants.CONF_BEARER);
-        
+
         ConditionsBean conditions = new ConditionsBean();
         conditions.setTokenPeriodMinutes(5);
         List<String> audiences = new ArrayList<>();
@@ -213,24 +214,24 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         AudienceRestrictionBean audienceRestrictionBean = new AudienceRestrictionBean();
         audienceRestrictionBean.setAudienceURIs(audiences);
         conditions.setAudienceRestrictions(Collections.singletonList(audienceRestrictionBean));
-        
+
         callbackHandler.setConditions(conditions);
-        
-        Map<String, Object> outProperties = new HashMap<String, Object>();
-        outProperties.put(WSHandlerConstants.ACTION, WSHandlerConstants.SAML_TOKEN_UNSIGNED);
-        outProperties.put(WSHandlerConstants.SAML_CALLBACK_REF, callbackHandler);
-        
+
+        Map<String, Object> outProperties = new HashMap<>();
+        outProperties.put(ConfigurationConstants.ACTION, ConfigurationConstants.SAML_TOKEN_UNSIGNED);
+        outProperties.put(ConfigurationConstants.SAML_CALLBACK_REF, callbackHandler);
+
         WSS4JOutInterceptor outInterceptor = new WSS4JOutInterceptor(outProperties);
         Client client = ClientProxy.getClient(greeter);
         client.getOutInterceptors().add(outInterceptor);
-        
+
         String reply = greeter.sayHi();
         assertNotNull("no response received from service", reply);
         assertEquals(response, reply);
 
         ((java.io.Closeable)greeter).close();
     }
-    
+
     @Test
     public void testUnsignedSAML2AudienceRestrictionTokenBadServiceName() throws Exception {
         QName serviceName = new QName("http://cxf.apache.org/hello_world_jms", "HelloWorldService");
@@ -239,11 +240,11 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         HelloWorldService service = new HelloWorldService(wsdl, serviceName);
 
         HelloWorldPortType greeter = service.getPort(portName, HelloWorldPortType.class);
-        
+
         SamlCallbackHandler callbackHandler = new SamlCallbackHandler();
         callbackHandler.setSignAssertion(true);
         callbackHandler.setConfirmationMethod(SAML2Constants.CONF_BEARER);
-        
+
         ConditionsBean conditions = new ConditionsBean();
         conditions.setTokenPeriodMinutes(5);
         List<String> audiences = new ArrayList<>();
@@ -251,17 +252,17 @@ public class JMSWSSecurityTest extends AbstractBusClientServerTestBase {
         AudienceRestrictionBean audienceRestrictionBean = new AudienceRestrictionBean();
         audienceRestrictionBean.setAudienceURIs(audiences);
         conditions.setAudienceRestrictions(Collections.singletonList(audienceRestrictionBean));
-        
+
         callbackHandler.setConditions(conditions);
-        
-        Map<String, Object> outProperties = new HashMap<String, Object>();
-        outProperties.put(WSHandlerConstants.ACTION, WSHandlerConstants.SAML_TOKEN_UNSIGNED);
-        outProperties.put(WSHandlerConstants.SAML_CALLBACK_REF, callbackHandler);
-        
+
+        Map<String, Object> outProperties = new HashMap<>();
+        outProperties.put(ConfigurationConstants.ACTION, ConfigurationConstants.SAML_TOKEN_UNSIGNED);
+        outProperties.put(ConfigurationConstants.SAML_CALLBACK_REF, callbackHandler);
+
         WSS4JOutInterceptor outInterceptor = new WSS4JOutInterceptor(outProperties);
         Client client = ClientProxy.getClient(greeter);
         client.getOutInterceptors().add(outInterceptor);
-        
+
         try {
             greeter.sayHi();
             fail("Failure expected on a bad audience restriction");

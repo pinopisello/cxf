@@ -24,6 +24,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.cxf.helpers.CastUtils;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,7 +39,7 @@ public class JsonMapObjectReaderWriterTest extends Assert {
         map.put("c", Collections.singletonList("cValue"));
         map.put("claim", null);
         String json = new JsonMapObjectReaderWriter().toJson(map);
-        assertEquals("{\"a\":\"aValue\",\"b\":123,\"c\":[\"cValue\"],\"claim\":null}", 
+        assertEquals("{\"a\":\"aValue\",\"b\":123,\"c\":[\"cValue\"],\"claim\":null}",
                      json);
     }
     @Test
@@ -57,4 +59,83 @@ public class JsonMapObjectReaderWriterTest extends Assert {
         assertEquals(Collections.singletonList("cValue"), map.get("c"));
         assertNull(map.get("f"));
     }
+    @Test
+    public void testReadMapWithValueCommas() throws Exception {
+        String json = "{\"a\":\"aValue1,aValue2\",\"b\":\"bValue1\"\r\n,\"c\":[\"cValue1, cValue2\"],"
+            + "\"d\":\"dValue1,dValue2,dValue3,dValue4\"}";
+        Map<String, Object> map = new JsonMapObjectReaderWriter().fromJson(json);
+        assertEquals(4, map.size());
+        assertEquals("aValue1,aValue2", map.get("a"));
+        assertEquals("bValue1", map.get("b"));
+        assertEquals(Collections.singletonList("cValue1, cValue2"), map.get("c"));
+        assertEquals("dValue1,dValue2,dValue3,dValue4", map.get("d"));
+    }
+    @Test
+    public void testReadStringWithLeftCurlyBracketInString() throws Exception {
+        JsonMapObjectReaderWriter jsonMapObjectReaderWriter = new JsonMapObjectReaderWriter();
+        String s = "{\"x\":{\"y\":\"{\"}}";
+        Map<String, Object> map = jsonMapObjectReaderWriter.fromJson(s);
+        assertEquals(1, map.size());
+        Map<String, Object> xMap = CastUtils.cast((Map<?, ?>)map.get("x"));
+        assertEquals(1, xMap.size());
+        assertEquals("{", xMap.get("y"));
+    }
+    @Test
+    public void testReadStringWithLeftCurlyBracketInString2() throws Exception {
+        JsonMapObjectReaderWriter jsonMapObjectReaderWriter = new JsonMapObjectReaderWriter();
+        String s = "{\"x\":{\"y\":\"{\", \"z\":\"{\"}, \"a\":\"b\"}";
+        Map<String, Object> map = jsonMapObjectReaderWriter.fromJson(s);
+        assertEquals(2, map.size());
+        assertEquals("b", map.get("a"));
+        Map<String, Object> xMap = CastUtils.cast((Map<?, ?>)map.get("x"));
+        assertEquals(2, xMap.size());
+        assertEquals("{", xMap.get("y"));
+        assertEquals("{", xMap.get("z"));
+    }
+    @Test
+    public void testReadStringWithRightCurlyBracketInString() throws Exception {
+        JsonMapObjectReaderWriter jsonMapObjectReaderWriter = new JsonMapObjectReaderWriter();
+        String s = "{\"x\":{\"y\":\"}\"}}";
+        Map<String, Object> map = jsonMapObjectReaderWriter.fromJson(s);
+        assertEquals(1, map.size());
+        Map<String, Object> xMap = CastUtils.cast((Map<?, ?>)map.get("x"));
+        assertEquals(1, xMap.size());
+        assertEquals("}", xMap.get("y"));
+    }
+    @Test
+    public void testReadStringWithRightCurlyBracketInString2() throws Exception {
+        JsonMapObjectReaderWriter jsonMapObjectReaderWriter = new JsonMapObjectReaderWriter();
+        String s = "{\"x\":{\"y\":\"}\", \"z\":\"}\"}, \"a\":\"b\"}";
+        Map<String, Object> map = jsonMapObjectReaderWriter.fromJson(s);
+        assertEquals(2, map.size());
+        assertEquals("b", map.get("a"));
+        Map<String, Object> xMap = CastUtils.cast((Map<?, ?>)map.get("x"));
+        assertEquals(2, xMap.size());
+        assertEquals("}", xMap.get("y"));
+        assertEquals("}", xMap.get("z"));
+    }
+    @Test
+    public void testReadStringWithCurlyBracketsInString() throws Exception {
+        JsonMapObjectReaderWriter jsonMapObjectReaderWriter = new JsonMapObjectReaderWriter();
+        String s = "{\"x\":{\"y\":\"{\\\"}\"}}";
+        Map<String, Object> map = jsonMapObjectReaderWriter.fromJson(s);
+        assertEquals(1, map.size());
+        Map<String, Object> xMap = CastUtils.cast((Map<?, ?>)map.get("x"));
+        assertEquals(1, xMap.size());
+        assertEquals("{\\\"}", xMap.get("y"));
+    }
+
+    @Test
+    public void testEscapedForwardSlashInString() throws Exception {
+        JsonMapObjectReaderWriter jsonMapObjectReaderWriter = new JsonMapObjectReaderWriter();
+        String s = "{\"kid\":\"4pZbe4shQQGzZXHbeIlbDvmHOc1\\/H6jH6oBk3nUrcZE=\",\"alg\":\"RS256\"}";
+
+        Map<String, Object> map = jsonMapObjectReaderWriter.fromJson(s);
+        assertEquals(2, map.size());
+
+        String kid = (String)map.get("kid");
+        String expectedKid = "4pZbe4shQQGzZXHbeIlbDvmHOc1/H6jH6oBk3nUrcZE=";
+        assertEquals(expectedKid, kid);
+    }
+
 }

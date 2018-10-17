@@ -27,6 +27,7 @@ import javax.xml.ws.BindingProvider;
 import org.apache.cxf.testutil.common.AbstractClientServerTestBase;
 import org.apache.hello_world_soap_http.Greeter;
 import org.apache.hello_world_soap_http.SOAPService;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,14 +38,14 @@ import org.junit.Test;
 
 public class ThreadPoolTest extends AbstractClientServerTestBase {
     private static final String ADDRESS = Server.ADDRESS;
-    private static final QName SERVICE_NAME = 
+    private static final QName SERVICE_NAME =
         new QName("http://apache.org/hello_world_soap_http", "SOAPServiceAddressing");
 
     private Greeter greeter;
 
     @BeforeClass
     public static void startServers() throws Exception {
-        assertTrue("server did not launch correctly", 
+        assertTrue("server did not launch correctly",
                    launchServer(Server.class, true));
     }
 
@@ -56,11 +57,11 @@ public class ThreadPoolTest extends AbstractClientServerTestBase {
         bp.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY,
                                    ADDRESS);
     }
-    
+
     class TestRunnable implements Runnable {
         int i;
         long total;
-        
+
         TestRunnable(int i) {
             this.i = i;
         }
@@ -94,7 +95,7 @@ public class ThreadPoolTest extends AbstractClientServerTestBase {
             invokers[i].setDaemon(true);
             invokers[i].start();
         }
-        
+
         int countLess = 0;
         int countMore = 0;
         for (int i = 0; i < invokers.length; i++) {

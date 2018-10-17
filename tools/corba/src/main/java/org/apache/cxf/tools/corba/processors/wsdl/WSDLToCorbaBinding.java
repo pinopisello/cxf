@@ -92,8 +92,8 @@ public class WSDLToCorbaBinding {
     TypeMappingType typeMappingType;
     ExtensionRegistry extReg;
 
-    List<String> interfaceNames = new ArrayList<String>();
-    Map<Object, Object> bindingNameMap = new HashMap<Object, Object>();
+    List<String> interfaceNames = new ArrayList<>();
+    Map<Object, Object> bindingNameMap = new HashMap<>();
     String bindingName;
     String address;
     String addressFile;
@@ -138,8 +138,8 @@ public class WSDLToCorbaBinding {
         helper.setXMLSchemaList(xmlSchemaList);
 
         List<PortType> intfs = null;
-        if (interfaceNames.size() > 0) {
-            intfs = new ArrayList<PortType>(interfaceNames.size());
+        if (!interfaceNames.isEmpty()) {
+            intfs = new ArrayList<>(interfaceNames.size());
 
             for (String interfaceName : interfaceNames) {
                 PortType portType = null;
@@ -184,22 +184,21 @@ public class WSDLToCorbaBinding {
             org.apache.cxf.common.i18n.Message msg = new org.apache.cxf.common.i18n.Message(
                 "No PortTypes defined in wsdl", LOG);
             throw new Exception(msg.toString());
-        } else {
-            PortType portType = null;
-            intfs = new ArrayList<PortType>();
-            if (portTypes.size() == 1) {
-                portType = portTypes.values().iterator().next();
-                interfaceNames.add(portType.getQName().getLocalPart());
-                intfs.add(portType);
-            } else if (portTypes.size() > 1) {
-                if (def.getAllBindings().size() > 0) {
-                    throwMultipleMultipleTypeException(CastUtils.cast(def.getAllBindings().keySet(),
-                                                                      QName.class));
-                }
-                for (PortType port : portTypes.values()) {
-                    interfaceNames.add(port.getQName().getLocalPart());
-                    intfs.add(port);
-                }
+        }
+        PortType portType = null;
+        intfs = new ArrayList<>();
+        if (portTypes.size() == 1) {
+            portType = portTypes.values().iterator().next();
+            interfaceNames.add(portType.getQName().getLocalPart());
+            intfs.add(portType);
+        } else if (portTypes.size() > 1) {
+            if (def.getAllBindings().size() > 0) {
+                throwMultipleMultipleTypeException(CastUtils.cast(def.getAllBindings().keySet(),
+                                                                  QName.class));
+            }
+            for (PortType port : portTypes.values()) {
+                interfaceNames.add(port.getQName().getLocalPart());
+                intfs.add(port);
             }
         }
         return intfs;
@@ -226,7 +225,7 @@ public class WSDLToCorbaBinding {
             extReg = def.getExtensionRegistry();
         }
 
-        bindingNames = new ArrayList<String>();
+        bindingNames = new ArrayList<>();
         String interfaceName = portType.getQName().getLocalPart();
         String bname = getMappedBindingName(interfaceName);
 
@@ -419,8 +418,8 @@ public class WSDLToCorbaBinding {
         }
 
         operationType.setName(op.getName());
-        List<ParamType> params = new ArrayList<ParamType>();
-        List<ArgType> returns = new ArrayList<ArgType>();
+        List<ParamType> params = new ArrayList<>();
+        List<ArgType> returns = new ArrayList<>();
 
         wsdlParameter.processParameters(this, op, def, xmlSchemaList, params, returns, true);
 
@@ -632,22 +631,21 @@ public class WSDLToCorbaBinding {
             org.apache.cxf.common.i18n.Message msg =
                 new org.apache.cxf.common.i18n.Message(msgStr, LOG);
             throw new Exception(msg.toString());
-        } else {
-            // Set the repository ID for Exception
-            // add to CorbaTypeMapping
-            String repoId = WSDLToCorbaHelper.REPO_STRING
-                + corbaex.getName().replace('.', '/')
-                + WSDLToCorbaHelper.IDL_VERSION;
-            corbaex.setRepositoryID(repoId);
-            CorbaType corbaTypeImpl = corbaex;
-            if (!helper.isDuplicate(corbaTypeImpl)) {
-                CorbaType dup = helper.isDuplicateException(corbaTypeImpl);
-                if (dup != null) {
-                    typeMappingType.getStructOrExceptionOrUnion().remove(dup);
-                    typeMappingType.getStructOrExceptionOrUnion().add(corbaTypeImpl);
-                } else {
-                    typeMappingType.getStructOrExceptionOrUnion().add(corbaTypeImpl);
-                }
+        }
+        // Set the repository ID for Exception
+        // add to CorbaTypeMapping
+        String repoId = WSDLToCorbaHelper.REPO_STRING
+            + corbaex.getName().replace('.', '/')
+            + WSDLToCorbaHelper.IDL_VERSION;
+        corbaex.setRepositoryID(repoId);
+        CorbaType corbaTypeImpl = corbaex;
+        if (!helper.isDuplicate(corbaTypeImpl)) {
+            CorbaType dup = helper.isDuplicateException(corbaTypeImpl);
+            if (dup != null) {
+                typeMappingType.getStructOrExceptionOrUnion().remove(dup);
+                typeMappingType.getStructOrExceptionOrUnion().add(corbaTypeImpl);
+            } else {
+                typeMappingType.getStructOrExceptionOrUnion().add(corbaTypeImpl);
             }
         }
         return corbaex;
@@ -755,9 +753,8 @@ public class WSDLToCorbaBinding {
 
         if (idx != -1) {
             return name.substring(0, idx);
-        } else {
-            return name;
         }
+        return name;
     }
 
     public QName convertToQName(String name) {

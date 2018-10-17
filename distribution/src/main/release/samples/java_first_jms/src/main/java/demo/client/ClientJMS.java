@@ -76,7 +76,6 @@ public final class ClientJMS {
         factory.getOutInterceptors().add(new LoggingOutInterceptor());
         factory.setTransportId(JMSSpecConstants.SOAP_JMS_SPECIFICATION_TRANSPORTID);
         factory.setAddress(JMS_ENDPOINT_URI);
-        HelloWorld client = factory.create(HelloWorld.class);
-        return client;
+        return factory.create(HelloWorld.class);
     }
 }

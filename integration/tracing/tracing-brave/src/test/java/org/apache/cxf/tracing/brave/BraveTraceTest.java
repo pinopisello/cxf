@@ -22,21 +22,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.github.kristofa.brave.Brave;
+import brave.Tracing;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.feature.Feature;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.jaxws.JaxWsServerFactoryBean;
+import zipkin2.Span;
+import zipkin2.reporter.Reporter;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import zipkin.Span;
-import zipkin.reporter.Reporter;
+
 
 public class BraveTraceTest {
-    
+
     private static final String ADDRESS = "http://localhost:8182";
     private Server server;
     private BraveFeature logging;
@@ -61,12 +62,12 @@ public class BraveTraceTest {
         Assert.assertEquals(2, localReporter.spans.size());
 
     }
-    
+
     @After
     public void stopServer() {
         server.destroy();
     }
-    
+
     private static Server createServer(Feature logging) {
         JaxWsServerFactoryBean factory = new JaxWsServerFactoryBean();
         factory.setAddress(ADDRESS);
@@ -74,7 +75,7 @@ public class BraveTraceTest {
         factory.setFeatures(Arrays.asList(logging));
         return factory.create();
     }
-    
+
     private static MyService createProxy(Feature trace) {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
         factory.setServiceClass(MyService.class);
@@ -84,23 +85,25 @@ public class BraveTraceTest {
     }
 
     private static BraveFeature createLoggingFeature(Reporter<Span> reporter) {
-        Brave brave = new Brave.Builder("myservice").reporter(reporter).build();
+        Tracing brave =
+            Tracing.newBuilder().localServiceName("myservice").spanReporter(reporter).build();
         return new BraveFeature(brave);
     }
-    
+
     private static BraveClientFeature createClientLoggingFeature(Reporter<Span> reporter) {
-        Brave brave = new Brave.Builder("myservice").reporter(reporter).build();
+        Tracing brave =
+            Tracing.newBuilder().localServiceName("myservice").spanReporter(reporter).build();
         return new BraveClientFeature(brave);
     }
-    
+
     static final class Localreporter implements Reporter<Span> {
-        List<Span> spans = new ArrayList<Span>();
+        List<Span> spans = new ArrayList<>();
 
         @Override
         public void report(Span span) {
             spans.add(span);
         }
-        
+
     }
 
 }

@@ -43,7 +43,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 
 import org.apache.cxf.common.logging.LogUtils;
@@ -86,11 +86,11 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
     private Topic jmsTopic;
 
     private JAXBContext jaxbContext;
-    
+
     private boolean checkTermination = true;
-    
+
     private boolean isSessionActive = true;
-    
+
     private Thread terminationThread;
 
     public JmsSubscription(String name) {
@@ -143,16 +143,15 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
         if (session == null) {
             PauseFailedFaultType fault = new PauseFailedFaultType();
             throw new PauseFailedFault("Subscription is already paused", fault);
-        } else {
-            try {
-                session.close();
-                isSessionActive = false;
-            } catch (JMSException e) {
-                PauseFailedFaultType fault = new PauseFailedFaultType();
-                throw new PauseFailedFault("Error pausing subscription", fault, e);
-            } finally {
-                session = null;
-            }
+        }
+        try {
+            session.close();
+            isSessionActive = false;
+        } catch (JMSException e) {
+            PauseFailedFaultType fault = new PauseFailedFaultType();
+            throw new PauseFailedFault("Error pausing subscription", fault, e);
+        } finally {
+            session = null;
         }
     }
 
@@ -161,16 +160,15 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
         if (session != null) {
             ResumeFailedFaultType fault = new ResumeFailedFaultType();
             throw new ResumeFailedFault("Subscription is already running", fault);
-        } else {
-            try {
-                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-                MessageConsumer consumer = session.createConsumer(jmsTopic);
-                consumer.setMessageListener(this);
-                isSessionActive = true;
-            } catch (JMSException e) {
-                ResumeFailedFaultType fault = new ResumeFailedFaultType();
-                throw new ResumeFailedFault("Error resuming subscription", fault, e);
-            }
+        }
+        try {
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            MessageConsumer consumer = session.createConsumer(jmsTopic);
+            consumer.setMessageListener(this);
+            isSessionActive = true;
+        } catch (JMSException e) {
+            ResumeFailedFaultType fault = new ResumeFailedFaultType();
+            throw new ResumeFailedFault("Error resuming subscription", fault, e);
         }
     }
 
@@ -214,7 +212,7 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
     public void onMessage(Message jmsMessage) {
         try {
             TextMessage text = (TextMessage) jmsMessage;
-            XMLStreamReader reader = StaxUtils.createXMLStreamReader(new StringReader(text.getText())); 
+            XMLStreamReader reader = StaxUtils.createXMLStreamReader(new StringReader(text.getText()));
             Notify notify = (Notify) jaxbContext.createUnmarshaller()
                     .unmarshal(reader);
             reader.close();
@@ -223,9 +221,9 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
                 NotificationMessageHolderType h = ith.next();
                 Object content = h.getMessage().getAny();
                 if (!(content instanceof Element)) {
-                    Document doc = DOMUtils.createDocument();
+                    DocumentFragment doc = DOMUtils.getEmptyDocument().createDocumentFragment();
                     jaxbContext.createMarshaller().marshal(content, doc);
-                    content = doc.getDocumentElement();
+                    content = DOMUtils.getFirstElement(doc);
                 }
                 if (!doFilter((Element) content)) {
                     ith.remove();
@@ -267,7 +265,7 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
     }
 
     protected abstract void doNotify(Notify notify);
-    
+
     class TerminationThread extends Thread {
         public void run() {
             while (checkTermination) {
@@ -285,7 +283,7 @@ public abstract class JmsSubscription extends AbstractSubscription implements Me
                     }
                 }
                 try {
-                    Thread.sleep(10000); // check if should terminate every 10 sec
+                    Thread.sleep(2000); // check if should terminate every 2 sec
                 } catch (InterruptedException e) {
                     LOGGER.log(Level.WARNING, "TerminationThread sleep interrupted", e);
                 }

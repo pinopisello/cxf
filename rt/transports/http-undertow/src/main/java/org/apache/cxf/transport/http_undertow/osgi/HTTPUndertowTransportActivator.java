@@ -24,13 +24,13 @@ import java.security.GeneralSecurityException;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.management.MBeanServer;
 
 import org.apache.cxf.bus.blueprint.BlueprintNameSpaceHandlerFactory;
 import org.apache.cxf.bus.blueprint.NamespaceHandlerRegisterer;
+import org.apache.cxf.common.util.CollectionUtils;
 import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
 import org.apache.cxf.configuration.jsse.TLSServerParameters;
 import org.apache.cxf.configuration.security.CertStoreType;
@@ -55,29 +55,28 @@ import org.osgi.service.cm.ConfigurationException;
 import org.osgi.service.cm.ManagedServiceFactory;
 import org.osgi.util.tracker.ServiceTracker;
 
-public class HTTPUndertowTransportActivator 
+public class HTTPUndertowTransportActivator
     implements BundleActivator, ManagedServiceFactory {
     public static final String FACTORY_PID = "org.apache.cxf.http.undertow";
-    
-    BundleContext context; 
+
+    BundleContext context;
     MBeanServer mbeans;
-    ServiceTracker mbeanServerTracker;
-    ServiceRegistration reg;
-    
+    ServiceTracker<MBeanServer, MBeanServer> mbeanServerTracker;
+    ServiceRegistration<?> reg;
+
     UndertowHTTPServerEngineFactory factory = new UndertowHTTPServerEngineFactory() {
         public MBeanServer getMBeanServer() {
-            return (MBeanServer)mbeanServerTracker.getService();
+            return mbeanServerTracker.getService();
         }
     };
-    
+
     public void start(BundleContext ctx) throws Exception {
         this.context = ctx;
-        Properties servProps = new Properties();
-        servProps.put(Constants.SERVICE_PID, FACTORY_PID);  
         reg = context.registerService(ManagedServiceFactory.class.getName(),
-                                       this, servProps);
-        
-        mbeanServerTracker = new ServiceTracker(ctx, MBeanServer.class.getName(), null);
+                                      this,
+                                      CollectionUtils.singletonDictionary(Constants.SERVICE_PID, FACTORY_PID));
+
+        mbeanServerTracker = new ServiceTracker<>(ctx, MBeanServer.class, null);
         try {
             BlueprintNameSpaceHandlerFactory nsHandlerFactory = new BlueprintNameSpaceHandlerFactory() {
 
@@ -102,14 +101,13 @@ public class HTTPUndertowTransportActivator
         return FACTORY_PID;
     }
 
-    @SuppressWarnings("unchecked")
-    public void updated(String pid, @SuppressWarnings("rawtypes") Dictionary properties)
+    public void updated(String pid, Dictionary<String, ?> properties)
         throws ConfigurationException {
         if (pid == null) {
             return;
         }
         int port = Integer.parseInt((String)properties.get("port"));
-        
+
         String host = (String)properties.get("host");
         try {
             TLSServerParameters tls = createTlsServerParameters(properties);
@@ -118,7 +116,7 @@ public class HTTPUndertowTransportActivator
             } else {
                 factory.createUndertowHTTPServerEngine(host, port, "http");
             }
-            
+
             UndertowHTTPServerEngine e = factory.retrieveUndertowHTTPServerEngine(port);
             configure(e, properties);
         } catch (GeneralSecurityException e) {
@@ -129,7 +127,7 @@ public class HTTPUndertowTransportActivator
     }
 
 
-    private void configure(UndertowHTTPServerEngine e, Dictionary<String, String> properties) {
+    private void configure(UndertowHTTPServerEngine e, Dictionary<String, ?> properties) {
         ThreadingParameters threading = createThreadingParameters(properties);
         if (threading != null) {
             e.setThreadingParameters(threading);
@@ -138,17 +136,17 @@ public class HTTPUndertowTransportActivator
         while (keys.hasMoreElements()) {
             String k = keys.nextElement();
             if ("continuationsEnabled".equals(k)) {
-                e.setContinuationsEnabled(Boolean.parseBoolean(properties.get(k)));
+                e.setContinuationsEnabled(Boolean.parseBoolean((String)properties.get(k)));
             } else if ("maxIdleTime".equals(k)) {
-                e.setMaxIdleTime(Integer.parseInt(properties.get(k)));
-            } 
+                e.setMaxIdleTime(Integer.parseInt((String)properties.get(k)));
+            }
         }
     }
 
     public void deleted(String pid) {
     }
 
-    private ThreadingParameters createThreadingParameters(Dictionary<String, String> d) {
+    private ThreadingParameters createThreadingParameters(Dictionary<String, ?> d) {
         Enumeration<String> keys = d.keys();
         ThreadingParameters p = null;
         while (keys.hasMoreElements()) {
@@ -157,7 +155,7 @@ public class HTTPUndertowTransportActivator
                 if (p == null) {
                     p = new ThreadingParameters();
                 }
-                String v = d.get(k);
+                String v = (String)d.get(k);
                 k = k.substring("threadingParameters.".length());
                 if ("minThreads".equals(k)) {
                     p.setMinThreads(Integer.parseInt(v));
@@ -171,19 +169,20 @@ public class HTTPUndertowTransportActivator
         return p;
     }
 
-    private TLSServerParameters createTlsServerParameters(Dictionary<String, String> d) {
+    private TLSServerParameters createTlsServerParameters(Dictionary<String, ?> d) {
         Enumeration<String> keys = d.keys();
         TLSServerParameters p = null;
         SecureRandomParameters srp = null;
         KeyManagersType kmt = null;
         TrustManagersType tmt = null;
+        boolean enableRevocation = false;
         while (keys.hasMoreElements()) {
             String k = keys.nextElement();
             if (k.startsWith("tlsServerParameters.")) {
                 if (p == null) {
                     p = new TLSServerParameters();
                 }
-                String v = d.get(k);
+                String v = (String)d.get(k);
                 k = k.substring("tlsServerParameters.".length());
 
                 if ("secureSocketProtocol".equals(k)) {
@@ -192,6 +191,8 @@ public class HTTPUndertowTransportActivator
                     p.setJsseProvider(v);
                 } else if ("certAlias".equals(k)) {
                     p.setCertAlias(v);
+                } else if ("enableRevocation".equals(k)) {
+                    enableRevocation = Boolean.parseBoolean(v);
                 } else if ("clientAuthentication.want".equals(k)) {
                     if (p.getClientAuthentication() == null) {
                         p.setClientAuthentication(new ClientAuthentication());
@@ -229,7 +230,7 @@ public class HTTPUndertowTransportActivator
                 }
             }
         }
-        
+
         try {
             if (srp != null) {
                 p.setSecureRandom(TLSParameterJaxBUtils.getSecureRandom(srp));
@@ -238,7 +239,7 @@ public class HTTPUndertowTransportActivator
                 p.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
             }
             if (tmt != null) {
-                p.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt));
+                p.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, enableRevocation));
             }
         } catch (RuntimeException e) {
             throw e;
@@ -380,7 +381,7 @@ public class HTTPUndertowTransportActivator
     }
 
 
-    
-    
-    
+
+
+
 }

@@ -1,12 +1,10 @@
 JAX-RS SSE Demo 
 =================
 
-This is a SSE version of JAX-RS Basic Demo using CDI.
+This is a SSE broadcaster version of JAX-RS Basic Demo using CDI.
 
-A SSE endpoint service is provided on URL http://localhost:8686/rest/api/stats/sse/{id}
-where {id} is any integer value, f.e.:
-
-  http://localhost:8686/rest/api/stats/sse/1
+A SSE endpoint service is provided on URL http://localhost:8686/rest/api/stats/sse which
+is broadcasting the SSE events to all subscribers (using RxJava 2 and SseBroadcaster).
 
 This sample includes a simple web UI using Highcharts JavaScript library to show off
 randomly generated statistics about particular server, pushed to the client using

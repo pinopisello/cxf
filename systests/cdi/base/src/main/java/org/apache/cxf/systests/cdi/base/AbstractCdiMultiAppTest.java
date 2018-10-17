@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import org.apache.cxf.jaxrs.client.WebClient;
+
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -51,11 +52,11 @@ public abstract class AbstractCdiMultiAppTest extends AbstractCdiSingleAppTest {
         Response r1 = createWebClient("/rest/v3/bookstore/versioned/version", MediaType.TEXT_PLAIN).get();
         assertEquals(Response.Status.OK.getStatusCode(), r1.getStatus());
         assertThat(r1.readEntity(String.class), startsWith("1.0."));
-        
+
         Response r2 = createWebClient("/rest/v3/bookstore/versioned/version", MediaType.TEXT_PLAIN).get();
         assertEquals(Response.Status.OK.getStatusCode(), r2.getStatus());
         assertThat(r2.readEntity(String.class), startsWith("1.0."));
-        
+
         assertThat(r2.readEntity(String.class), not(equalTo(r1.readEntity(String.class))));
     }
 
@@ -77,6 +78,6 @@ public abstract class AbstractCdiMultiAppTest extends AbstractCdiSingleAppTest {
     protected String getBasePath() {
         return "/rest/v1/bookstore";
     }
-    
+
     protected abstract int getPort();
 }

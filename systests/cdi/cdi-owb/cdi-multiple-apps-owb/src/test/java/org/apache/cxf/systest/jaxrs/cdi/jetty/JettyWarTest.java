@@ -23,6 +23,7 @@ import org.apache.cxf.jaxrs.model.AbstractResourceInfo;
 import org.apache.cxf.systests.cdi.base.AbstractCdiMultiAppTest;
 import org.apache.cxf.systests.cdi.base.jetty.AbstractJettyServer;
 import org.apache.webbeans.servlet.WebBeansConfigurationListener;
+
 import org.junit.BeforeClass;
 
 public class JettyWarTest extends AbstractCdiMultiAppTest {
@@ -33,14 +34,14 @@ public class JettyWarTest extends AbstractCdiMultiAppTest {
             super("/jaxrs_cdi", "/", PORT, new WebBeansConfigurationListener());
         }
     }
-    
+
     @BeforeClass
     public static void startServers() throws Exception {
         AbstractResourceInfo.clearAllMaps();
         assertTrue("server did not launch correctly", launchServer(EmbeddedJettyServer.class, true));
         createStaticBus();
     }
-    
+
     @Override
     protected int getPort() {
         return EmbeddedJettyServer.PORT;

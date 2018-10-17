@@ -30,7 +30,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 // protecting the service resources.
 
 // If the protected resources are not CXF based then use TokenIntrospectionService which
-// returns RFC 7622 compliant TokenIntrospection response. 
+// returns RFC 7622 compliant TokenIntrospection response.
 
 
 // The problem with reading specific ServerAccessToken instances is that
@@ -38,9 +38,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 // classes like BearerAccessToken, etc, even though classes like BearerAccessToken
 // will not add anything useful to the filter protecting the application.
 
-//TODO: consider simply extending ServerAccessToken, 
-// though this will require relaxing a bit the ServerAccessToken model 
-// (introduce default constructors, etc) 
+//TODO: consider simply extending ServerAccessToken,
+// though this will require relaxing a bit the ServerAccessToken model
+// (introduce default constructors, etc)
 @XmlRootElement
 public class AccessTokenValidation {
     private boolean initialValidationSuccessful = true;
@@ -53,17 +53,18 @@ public class AccessTokenValidation {
     private String tokenGrantType;
     private long tokenIssuedAt;
     private long tokenLifetime;
+    private long tokenNotBefore;
     private String tokenIssuer;
     private UserSubject tokenSubject;
     private List<OAuthPermission> tokenScopes = new LinkedList<OAuthPermission>();
     private List<String> audiences = new LinkedList<String>();
     private String clientCodeVerifier;
-    private Map<String, String> extraProps = new HashMap<String, String>();
-    
+    private Map<String, String> extraProps = new HashMap<>();
+
     public AccessTokenValidation() {
-        
+
     }
-    
+
     public AccessTokenValidation(ServerAccessToken token) {
         this.clientId = token.getClient().getClientId();
         this.clientSubject = token.getClient().getSubject();
@@ -74,14 +75,15 @@ public class AccessTokenValidation {
         this.tokenGrantType = token.getGrantType();
         this.tokenIssuedAt = token.getIssuedAt();
         this.tokenLifetime = token.getExpiresIn();
+        this.tokenNotBefore = token.getNotBefore();
         this.tokenIssuer = token.getIssuer();
         this.tokenSubject = token.getSubject();
         this.tokenScopes = token.getScopes();
-        this.setAudiences(token.getAudiences());
+        this.audiences = token.getAudiences();
         this.clientCodeVerifier = token.getClientCodeVerifier();
         this.extraProps.putAll(token.getExtraProperties());
     }
-    
+
     public String getClientId() {
         return clientId;
     }
@@ -193,5 +195,13 @@ public class AccessTokenValidation {
     public void setTokenIssuer(String tokenIssuer) {
         this.tokenIssuer = tokenIssuer;
     }
-    
+
+    public long getTokenNotBefore() {
+        return tokenNotBefore;
+    }
+
+    public void setTokenNotBefore(long tokenNotBefore) {
+        this.tokenNotBefore = tokenNotBefore;
+    }
+
 }

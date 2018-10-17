@@ -22,9 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerSpan;
-
+import brave.http.HttpTracing;
 import org.apache.cxf.common.injection.NoJSR250Annotations;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.interceptor.Fault;
@@ -32,39 +30,36 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.phase.Phase;
 
-/**
- * 
- */
 @NoJSR250Annotations
 public class BraveStopInterceptor extends AbstractBraveInterceptor {
-    public BraveStopInterceptor(final Brave brave) {
-        super(Phase.PRE_MARSHAL, brave, new ServerSpanNameProvider());
+    public BraveStopInterceptor(final HttpTracing brave) {
+        super(Phase.PRE_MARSHAL, brave);
     }
 
     @Override
     public void handleMessage(Message message) throws Fault {
         Map<String, List<Object>> responseHeaders = CastUtils.cast((Map<?, ?>)message.get(Message.PROTOCOL_HEADERS));
-        
+
         if (responseHeaders == null) {
-            responseHeaders = new HashMap<String, List<Object>>();
+            responseHeaders = new HashMap<>();
             message.put(Message.PROTOCOL_HEADERS, responseHeaders);
         }
-        
+
         boolean isRequestor = MessageUtils.isRequestor(message);
-        Message requestMessage = isRequestor ? message.getExchange().getOutMessage() 
+        Message requestMessage = isRequestor ? message.getExchange().getOutMessage()
             : message.getExchange().getInMessage();
-        Map<String, List<String>> requestHeaders =  
+        Map<String, List<String>> requestHeaders =
             CastUtils.cast((Map<?, ?>)requestMessage.get(Message.PROTOCOL_HEADERS));
-        
+
         @SuppressWarnings("unchecked")
-        final TraceScopeHolder<ServerSpan> holder = 
-            (TraceScopeHolder<ServerSpan>)message.getExchange().get(TRACE_SPAN);
-        
+        final TraceScopeHolder<TraceScope> holder =
+            (TraceScopeHolder<TraceScope>)message.getExchange().get(TRACE_SPAN);
+
         Integer responseCode = (Integer)message.get(Message.RESPONSE_CODE);
         if (responseCode == null) {
-            responseCode = 200; 
+            responseCode = 200;
         }
-        
+
         super.stopTraceSpan(requestHeaders, responseHeaders, responseCode, holder);
     }
 }

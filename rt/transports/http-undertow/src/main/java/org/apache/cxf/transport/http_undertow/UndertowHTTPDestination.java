@@ -38,7 +38,6 @@ import org.apache.cxf.common.classloader.ClassLoaderUtils.ClassLoaderHolder;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.service.model.EndpointInfo;
-
 import org.apache.cxf.transport.http.DestinationRegistry;
 import org.apache.cxf.transport.servlet.ServletDestination;
 import org.apache.cxf.transports.http.configuration.HTTPServerPolicy;
@@ -46,10 +45,10 @@ import org.apache.cxf.transports.http.configuration.HTTPServerPolicy;
 
 
 public class UndertowHTTPDestination extends ServletDestination {
-    
+
     private static final Logger LOG =
         LogUtils.getL7dLogger(UndertowHTTPDestination.class);
-    
+
     protected UndertowHTTPServerEngine engine;
     protected UndertowHTTPServerEngineFactory serverEngineFactory;
     protected URL nurl;
@@ -72,37 +71,35 @@ public class UndertowHTTPDestination extends ServletDestination {
      * @param serverEngineFactory the serverEngineFactory which could be used to create ServerEngine
      * @throws java.io.IOException
      */
-    public UndertowHTTPDestination(Bus bus, 
-                                   DestinationRegistry registry, 
-                                   EndpointInfo ei, 
+    public UndertowHTTPDestination(Bus bus,
+                                   DestinationRegistry registry,
+                                   EndpointInfo ei,
                                    UndertowHTTPServerEngineFactory serverEngineFactory)
         throws IOException {
         //Add the default port if the address is missing it
         super(bus, registry, ei, getAddressValue(ei, true).getAddress(), true);
         this.serverEngineFactory = serverEngineFactory;
-        if (serverEngineFactory != null) {
-            nurl = new URL(getAddress(endpointInfo));
-        }
         loader = bus.getExtension(ClassLoader.class);
     }
-    
+
     @Override
     protected Logger getLogger() {
         return LOG;
     }
-    
-    
-    
+
+
+
     /**
      * Post-configure retreival of server engine.
      */
     protected void retrieveEngine()
-        throws GeneralSecurityException, 
+        throws GeneralSecurityException,
                IOException {
         if (serverEngineFactory == null) {
             return;
         }
-        engine = 
+        nurl = new URL(getAddress(endpointInfo));
+        engine =
             serverEngineFactory.retrieveUndertowHTTPServerEngine(nurl.getPort());
         if (engine == null) {
             engine = serverEngineFactory.
@@ -110,16 +107,16 @@ public class UndertowHTTPDestination extends ServletDestination {
         }
 
         // When configuring for "http", however, it is still possible that
-        // Spring configuration has configured the port for https. 
+        // Spring configuration has configured the port for https.
         if (!nurl.getProtocol().equals(engine.getProtocol())) {
             throw new IllegalStateException(
-                "Port " + engine.getPort() 
-                + " is configured with wrong protocol \"" 
+                "Port " + engine.getPort()
+                + " is configured with wrong protocol \""
                 + engine.getProtocol()
                 + "\" for \"" + nurl + "\"");
         }
     }
-    
+
     /**
      * This method is used to finalize the configuration
      * after the configuration items have been set.
@@ -127,7 +124,7 @@ public class UndertowHTTPDestination extends ServletDestination {
      */
     public void finalizeConfig() {
         assert !configFinalized;
-        
+
         try {
             retrieveEngine();
         } catch (Exception e) {
@@ -135,14 +132,14 @@ public class UndertowHTTPDestination extends ServletDestination {
         }
         configFinalized = true;
     }
-    
+
     /**
      * Activate receipt of incoming messages.
      */
     protected void activate() {
         super.activate();
         LOG.log(Level.FINE, "Activating receipt of incoming messages");
-                
+
         if (engine != null) {
             UndertowHTTPHandler jhd = createUndertowHTTPHandler(this, contextMatchOnExact());
             engine.addServant(nurl, jhd);
@@ -163,10 +160,10 @@ public class UndertowHTTPDestination extends ServletDestination {
         if (engine != null) {
             engine.removeServant(nurl);
         }
-    }   
-     
+    }
 
-    
+
+
     protected String getBasePathForFullAddress(String addr) {
         try {
             return new URL(addr).getPath();
@@ -174,13 +171,13 @@ public class UndertowHTTPDestination extends ServletDestination {
             return null;
         }
     }
-    
-     
+
+
     protected void doService(HttpServletRequest req,
                              HttpServletResponse resp) throws IOException {
         doService(servletContext, req, resp);
     }
-        
+
     protected void doService(ServletContext context,
                              HttpServletRequest req,
                              HttpServletResponse resp) throws IOException {
@@ -205,44 +202,44 @@ public class UndertowHTTPDestination extends ServletDestination {
             if (origBus != bus) {
                 BusFactory.setThreadDefaultBus(origBus);
             }
-            if (origLoader != null) { 
+            if (origLoader != null) {
                 origLoader.reset();
             }
-        }    
+        }
     }
-    
-    protected void invokeComplete(final ServletContext context, 
-                                  final HttpServletRequest req, 
+
+    protected void invokeComplete(final ServletContext context,
+                                  final HttpServletRequest req,
                                   final HttpServletResponse resp,
                                   Message m) throws IOException {
         resp.flushBuffer();
         super.invokeComplete(context, req, resp, m);
     }
-    
+
     public void setServletContext(ServletContext sc) {
         servletContext = sc;
     }
-    
+
     protected Message retrieveFromContinuation(HttpServletRequest req) {
         return (Message)req.getAttribute(CXF_CONTINUATION_MESSAGE);
     }
-    
+
     protected void setupContinuation(Message inMessage, final HttpServletRequest req,
                                      final HttpServletResponse resp) {
         if (engine != null && engine.getContinuationsEnabled()) {
             super.setupContinuation(inMessage, req, resp);
         }
     }
-        
+
     protected OutputStream flushHeaders(Message outMessage, boolean getStream) throws IOException {
         return super.flushHeaders(outMessage, getStream);
     }
-    
-      
+
+
     protected String getAddress(EndpointInfo endpointInfo) {
         return endpointInfo.getAddress();
     }
-    
+
     public ServerEngine getEngine() {
         return engine;
     }

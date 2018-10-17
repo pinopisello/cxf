@@ -48,7 +48,7 @@ import org.apache.cxf.staxutils.transform.OutTransformWriter;
 import org.apache.cxf.ws.addressing.AddressingProperties;
 
 /**
- * 
+ *
  */
 public class RMCaptureInInterceptor extends AbstractRMInterceptor<Message> {
 
@@ -61,16 +61,16 @@ public class RMCaptureInInterceptor extends AbstractRMInterceptor<Message> {
 
     @Override
     protected void handle(Message message) throws SequenceFault, RMException {
-       
+
         // all messages are initially captured as they cannot be distinguished at this phase
         // Non application messages temp files are released (cos.releaseTempFileHold()) in RMInInterceptor
-        if (!isGET(message) && !MessageUtils.isTrue(message.getContextualProperty(Message.ROBUST_ONEWAY))
+        if (!isGET(message) && !MessageUtils.getContextualBoolean(message, Message.ROBUST_ONEWAY, false)
             && (getManager().getStore() != null || (getManager().getDestinationPolicy() != null && getManager()
                 .getDestinationPolicy().getRetryPolicy() != null))) {
 
             message.getInterceptorChain().add(new RMCaptureInEnd());
             XMLStreamReader reader = message.getContent(XMLStreamReader.class);
-            
+
             if (null != reader) {
                 CachedOutputStream saved = new CachedOutputStream();
                 // REVISIT check factory for READER
@@ -163,7 +163,7 @@ public class RMCaptureInInterceptor extends AbstractRMInterceptor<Message> {
         public void handleMessage(Message message) {
             LOG.entering(getClass().getName(), "handleMessage");
             // Capturing the soap envelope. In case of WSS was activated, decrypted envelope is captured.
-            if (!MessageUtils.isTrue(message.getContextualProperty(Message.ROBUST_ONEWAY))
+            if (!MessageUtils.getContextualBoolean(message, Message.ROBUST_ONEWAY, false)
                 && isApplicationMessage(message)
                 && (getManager().getStore() != null || (getManager().getDestinationPolicy() != null && getManager()
                     .getDestinationPolicy().getRetryPolicy() != null))) {
@@ -221,7 +221,7 @@ public class RMCaptureInInterceptor extends AbstractRMInterceptor<Message> {
                 is = saved.getInputStream();
                 XMLStreamWriter capture = StaxUtils.createXMLStreamWriter(newSaved,
                                                                           StandardCharsets.UTF_8.name());
-                Map<String, String> map = new HashMap<String, String>();
+                Map<String, String> map = new HashMap<>();
                 map.put("{http://schemas.xmlsoap.org/ws/2005/02/rm}Sequence", "");
                 map.put("{http://schemas.xmlsoap.org/ws/2005/02/rm}SequenceAcknowledgement", "");
                 map.put("{http://docs.oasis-open.org/ws-rx/wsrm/200702}Sequence", "");
@@ -229,7 +229,7 @@ public class RMCaptureInInterceptor extends AbstractRMInterceptor<Message> {
                 map.put("{http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd}Security",
                         "");
                 // attributes to be removed
-                Map<String, String> amap = new HashMap<String, String>();
+                Map<String, String> amap = new HashMap<>();
                 amap.put("{http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd}Id",
                          "");
 

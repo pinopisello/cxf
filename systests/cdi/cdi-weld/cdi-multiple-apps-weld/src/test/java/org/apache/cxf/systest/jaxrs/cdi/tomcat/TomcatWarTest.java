@@ -24,6 +24,7 @@ import org.apache.cxf.systests.cdi.base.AbstractCdiMultiAppTest;
 import org.apache.cxf.systests.cdi.base.tomcat.AbstractTomcatServer;
 import org.jboss.weld.environment.Container;
 import org.jboss.weld.environment.tomcat.TomcatContainer;
+
 import org.junit.BeforeClass;
 
 public class TomcatWarTest extends AbstractCdiMultiAppTest {
@@ -34,7 +35,7 @@ public class TomcatWarTest extends AbstractCdiMultiAppTest {
             super("/jaxrs_cdi", "/", PORT);
         }
     }
-    
+
     @BeforeClass
     public static void startServers() throws Exception {
         AbstractResourceInfo.clearAllMaps();
@@ -42,7 +43,7 @@ public class TomcatWarTest extends AbstractCdiMultiAppTest {
         assertTrue("server did not launch correctly", launchServer(EmbeddedTomcatServer.class, true));
         createStaticBus();
     }
-    
+
     @Override
     protected int getPort() {
         return EmbeddedTomcatServer.PORT;

@@ -31,13 +31,13 @@ import org.apache.cxf.ws.security.sts.provider.model.RequestedSecurityTokenType;
  * token.
  */
 public class DefaultTokenWrapper implements TokenWrapper {
-    
+
     /**
      * Wrap the Token parameter and set it on the RequestedSecurityTokenType parameter
      */
     public void wrapToken(Object token, RequestedSecurityTokenType requestedTokenType) {
         if (token instanceof String) {
-            Document doc = DOMUtils.newDocument();
+            Document doc = DOMUtils.getEmptyDocument();
             Element tokenWrapper = doc.createElementNS(null, "TokenWrapper");
             tokenWrapper.setTextContent((String)token);
             requestedTokenType.setAny(tokenWrapper);
@@ -45,5 +45,5 @@ public class DefaultTokenWrapper implements TokenWrapper {
             requestedTokenType.setAny(token);
         }
     }
-    
+
 }

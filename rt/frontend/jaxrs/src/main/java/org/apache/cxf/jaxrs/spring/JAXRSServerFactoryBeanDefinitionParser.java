@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.ws.rs.Path;
 import javax.ws.rs.ext.Provider;
@@ -33,6 +34,7 @@ import org.w3c.dom.Element;
 
 import org.apache.cxf.bus.spring.BusWiringBeanFactoryPostProcessor;
 import org.apache.cxf.common.classloader.ClassLoaderUtils;
+import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.ClasspathScanner;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.configuration.spring.AbstractBeanDefinitionParser;
@@ -41,6 +43,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.model.UserResource;
+import org.apache.cxf.jaxrs.utils.ExceptionUtils;
 import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -55,18 +58,18 @@ import org.springframework.context.ApplicationContextAware;
 
 
 public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefinitionParser {
-    
-    
+    private static final Logger LOG = LogUtils.getL7dLogger(JAXRSServerFactoryBeanDefinitionParser.class);
+
     public JAXRSServerFactoryBeanDefinitionParser() {
         super();
         setBeanClass(SpringJAXRSServerFactoryBean.class);
     }
-    
+
     @Override
     protected void mapAttribute(BeanDefinitionBuilder bean, Element e, String name, String val) {
         if ("beanNames".equals(name)) {
             String[] values = StringUtils.split(val, " ");
-            List<SpringResourceFactory> tempFactories = new ArrayList<SpringResourceFactory>(values.length);
+            List<SpringResourceFactory> tempFactories = new ArrayList<>(values.length);
             for (String v : values) {
                 String theValue = v.trim();
                 if (theValue.length() > 0) {
@@ -77,7 +80,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
         } else if ("serviceName".equals(name)) {
             QName q = parseQName(e, val);
             bean.addPropertyValue(name, q);
-        } else if ("basePackages".equals(name)) {            
+        } else if ("basePackages".equals(name)) {
             bean.addPropertyValue("basePackages", ClasspathScanner.parsePackages(val));
         } else if ("serviceAnnotation".equals(name)) {
             bean.addPropertyValue("serviceAnnotation", val);
@@ -90,7 +93,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
 
     @Override
     protected void mapElement(ParserContext ctx, BeanDefinitionBuilder bean, Element el, String name) {
-        if ("properties".equals(name) 
+        if ("properties".equals(name)
             || "extensionMappings".equals(name)
             || "languageMappings".equals(name)) {
             Map<?, ?> map = ctx.getDelegate().parseMapElement(el, bean.getBeanDefinition());
@@ -105,7 +108,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
             || "outInterceptors".equals(name) || "outFaultInterceptors".equals(name)) {
             List<?> list = ctx.getDelegate().parseListElement(el, bean.getBeanDefinition());
             bean.addPropertyValue(name, list);
-        } else if ("features".equals(name) || "schemaLocations".equals(name) 
+        } else if ("features".equals(name) || "schemaLocations".equals(name)
             || "providers".equals(name) || "serviceBeans".equals(name)
             || "modelBeans".equals(name)) {
             List<?> list = ctx.getDelegate().parseListElement(el, bean.getBeanDefinition());
@@ -117,10 +120,10 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
             List<UserResource> resources = ResourceUtils.getResourcesFromElement(el);
             bean.addPropertyValue("modelBeans", resources);
         } else {
-            setFirstChildAsProperty(el, ctx, bean, name);            
-        }        
+            setFirstChildAsProperty(el, ctx, bean, name);
+        }
     }
-    
+
 
     @Override
     protected void doParse(Element element, ParserContext ctx, BeanDefinitionBuilder bean) {
@@ -128,21 +131,21 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
 
         bean.setInitMethodName("create");
         bean.setDestroyMethodName("destroy");
-        
+
         // We don't really want to delay the registration of our Server
         bean.setLazyInit(false);
     }
 
     @Override
-    protected String resolveId(Element elem, 
-                               AbstractBeanDefinition definition, 
-                               ParserContext ctx) 
+    protected String resolveId(Element elem,
+                               AbstractBeanDefinition definition,
+                               ParserContext ctx)
         throws BeanDefinitionStoreException {
         String id = super.resolveId(elem, definition, ctx);
         if (StringUtils.isEmpty(id)) {
             id = getBeanClass().getName() + "--" + definition.hashCode();
         }
-        
+
         return id;
     }
 
@@ -150,10 +153,10 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
     protected boolean hasBusProperty() {
         return true;
     }
-    
+
     public static class SpringJAXRSServerFactoryBean extends JAXRSServerFactoryBean implements
         ApplicationContextAware {
-        
+
         private List<SpringResourceFactory> tempFactories;
         private List<String> basePackages;
         private String serviceAnnotation;
@@ -161,7 +164,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
         private boolean serviceBeansAvailable;
         private boolean providerBeansAvailable;
         private boolean resourceProvidersAvailable;
-        
+
         public SpringJAXRSServerFactoryBean() {
             super();
         }
@@ -169,7 +172,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
         public SpringJAXRSServerFactoryBean(JAXRSServiceFactoryBean sf) {
             super(sf);
         }
-        
+
         public void destroy() {
             Server server = super.getServer();
             if (server != null && server.isStarted()) {
@@ -193,20 +196,20 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
         public void setBasePackages(List<String> basePackages) {
             this.basePackages = basePackages;
         }
-        
+
         public void setServiceAnnotation(String serviceAnnotation) {
             this.serviceAnnotation = serviceAnnotation;
         }
-        
+
         public void setTempResourceProviders(List<SpringResourceFactory> providers) {
             tempFactories = providers;
         }
-        
+
         public void setApplicationContext(ApplicationContext ctx) throws BeansException {
             this.context = ctx;
-            
+
             if (tempFactories != null) {
-                List<ResourceProvider> factories = new ArrayList<ResourceProvider>(
+                List<ResourceProvider> factories = new ArrayList<>(
                     tempFactories.size());
                 for (int i = 0; i < tempFactories.size(); i++) {
                     SpringResourceFactory factory = tempFactories.get(i);
@@ -221,7 +224,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
                 try {
                     final Map< Class< ? extends Annotation >, Collection< Class< ? > > > classes =
                         ClasspathScanner.findClasses(basePackages, Provider.class, Path.class);
-                                              
+
                     this.setServiceBeans(createBeansFromDiscoveredClasses(context,
                                                                           classes.get(Path.class),
                                                                           serviceAnnotationClass));
@@ -240,9 +243,9 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
             if (bus == null) {
                 setBus(BusWiringBeanFactoryPostProcessor.addDefaultBus(ctx));
             }
-        }        
+        }
         private void discoverContextResources(Class<? extends Annotation> serviceAnnotationClass) {
-            AbstractSpringComponentScanServer scanServer = 
+            AbstractSpringComponentScanServer scanServer =
                 new AbstractSpringComponentScanServer(serviceAnnotationClass) { };
             scanServer.setApplicationContext(context);
             scanServer.setJaxrsResources(this);
@@ -255,12 +258,12 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
-            } 
+            }
             return null;
         }
     }
     static List<Object> createBeansFromDiscoveredClasses(ApplicationContext context,
-                                                         Collection<Class<?>> classes, 
+                                                         Collection<Class<?>> classes,
                                                          Class<? extends Annotation> serviceClassAnnotation) {
         AutowireCapableBeanFactory beanFactory = context.getAutowireCapableBeanFactory();
         final List< Object > providers = new ArrayList< Object >();
@@ -272,6 +275,8 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
             try {
                 bean = beanFactory.createBean(clazz, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, true);
             } catch (Exception ex) {
+                String stackTrace = ExceptionUtils.getStackTrace(ex);
+                LOG.fine("Autowire failure for a " + clazz.getName() + " bean: " + stackTrace);
                 bean = beanFactory.createBean(clazz);
             }
             providers.add(bean);

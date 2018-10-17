@@ -50,21 +50,21 @@ import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.phase.PhaseInterceptor;
 import org.apache.cxf.staxutils.StaxUtils;
 import org.apache.cxf.test.AbstractCXFTest;
-import org.apache.wss4j.dom.WSConstants;
+import org.apache.wss4j.common.WSS4JConstants;
 
 
 public abstract class AbstractSecurityTest extends AbstractCXFTest {
     public AbstractSecurityTest() {
         super();
 
-        addNamespace("wsse", WSConstants.WSSE_NS);
-        addNamespace("wsse11", WSConstants.WSSE11_NS);
-        addNamespace("ds", WSConstants.SIG_NS);
+        addNamespace("wsse", WSS4JConstants.WSSE_NS);
+        addNamespace("wsse11", WSS4JConstants.WSSE11_NS);
+        addNamespace("ds", WSS4JConstants.SIG_NS);
         addNamespace("s", Soap11.getInstance().getNamespace());
-        addNamespace("xenc", WSConstants.ENC_NS);
-        addNamespace("wsu", WSConstants.WSU_NS);
-        addNamespace("saml1", WSConstants.SAML_NS);
-        addNamespace("saml2", WSConstants.SAML2_NS);
+        addNamespace("xenc", WSS4JConstants.ENC_NS);
+        addNamespace("wsu", WSS4JConstants.WSU_NS);
+        addNamespace("saml1", WSS4JConstants.SAML_NS);
+        addNamespace("saml2", WSS4JConstants.SAML2_NS);
     }
 
     /**
@@ -84,7 +84,7 @@ public abstract class AbstractSecurityTest extends AbstractCXFTest {
     protected SoapMessage getSoapMessageForDom(Document doc) throws Exception {
         return getSoapMessageForDom(doc, SOAPConstants.SOAP_1_1_PROTOCOL);
     }
-    
+
     protected SoapMessage getSoapMessageForDom(Document doc, String protocol) throws Exception {
         SOAPMessage saajMsg = MessageFactory.newInstance(protocol).createMessage();
         SOAPPart part = saajMsg.getSOAPPart();
@@ -97,10 +97,10 @@ public abstract class AbstractSecurityTest extends AbstractCXFTest {
         Exchange ex = new ExchangeImpl();
         ex.setInMessage(msg);
         msg.setContent(SOAPMessage.class, saajMsg);
-        
+
         return msg;
     }
-    
+
     protected byte[] getMessageBytes(Document doc) throws Exception {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         XMLStreamWriter byteArrayWriter = StaxUtils.createXMLStreamWriter(outputStream);
@@ -108,7 +108,7 @@ public abstract class AbstractSecurityTest extends AbstractCXFTest {
         byteArrayWriter.flush();
         return outputStream.toByteArray();
     }
-   
+
     protected SoapMessage makeInvocation(
         Map<String, Object> outProperties,
         List<String> xpaths,
@@ -155,12 +155,12 @@ public abstract class AbstractSecurityTest extends AbstractCXFTest {
         ex.setInMessage(inmsg);
         inmsg.setContent(SOAPMessage.class, saajMsg);
 
-        
+
         inHandler.handleMessage(inmsg);
 
         return inmsg;
     }
-    
+
     protected static boolean checkUnrestrictedPoliciesInstalled() {
         try {
             byte[] data = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
@@ -179,7 +179,7 @@ public abstract class AbstractSecurityTest extends AbstractCXFTest {
         }
         return false;
     }
-    
+
     @org.junit.AfterClass
     public static void cleanup() {
         String tmpDir = System.getProperty("java.io.tmpdir");

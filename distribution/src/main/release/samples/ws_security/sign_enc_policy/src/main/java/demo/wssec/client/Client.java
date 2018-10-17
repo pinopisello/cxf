@@ -63,8 +63,8 @@ public final class Client {
         } else {
             busURL = new URL(args[1]);
         }
-        
-        Bus bus = bf.createBus(busFile.toString());
+
+        Bus bus = bf.createBus(busURL);
         BusFactory.setDefaultBus(bus);
 
         System.out.println(wsdlURL);

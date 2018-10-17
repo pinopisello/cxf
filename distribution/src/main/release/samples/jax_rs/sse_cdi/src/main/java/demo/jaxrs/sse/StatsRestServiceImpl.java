@@ -18,63 +18,60 @@
  */
 package demo.jaxrs.sse;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.sse.OutboundSseEvent;
-import javax.ws.rs.sse.SseContext;
-import javax.ws.rs.sse.SseEventOutput;
+import javax.ws.rs.sse.OutboundSseEvent.Builder;
+import javax.ws.rs.sse.Sse;
+import javax.ws.rs.sse.SseBroadcaster;
+import javax.ws.rs.sse.SseEventSink;
+
+import io.reactivex.Emitter;
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 
 @Path("/stats")
 public class StatsRestServiceImpl {
     private static final Random RANDOM = new Random();
 
-    private static OutboundSseEvent createStatsEvent(final OutboundSseEvent.Builder builder, final int eventId) {
+    private SseBroadcaster broadcaster;
+    private Builder builder;
+
+
+    @Context 
+    public void setSse(Sse sse) {
+        this.broadcaster = sse.newBroadcaster();
+        this.builder = sse.newEventBuilder();
+        
+        Flowable
+            .interval(500, TimeUnit.MILLISECONDS)
+            .zipWith(
+                Flowable.generate((Emitter<OutboundSseEvent.Builder> emitter) -> emitter.onNext(builder.name("stats"))),
+                (id, bldr) -> createStatsEvent(bldr, id)
+            )
+            .subscribeOn(Schedulers.single())
+            .subscribe(broadcaster::broadcast);
+    }
+    
+    @GET
+    @Path("sse")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public void stats(@Context SseEventSink sink) {
+        broadcaster.register(sink);
+    }
+
+    private static OutboundSseEvent createStatsEvent(final OutboundSseEvent.Builder builder, final long eventId) {
         return builder
             .id("" + eventId)
             .data(Stats.class, new Stats(new Date().getTime(), RANDOM.nextInt(100)))
             .mediaType(MediaType.APPLICATION_JSON_TYPE)
             .build();
-    }
-    
-    @GET
-    @Path("sse/{id}")
-    @Produces("text/event-stream")
-    public SseEventOutput stats(@Context SseContext sseContext, @PathParam("id") final String id) {
-        final SseEventOutput output = sseContext.newOutput();
-        
-        new Thread() {
-            public void run() {
-                try {
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 1));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 2));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 3));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 4));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 5));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 6));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 7));
-                    Thread.sleep(1000);
-                    output.write(createStatsEvent(sseContext.newEvent().name("stats"), 8));
-                    output.close();
-                } catch (final InterruptedException | IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-
-        return output;
     }
 }

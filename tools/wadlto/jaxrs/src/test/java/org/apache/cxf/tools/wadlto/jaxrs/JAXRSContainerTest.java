@@ -25,7 +25,10 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.Valid;
 import javax.ws.rs.Consumes;
@@ -37,16 +40,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import org.apache.cxf.helpers.FileUtils;
+import org.apache.cxf.jaxrs.ext.Oneway;
 import org.apache.cxf.jaxrs.ext.multipart.Multipart;
 import org.apache.cxf.tools.common.ProcessorTestBase;
 import org.apache.cxf.tools.common.ToolContext;
+import org.apache.cxf.tools.util.ClassCollector;
 import org.apache.cxf.tools.wadlto.WadlToolConstants;
 
 import org.junit.Test;
 
 public class JAXRSContainerTest extends ProcessorTestBase {
 
-    @Test    
+    @Test
     public void testNoTargetNamespace() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -56,7 +61,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/resourceSchemaNoTargetNamespace.xml"));
             context.put(WadlToolConstants.CFG_SCHEMA_PACKAGENAME, "=custom");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
@@ -71,8 +76,8 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenInterfaces() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -80,30 +85,30 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             ToolContext context = new ToolContext();
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/bookstore.xml"));
-            context.put(WadlToolConstants.CFG_MEDIA_TYPE_MAP, 
+            context.put(WadlToolConstants.CFG_MEDIA_TYPE_MAP,
                         "application/xml=javax.xml.transform.Source");
-            context.put(WadlToolConstants.CFG_MEDIA_TYPE_MAP, 
+            context.put(WadlToolConstants.CFG_MEDIA_TYPE_MAP,
                         "multipart/form-data=org.apache.cxf.jaxrs.ext.multipart.MultipartBody");
             context.put(WadlToolConstants.CFG_NO_VOID_FOR_EMPTY_RESPONSES, "true");
             context.put(WadlToolConstants.CFG_GENERATE_RESPONSE_IF_HEADERS_SET, "true");
             context.put(WadlToolConstants.CFG_GENERATE_RESPONSE_FOR_METHODS, "getName");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
             verifyFiles("class", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testInheritParameters() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -112,8 +117,8 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/test.xml"));
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            context.put(WadlToolConstants.CFG_SCHEMA_TYPE_MAP, 
-                        "{http://www.w3.org/2001/XMLSchema}anyType=" 
+            context.put(WadlToolConstants.CFG_SCHEMA_TYPE_MAP,
+                        "{http://www.w3.org/2001/XMLSchema}anyType="
                         + "java.io.InputStream");
             context.put(WadlToolConstants.CFG_INHERIT_PARAMS, "last");
             context.put(WadlToolConstants.CFG_CREATE_JAVA_DOCS, "true");
@@ -121,17 +126,91 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(1, files.size());
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
+    public void testOnewayMethod() throws Exception {
+        JAXRSContainer container = new JAXRSContainer(null);
+
+        final String onewayMethod = "deleteRepository";
+        ToolContext context = new ToolContext();
+        context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
+        context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/test.xml"));
+        context.put(WadlToolConstants.CFG_COMPILE, "true");
+        context.put(WadlToolConstants.CFG_ONEWAY, onewayMethod);
+        container.setContext(context);
+        container.execute();
+
+        assertNotNull(output.list());
+
+        ClassCollector cc = context.get(ClassCollector.class);
+        assertEquals(1, cc.getServiceClassNames().size());
+        try (URLClassLoader loader = new URLClassLoader(new URL[]{output.toURI().toURL()})) {
+            final Class<?> generatedClass = loader.loadClass(cc.getServiceClassNames().values().iterator().next());
+            Method m = generatedClass.getMethod(onewayMethod, String.class);
+            assertNotNull(m.getAnnotation(Oneway.class));
+        }
+    }
+
+    @Test
+    public void testThrows() throws Exception {
+        JAXRSContainer container = new JAXRSContainer(null);
+
+        ToolContext context = new ToolContext();
+        context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
+        context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/test.xml"));
+        context.put(WadlToolConstants.CFG_COMPILE, Boolean.TRUE);
+        context.put(WadlToolConstants.CFG_INTERFACE, Boolean.TRUE);
+        context.put(WadlToolConstants.CFG_IMPL, Boolean.TRUE);
+        context.put(WadlToolConstants.CFG_CREATE_JAVA_DOCS, Boolean.TRUE);
+        container.setContext(context);
+        container.execute();
+
+        assertNotNull(output.list());
+
+        List<File> javaFiles = FileUtils.getFilesRecurse(output, ".+\\." + "java" + "$");
+        assertEquals(2, javaFiles.size());
+        for (File f : javaFiles) {
+            if (!f.getName().endsWith("Impl.java")) {
+                assertTrue(
+                        Files.readAllLines(f.toPath()).contains("     * @throws IOException if something going wrong"));
+            }
+        }
+
+        ClassCollector cc = context.get(ClassCollector.class);
+        assertEquals(2, cc.getServiceClassNames().size());
+
+        final Map<String, Class<?>[]> methods = new HashMap<>();
+        methods.put("listRepositories", new Class<?>[] {});
+        methods.put("createRepository", new Class<?>[] {java.io.IOException.class});
+        methods.put("deleteRepository",
+                new Class<?>[] {javax.ws.rs.NotFoundException.class, java.io.IOException.class});
+        methods.put("postThename", new Class<?>[] {java.io.IOException.class, java.lang.NoSuchMethodException.class});
+        try (URLClassLoader loader = new URLClassLoader(new URL[]{output.toURI().toURL()})) {
+            for (String className : cc.getServiceClassNames().values()) {
+                final Class<?> generatedClass = loader.loadClass(className);
+                for (Map.Entry<String, Class<?>[]> entry : methods.entrySet()) {
+                    Method m; 
+                    try {
+                        m = generatedClass.getMethod(entry.getKey(), String.class);
+                    } catch (NoSuchMethodException e) {
+                        m = generatedClass.getMethod(entry.getKey(), String.class, String.class);
+                    }
+                    assertArrayEquals(entry.getValue(), m.getExceptionTypes());
+                }
+            }
+        }
+    }
+
+    @Test
     public void testCodeGenInterfacesMultipleInXmlReps() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -146,17 +225,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
             verifyFiles("class", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-        
-    @Test    
+
+    @Test
     public void testCodeGenInterfacesWithBinding() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -171,17 +250,47 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
             verifyFiles("class", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
     
-    @Test    
+    @Test
+    public void testCodeGenInterfacesWithJaxbClassNameSuffix() {
+        try {
+            JAXRSContainer container = new JAXRSContainer(null);
+
+            ToolContext context = new ToolContext();
+            context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
+            context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/bookstore.xml"));
+            context.put(WadlToolConstants.CFG_JAXB_CLASS_NAME_SUFFIX, "DTO");
+            context.put(WadlToolConstants.CFG_BINDING, getLocation("/wadl/jaxbSchemaBindings.xml"));
+            context.put(WadlToolConstants.CFG_COMPILE, "true");
+
+            container.setContext(context);
+            container.execute();
+
+            assertNotNull(output.list());
+            List<File> schemafiles = FileUtils.getFilesRecurse(output, ".+\\." + "java" + "$");
+            assertEquals(10, schemafiles.size());
+            doVerifyTypesWithSuffix(schemafiles, "superbooks", "java");
+            
+            List<File> classfiles = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
+            assertEquals(10, classfiles.size());
+            doVerifyTypesWithSuffix(classfiles, "superbooks", "class");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
     public void testCodeGenWithImportedSchema() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -195,16 +304,16 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
             verifyFiles("class", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
+
     @Test
     public void testCodeGenWithImportedSchemaWithParentRefs() {
         try {
@@ -219,26 +328,26 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
             verifyFiles("class", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenWithMultipleInlinedSchemas() {
         doTestInlinedSchemasWithImport("/wadl/bookstoreMultipleSchemas.xml");
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenWithInlinedSchemaAndImport() {
         doTestInlinedSchemasWithImport("/wadl/bookstoreInlinedSchemaWithImport.xml");
     }
-    
+
     private void doTestInlinedSchemasWithImport(String loc) {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -252,7 +361,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(8, files.size());
             assertTrue(checkContains(files, "org.apache.cxf.jaxrs.model.wadl" + ".BookStore.class"));
@@ -263,7 +372,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             assertTrue(checkContains(files, "superchapters" + ".Chapter.class"));
             assertTrue(checkContains(files, "superchapters" + ".ObjectFactory.class"));
             assertTrue(checkContains(files, "superchapters" + ".package-info.class"));
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
@@ -277,7 +386,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             ToolContext context = new ToolContext();
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/resourceWithEPR.xml"));
-            context.put(WadlToolConstants.CFG_SCHEMA_TYPE_MAP, 
+            context.put(WadlToolConstants.CFG_SCHEMA_TYPE_MAP,
                         "{http://www.w3.org/2001/XMLSchema}date=javax.xml.datatype.XMLGregorianCalendar");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
 
@@ -285,7 +394,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(4, files.size());
             assertTrue(checkContains(files, "application" + ".BookstoreResource.class"));
@@ -297,7 +406,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
+
     @Test
     public void testResourceWithEPRNoSchemaGen() {
         try {
@@ -306,19 +415,19 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             ToolContext context = new ToolContext();
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/resourceWithEPR.xml"));
-            context.put(WadlToolConstants.CFG_SCHEMA_TYPE_MAP, 
-                "{http://www.w3.org/2005/08/addressing}EndpointReferenceType=" 
+            context.put(WadlToolConstants.CFG_SCHEMA_TYPE_MAP,
+                "{http://www.w3.org/2005/08/addressing}EndpointReferenceType="
                 + "javax.xml.ws.wsaddressing.W3CEndpointReference");
             context.put(WadlToolConstants.CFG_NO_ADDRESS_BINDING, "true");
             context.put(WadlToolConstants.CFG_NO_TYPES, "true");
-            
+
             context.put(WadlToolConstants.CFG_COMPILE, "true");
 
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(1, files.size());
             assertTrue(checkContains(files, "application" + ".BookstoreResource.class"));
@@ -327,7 +436,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
+
     @Test
     public void testQueryMultipartParam() {
         try {
@@ -342,26 +451,26 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(2, files.size());
             assertTrue(checkContains(files, "application.Test1.class"));
             assertTrue(checkContains(files, "application.Test2.class"));
-            
+
             @SuppressWarnings("resource")
             ClassLoader loader = new URLClassLoader(new URL[] {output.toURI().toURL() });
-            
+
             Class<?> test1 = loader.loadClass("application.Test1");
             Method[] test1Methods = test1.getDeclaredMethods();
             assertEquals(1, test1Methods.length);
-            
+
             assertEquals(2, test1Methods[0].getAnnotations().length);
             assertNotNull(test1Methods[0].getAnnotation(PUT.class));
             Consumes consumes1 = test1Methods[0].getAnnotation(Consumes.class);
             assertNotNull(consumes1);
             assertEquals(1, consumes1.value().length);
             assertEquals("multipart/mixed", consumes1.value()[0]);
-            
+
             assertEquals("put", test1Methods[0].getName());
             Class<?>[] paramTypes = test1Methods[0].getParameterTypes();
             assertEquals(3, paramTypes.length);
@@ -380,18 +489,18 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             Multipart test1MultipartParam2 = (Multipart)paramAnns[2][0];
             assertEquals("sources", test1MultipartParam2.value());
             assertFalse(test1MultipartParam2.required());
-            
+
             Class<?> test2 = loader.loadClass("application.Test2");
             Method[] test2Methods = test2.getDeclaredMethods();
             assertEquals(1, test2Methods.length);
-            
+
             assertEquals(2, test2Methods[0].getAnnotations().length);
             assertNotNull(test2Methods[0].getAnnotation(PUT.class));
             Consumes consumes2 = test2Methods[0].getAnnotation(Consumes.class);
             assertNotNull(consumes2);
             assertEquals(1, consumes2.value().length);
             assertEquals("application/json", consumes2.value()[0]);
-            
+
             assertEquals("put", test2Methods[0].getName());
             Class<?>[] paramTypes2 = test2Methods[0].getParameterTypes();
             assertEquals(2, paramTypes2.length);
@@ -402,14 +511,14 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             assertEquals("snapshot", test2QueryParam1.value());
             assertEquals(String.class, paramTypes2[1]);
             assertEquals(0, paramAnns2[1].length);
-            
-            
+
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
+
     @Test
     public void testComplexPath() {
         try {
@@ -424,13 +533,13 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(1, files.size());
             assertTrue(checkContains(files, "application.Resource.class"));
             @SuppressWarnings("resource")
             ClassLoader loader = new URLClassLoader(new URL[] {output.toURI().toURL() });
-            
+
             Class<?> test1 = loader.loadClass("application.Resource");
             Method[] test1Methods = test1.getDeclaredMethods();
             assertEquals(2, test1Methods.length);
@@ -447,9 +556,9 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
+
     private void checkComplexPathMethod(Method m, String suffix) {
-        assertNotNull(m.getAnnotation(GET.class));            
+        assertNotNull(m.getAnnotation(GET.class));
         Path path = m.getAnnotation(Path.class);
         assertNotNull(path);
         assertEquals("/get-add-method", path.value());
@@ -462,7 +571,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
         PathParam methodPathParam1 = (PathParam)paramAnns[0][0];
         assertEquals("id", methodPathParam1.value());
     }
-    
+
     @Test
     public void testBeanValidation() {
         try {
@@ -478,13 +587,13 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(4, files.size());
             assertTrue(checkContains(files, "application.Resource.class"));
             @SuppressWarnings("resource")
             ClassLoader loader = new URLClassLoader(new URL[] {output.toURI().toURL() });
-            
+
             Class<?> test1 = loader.loadClass("application.Resource");
             Method[] test1Methods = test1.getDeclaredMethods();
             assertEquals(1, test1Methods.length);
@@ -495,7 +604,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             assertNotNull(m.getAnnotation(Consumes.class));
             assertNotNull(m.getAnnotation(Produces.class));
             assertNotNull(m.getAnnotation(PUT.class));
-            
+
             Class<?>[] paramTypes = m.getParameterTypes();
             assertEquals(2, paramTypes.length);
             Annotation[][] paramAnns = m.getParameterAnnotations();
@@ -503,17 +612,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             assertEquals(1, paramAnns[0].length);
             PathParam methodPathParam1 = (PathParam)paramAnns[0][0];
             assertEquals("id", methodPathParam1.value());
-            
+
             assertEquals(1, paramAnns[1].length);
             assertTrue(paramAnns[1][0] instanceof Valid);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenWithImportedSchemaAndResourceSet() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -527,17 +636,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
             verifyFiles("class", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenWithImportedSchemaAndBinding() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -552,17 +661,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
             verifyFiles("class", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenWithImportedSchemaAndCatalog() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -577,17 +686,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
             verifyFiles("class", false, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 9);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenNoIds() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -598,17 +707,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_RESOURCENAME, "CustomResource");
             context.put(WadlToolConstants.CFG_GENERATE_ENUMS, "true");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> javaFiles = FileUtils.getFilesRecurse(output, ".+\\." + "java" + "$");
             assertEquals(2, javaFiles.size());
             assertTrue(checkContains(javaFiles, "application.CustomResource.java"));
             assertTrue(checkContains(javaFiles, "application.Theid.java"));
-            
+
             List<File> classFiles = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(2, classFiles.size());
             assertTrue(checkContains(classFiles, "application.CustomResource.class"));
@@ -618,8 +727,8 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenNoIds2() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -628,12 +737,12 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/multipleResources.xml"));
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> javaFiles = FileUtils.getFilesRecurse(output, ".+\\." + "java" + "$");
             assertEquals(2, javaFiles.size());
             assertTrue(checkContains(javaFiles, "application.BookstoreResource.java"));
@@ -647,8 +756,8 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenNoIds3() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -658,12 +767,12 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/resourcesNoId.xml"));
             context.put(WadlToolConstants.CFG_COMPILE, "true");
             context.put(WadlToolConstants.CFG_INHERIT_PARAMS, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> javaFiles = FileUtils.getFilesRecurse(output, ".+\\." + "java" + "$");
             assertEquals(1, javaFiles.size());
             assertTrue(checkContains(javaFiles, "application.TestRsResource.java"));
@@ -675,8 +784,8 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeTwoSchemasSameTargetNs() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -685,7 +794,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/resourceSameTargetNsSchemas.xml"));
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
@@ -702,14 +811,14 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             assertTrue(checkContains(classFiles, "com.example.test.package-info.class"));
             assertTrue(checkContains(classFiles, "com.example.test.TestCompositeObject.class"));
 
-            
+
             assertNotNull(output.list());
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    @Test    
+    @Test
     public void testCodeGenWithResourceSet() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -719,16 +828,16 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/singleResourceWithRefs.xml"));
             context.put(WadlToolConstants.CFG_RESOURCENAME, "CustomResource");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             List<File> javaFiles = FileUtils.getFilesRecurse(output, ".+\\." + "java" + "$");
             assertEquals(1, javaFiles.size());
             assertTrue(checkContains(javaFiles, "application.CustomResource.java"));
-            
+
             List<File> classFiles = FileUtils.getFilesRecurse(output, ".+\\." + "class" + "$");
             assertEquals(1, classFiles.size());
             assertTrue(checkContains(classFiles, "application.CustomResource.class"));
@@ -737,12 +846,12 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenInterfacesCustomPackage() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
-            
+
             ToolContext context = new ToolContext();
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/bookstore.xml"));
@@ -753,21 +862,21 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, false, "superbooks", "custom.books", 11, true);
             verifyFiles("class", true, false, "superbooks", "custom.books", 11, true);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenInterfacesCustomPackageForResourcesAndSchemas() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
-            
+
             ToolContext context = new ToolContext();
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/bookstore.xml"));
@@ -779,17 +888,17 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, false, "custom.books.schema", "custom.books.service", 11, true);
             verifyFiles("class", true, false, "custom.books.schema", "custom.books.service", 11, true);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             fail();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenImpl() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -799,12 +908,12 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/bookstore.xml"));
             context.put(WadlToolConstants.CFG_IMPL, "true");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
             verifyFiles("class", true, false, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 11, true);
         } catch (Exception e) {
@@ -812,24 +921,24 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             e.printStackTrace();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenInterfaceAndImpl() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
-         
+
             ToolContext context = new ToolContext();
             context.put(WadlToolConstants.CFG_OUTPUTDIR, output.getCanonicalPath());
             context.put(WadlToolConstants.CFG_WADLURL, getLocation("/wadl/bookstore.xml"));
             context.put(WadlToolConstants.CFG_INTERFACE, "true");
             context.put(WadlToolConstants.CFG_IMPL, "true");
             context.put(WadlToolConstants.CFG_COMPILE, "true");
-            
+
             container.setContext(context);
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyFiles("java", true, true, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 14, true);
             verifyFiles("class", true, true, "superbooks", "org.apache.cxf.jaxrs.model.wadl", 14, true);
         } catch (Exception e) {
@@ -837,8 +946,8 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             e.printStackTrace();
         }
     }
-    
-    @Test    
+
+    @Test
     public void testCodeGenTypesOnly() {
         try {
             JAXRSContainer container = new JAXRSContainer(null);
@@ -852,24 +961,24 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             container.execute();
 
             assertNotNull(output.list());
-            
+
             verifyTypes("superbooks", "java", true);
-            
+
         } catch (Exception e) {
             fail();
             e.printStackTrace();
         }
     }
-    
-    private void verifyFiles(String ext, boolean subresourceExpected, boolean interfacesAndImpl, 
+
+    private void verifyFiles(String ext, boolean subresourceExpected, boolean interfacesAndImpl,
                              String schemaPackage, String resourcePackage, int expectedCount) {
         verifyFiles(ext, subresourceExpected, interfacesAndImpl, schemaPackage, resourcePackage,
                     expectedCount, false);
     }
-    
-    private void verifyFiles(String ext, boolean subresourceExpected, boolean interfacesAndImpl, 
+
+    private void verifyFiles(String ext, boolean subresourceExpected, boolean interfacesAndImpl,
                              String schemaPackage, String resourcePackage, int expectedCount,
-                             boolean enumTypeExpected) {    
+                             boolean enumTypeExpected) {
         List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + ext + "$");
         int offset = enumTypeExpected ? 1 : 2;
         int size = interfacesAndImpl ? expectedCount : expectedCount - offset;
@@ -891,13 +1000,13 @@ public class JAXRSContainerTest extends ProcessorTestBase {
             assertTrue(checkContains(files, resourcePackage + ".BookStoreImpl." + ext));
         }
     }
-    
+
     private void verifyTypes(String schemaPackage, String ext, boolean enumTypeExpected) {
         List<File> files = FileUtils.getFilesRecurse(output, ".+\\." + ext + "$");
         assertEquals(enumTypeExpected ? 6 : 5, files.size());
         doVerifyTypes(files, schemaPackage, ext);
     }
-    
+
     private void doVerifyTypes(List<File> files, String schemaPackage, String ext) {
         assertTrue(checkContains(files, schemaPackage + ".Book." + ext));
         assertTrue(checkContains(files, schemaPackage + ".TheBook2." + ext));
@@ -905,7 +1014,14 @@ public class JAXRSContainerTest extends ProcessorTestBase {
         assertTrue(checkContains(files, schemaPackage + ".ObjectFactory." + ext));
         assertTrue(checkContains(files, schemaPackage + ".package-info." + ext));
     }
-    
+    private void doVerifyTypesWithSuffix(List<File> files, String schemaPackage, String ext) {
+        assertTrue(checkContains(files, schemaPackage + ".BookDTO." + ext));
+        assertTrue(checkContains(files, schemaPackage + ".TheBook2DTO." + ext));
+        assertTrue(checkContains(files, schemaPackage + ".ChapterDTO." + ext));
+        assertTrue(checkContains(files, schemaPackage + ".ObjectFactory." + ext));
+        assertTrue(checkContains(files, schemaPackage + ".package-info." + ext));
+    }
+
     private boolean checkContains(List<File> clsFiles, String name) {
         for (File f : clsFiles) {
             if (f.getAbsolutePath().replace(File.separatorChar, '.').endsWith(name)) {
@@ -914,7 +1030,7 @@ public class JAXRSContainerTest extends ProcessorTestBase {
         }
         return false;
     }
-    
+
     protected String getLocation(String wsdlFile) throws URISyntaxException {
         return getClass().getResource(wsdlFile).toString();
     }

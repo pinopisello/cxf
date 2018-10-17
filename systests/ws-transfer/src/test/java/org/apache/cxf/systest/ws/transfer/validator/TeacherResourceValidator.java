@@ -20,16 +20,17 @@
 package org.apache.cxf.systest.ws.transfer.validator;
 
 import org.w3c.dom.Element;
+
 import org.apache.cxf.ws.transfer.Representation;
 import org.apache.cxf.ws.transfer.shared.faults.PutDenied;
 import org.apache.cxf.ws.transfer.validationtransformation.ResourceValidator;
 
 public class TeacherResourceValidator implements ResourceValidator {
-    
+
     public static final String UID_NAMESPACE = "http://university.edu/teacher";
-    
+
     public static final String UID_NAME = "uid";
-    
+
     @Override
     public boolean validate(Representation newRepresentation, Representation oldRepresentation) {
         if (oldRepresentation != null) {
@@ -46,6 +47,6 @@ public class TeacherResourceValidator implements ResourceValidator {
             }
         }
         return true;
-    } 
-    
+    }
+
 }

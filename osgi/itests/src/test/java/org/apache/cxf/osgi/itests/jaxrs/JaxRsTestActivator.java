@@ -42,7 +42,6 @@ public class JaxRsTestActivator implements BundleActivator {
 
     @Override
     public void stop(BundleContext arg0) throws Exception {
-        server.stop();
         server.destroy();
     }
 

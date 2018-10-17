@@ -20,6 +20,7 @@
 package org.apache.cxf.systest.ws.transfer.validator;
 
 import org.w3c.dom.Element;
+
 import org.apache.cxf.ws.transfer.Representation;
 import org.apache.cxf.ws.transfer.shared.faults.PutDenied;
 import org.apache.cxf.ws.transfer.validationtransformation.ResourceValidator;
@@ -27,21 +28,21 @@ import org.apache.cxf.ws.transfer.validationtransformation.ResourceValidator;
 public class StudentPutResourceValidator implements ResourceValidator {
 
     public static final String UID_NAMESPACE = "http://university.edu/student";
-    
+
     public static final String UID_NAME = "uid";
-    
+
     @Override
     public boolean validate(Representation newRepresentation, Representation oldRepresentation) {
         Element newRepresentationEl = (Element) newRepresentation.getAny();
         Element oldRepresentationEl = (Element) oldRepresentation.getAny();
-        
+
         String newUid = newRepresentationEl.getElementsByTagNameNS(UID_NAMESPACE, UID_NAME).item(0).getTextContent();
         String oldUid = oldRepresentationEl.getElementsByTagNameNS(UID_NAMESPACE, UID_NAME).item(0).getTextContent();
-        
+
         if (!newUid.equals(oldUid)) {
             throw new PutDenied();
         }
         return true;
-    } 
-    
+    }
+
 }

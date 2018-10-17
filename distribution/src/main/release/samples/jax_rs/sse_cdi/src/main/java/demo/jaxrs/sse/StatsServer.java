@@ -19,7 +19,6 @@
 package demo.jaxrs.sse;
 
 import org.apache.cxf.cdi.CXFCdiServlet;
-import org.apache.cxf.transport.sse.SseHttpTransportFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -31,7 +30,7 @@ import org.jboss.weld.environment.servlet.Listener;
 public final class StatsServer {
     private StatsServer() {
     }
-    
+
     public static void main(final String[] args) throws Exception {
         final Server server = new Server(8686);
 
@@ -44,7 +43,6 @@ public final class StatsServer {
          // Register and map the dispatcher servlet
         final CXFCdiServlet cxfServlet = new CXFCdiServlet();
         final ServletHolder cxfServletHolder = new ServletHolder(cxfServlet);
-        cxfServletHolder.setInitParameter(CXFCdiServlet.TRANSPORT_ID, SseHttpTransportFactory.TRANSPORT_ID);
         final ServletContextHandler context = new ServletContextHandler();
         context.setContextPath("/");
         context.addEventListener(new Listener());
@@ -54,7 +52,7 @@ public final class StatsServer {
         HandlerList handlers = new HandlerList();
         handlers.addHandler(staticContext);
         handlers.addHandler(context);
-        
+
         server.setHandler(handlers);
         server.start();
         server.join();

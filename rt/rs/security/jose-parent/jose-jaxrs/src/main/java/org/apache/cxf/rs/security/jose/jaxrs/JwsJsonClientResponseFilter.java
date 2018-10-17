@@ -22,11 +22,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import javax.annotation.Priority;
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 
 import org.apache.cxf.helpers.IOUtils;
+import org.apache.cxf.jaxrs.utils.HttpUtils;
 import org.apache.cxf.rs.security.jose.common.JoseUtils;
 import org.apache.cxf.rs.security.jose.jws.JwsJsonConsumer;
 import org.apache.cxf.rs.security.jose.jws.JwsJsonSignatureEntry;
@@ -36,19 +38,27 @@ import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
 public class JwsJsonClientResponseFilter extends AbstractJwsJsonReaderProvider implements ClientResponseFilter {
     @Override
     public void filter(ClientRequestContext req, ClientResponseContext res) throws IOException {
+        if (isMethodWithNoContent(req.getMethod())
+            || isCheckEmptyStream() && !res.hasEntity()) {
+            return;
+        }
         JwsSignatureVerifier theSigVerifier = getInitializedSigVerifier();
         JwsJsonConsumer c = new JwsJsonConsumer(IOUtils.readStringFromStream(res.getEntityStream()));
         validate(c, theSigVerifier);
         byte[] bytes = c.getDecodedJwsPayloadBytes();
         res.setEntityStream(new ByteArrayInputStream(bytes));
         res.getHeaders().putSingle("Content-Length", Integer.toString(bytes.length));
-        
+
         // the list is guaranteed to be non-empty
         JwsJsonSignatureEntry sigEntry = c.getSignatureEntries().get(0);
         String ct = JoseUtils.checkContentType(sigEntry.getUnionHeader().getContentType(), getDefaultMediaType());
         if (ct != null) {
             res.getHeaders().putSingle("Content-Type", ct);
         }
+    }
+    
+    protected boolean isMethodWithNoContent(String method) {
+        return HttpMethod.DELETE.equals(method) || HttpUtils.isMethodWithNoResponseContent(method);
     }
 
 }

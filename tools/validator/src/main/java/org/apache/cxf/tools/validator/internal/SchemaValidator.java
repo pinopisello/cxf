@@ -131,7 +131,7 @@ public class SchemaValidator extends AbstractDefinitionValidator {
 
         sf.setResourceResolver(resourceResolver);
 
-        List<Source> sources = new ArrayList<Source>();
+        List<Source> sources = new ArrayList<>();
 
         for (InputSource is : xsdsInJar) {
             Message msg = new Message("CREATE_SCHEMA_LOADED_FROM_JAR", LOG, is.getSystemId());
@@ -252,7 +252,7 @@ public class SchemaValidator extends AbstractDefinitionValidator {
             File[] files = f.listFiles(filter);
 
             if (files != null) {
-                List<String> xsdUrls = new ArrayList<String>(files.length);
+                List<String> xsdUrls = new ArrayList<>(files.length);
                 for (File file : files) {
                     try {
                         String s = file.toURI().toURL().toString();
@@ -264,7 +264,7 @@ public class SchemaValidator extends AbstractDefinitionValidator {
                         throw new ToolException(e);
                     }
                 }
-                return xsdUrls.toArray(new String[xsdUrls.size()]);
+                return xsdUrls.toArray(new String[0]);
             }
         }
         return null;
@@ -284,7 +284,7 @@ class NewStackTraceErrorHandler implements ErrorHandler {
         valid = true;
         numErrors = 0;
         buffer = new StringBuilder();
-        errors = new ArrayList<SAXParseException>();
+        errors = new ArrayList<>();
     }
 
     public void error(SAXParseException ex) throws SAXParseException {
@@ -316,7 +316,7 @@ class NewStackTraceErrorHandler implements ErrorHandler {
         if (errors == null) {
             return null;
         }
-        return errors.toArray(new SAXParseException[errors.size()]);
+        return errors.toArray(new SAXParseException[0]);
     }
 
     void addError(String msg, SAXParseException ex) {
@@ -345,7 +345,7 @@ class NewStackTraceErrorHandler implements ErrorHandler {
 
 class SchemaResourceResolver implements LSResourceResolver {
     private static final Logger LOG = LogUtils.getL7dLogger(SchemaValidator.class);
-    private static final Map<String, String> NSFILEMAP = new HashMap<String, String>();
+    private static final Map<String, String> NSFILEMAP = new HashMap<>();
     static {
         NSFILEMAP.put(ToolConstants.XML_NAMESPACE_URI, "xml.xsd");
         NSFILEMAP.put(ToolConstants.WSDL_NAMESPACE_URI, "wsdl.xsd");

@@ -27,6 +27,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.cxf.common.injection.NoJSR250Annotations;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.io.CacheAndWriteOutputStream;
@@ -43,14 +44,14 @@ import org.apache.cxf.phase.Phase;
 public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
     private static final Logger LOG = LogUtils.getLogger(LoggingOutInterceptor.class);
     private static final String LOG_SETUP = LoggingOutInterceptor.class.getName() + ".log-setup";
-    
+
     public LoggingOutInterceptor(String phase) {
         super(phase);
         addBefore(StaxOutInterceptor.class.getName());
     }
     public LoggingOutInterceptor() {
         this(Phase.PRE_STREAM);
-    }    
+    }
     public LoggingOutInterceptor(int lim) {
         this();
         limit = lim;
@@ -60,7 +61,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
         this();
         this.writer = w;
     }
-    
+
 
     public void handleMessage(Message message) throws Fault {
         final OutputStream os = message.getContent(OutputStream.class);
@@ -90,26 +91,26 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             }
         }
     }
-    
+
     private LoggingMessage setupBuffer(Message message) {
         String id = (String)message.getExchange().get(LoggingMessage.ID_KEY);
         if (id == null) {
             id = LoggingMessage.nextId();
             message.getExchange().put(LoggingMessage.ID_KEY, id);
         }
-        final LoggingMessage buffer 
+        final LoggingMessage buffer
             = new LoggingMessage("Outbound Message\n---------------------------",
                                  id);
-        
+
         Integer responseCode = (Integer)message.get(Message.RESPONSE_CODE);
         if (responseCode != null) {
             buffer.getResponseCode().append(responseCode);
         }
-        
+
         String encoding = (String)message.get(Message.ENCODING);
         if (encoding != null) {
             buffer.getEncoding().append(encoding);
-        }            
+        }
         String httpMethod = (String)message.get(Message.HTTP_REQUEST_METHOD);
         if (httpMethod != null) {
             buffer.getHttpMethod().append(httpMethod);
@@ -135,14 +136,14 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
         }
         return buffer;
     }
-    
+
     private class LogWriter extends FilterWriter {
         StringWriter out2;
         int count;
         Logger logger; //NOPMD
         Message message;
         final int lim;
-        
+
         LogWriter(Logger logger, Message message, Writer writer) {
             super(writer);
             this.logger = logger;
@@ -184,7 +185,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             }
             String ct = (String)message.get(Message.CONTENT_TYPE);
             try {
-                writePayload(buffer.getPayload(), w2, ct); 
+                writePayload(buffer.getPayload(), w2, ct);
             } catch (Exception ex) {
                 //ignore
             }
@@ -199,12 +200,12 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
     }
 
     class LoggingCallback implements CachedOutputStreamCallback {
-        
+
         private final Message message;
         private final OutputStream origStream;
         private final Logger logger; //NOPMD
         private final int lim;
-        
+
         LoggingCallback(final Logger logger, final Message msg, final OutputStream os) {
             this.logger = logger;
             this.message = msg;
@@ -212,10 +213,10 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
             this.lim = limit == -1 ? Integer.MAX_VALUE : limit;
         }
 
-        public void onFlush(CachedOutputStream cos) {  
-            
+        public void onFlush(CachedOutputStream cos) {
+
         }
-        
+
         public void onClose(CachedOutputStream cos) {
             LoggingMessage buffer = setupBuffer(message);
 
@@ -230,22 +231,25 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
                 log(logger, formatLoggingMessage(buffer));
                 return;
             }
-            
+
+            boolean truncated = false;
             if (cos.getTempFile() == null) {
                 //buffer.append("Outbound Message:\n");
                 if (cos.size() >= lim) {
                     buffer.getMessage().append("(message truncated to " + lim + " bytes)\n");
+                    truncated = true;
                 }
             } else {
                 buffer.getMessage().append("Outbound Message (saved to tmp file):\n");
                 buffer.getMessage().append("Filename: " + cos.getTempFile().getAbsolutePath() + "\n");
                 if (cos.size() >= lim) {
                     buffer.getMessage().append("(message truncated to " + lim + " bytes)\n");
+                    truncated = true;
                 }
             }
             try {
                 String encoding = (String)message.get(Message.ENCODING);
-                writePayload(buffer.getPayload(), cos, encoding, ct); 
+                writePayload(buffer.getPayload(), cos, encoding, ct, truncated);
             } catch (Exception ex) {
                 //ignore
             }
@@ -265,7 +269,7 @@ public class LoggingOutInterceptor extends AbstractLoggingInterceptor {
     @Override
     protected Logger getLogger() {
         return LOG;
-        
+
     }
 
 }

@@ -46,10 +46,14 @@ import org.springframework.web.context.WebApplicationContext;
 @Component("CustomerServiceImplementor")
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode= ScopedProxyMode.TARGET_CLASS)
 public class CustomerServiceImpl implements CustomerService {
+<<<<<<< HEAD
     
      
+=======
+
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
     /**
-     * The WebServiceContext can be used to retrieve special attributes like the 
+     * The WebServiceContext can be used to retrieve special attributes like the
      * user principal. Normally it is not needed
      */
     //@Inject
@@ -76,7 +80,7 @@ public class CustomerServiceImpl implements CustomerService {
                                               noSuchCustomer);
         }
 
-        List<Customer> customers = new ArrayList<Customer>();
+        List<Customer> customers = new ArrayList<>();
         for (int c = 0; c < 2; c++) {
             Customer cust = new Customer();
             cust.setName(name);

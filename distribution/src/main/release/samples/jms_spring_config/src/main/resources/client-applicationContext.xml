@@ -15,22 +15,20 @@
         License.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:jaxws="http://cxf.apache.org/jaxws"
-<<<<<<< HEAD
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:p="http://www.springframework.org/schema/p"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-		http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd http://cxf.apache.org/jaxws
-		http://cxf.apache.org/schemas/jaxws.xsd">
+		http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd 
+		http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
 	
 	<!-- Make sure to use ConnectionPooling to achieve a good performance. Do not forget
 		the destroy-method as else the JVM will hang on shutdown -->
-=======
 	xsi:schemaLocation="
-		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd         
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd         
 		http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd
 		http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
 
@@ -71,7 +69,7 @@
 	
 	<jaxws:client id="customerService" address="jms:queue:endpoint-in-queue" serviceClass="com.example.customerservice.CustomerService" >
 		<jaxws:features>
-			<bean class="org.apache.cxf.feature.LoggingFeature"/>
+            <bean class="org.apache.cxf.ext.logging.LoggingFeature"/>
 			
 			<!-- We use the feature to inject the ConnectionFactory. This approach also allows
 				to publish a java first service as we need no jms config in the wsdl. Alternatively

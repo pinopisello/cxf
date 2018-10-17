@@ -32,13 +32,13 @@ public class JsonMapObject implements Serializable {
     Map<String, Integer> updateCount;
     Map<String, Object> values = new LinkedHashMap<String, Object>();
     public JsonMapObject() {
-        
+
     }
-    
+
     public JsonMapObject(Map<String, Object> values) {
         this.values = values;
     }
-    
+
     public void setProperty(String name, Object value) {
         if (values.containsKey(name)) {
             if (updateCount == null) {
@@ -48,15 +48,34 @@ public class JsonMapObject implements Serializable {
             count = count == null ? 2 : count++;
             updateCount.put(name, count);
         }
+        if (value instanceof JsonMapObject) {
+            value = ((JsonMapObject)value).asMap();
+        }
         values.put(name, value);
     }
-    
+
     public boolean containsProperty(String name) {
         return values.containsKey(name);
     }
-    
+
     public Object getProperty(String name) {
         return values.get(name);
+    }
+    
+    public Map<String, Object> getMapProperty(String name) {
+        Object value = getProperty(name);
+        if (value != null) {
+            return CastUtils.cast((Map<?, ?>)value);
+        }
+        return null;
+    }
+    
+    public JsonMapObject getJsonMapProperty(String name) {
+        Map<String, Object> value = getMapProperty(name);
+        if (value != null) {
+            return new JsonMapObject(value);
+        }
+        return null;
     }
 
     public Map<String, Object> asMap() {
@@ -66,50 +85,62 @@ public class JsonMapObject implements Serializable {
         Object value = getProperty(name);
         if (value != null) {
             return value instanceof Integer ? (Integer)value : Integer.parseInt(value.toString());
-        } else {
-            return null;
         }
+        return null;
     }
     public Long getLongProperty(String name) {
         Object value = getProperty(name);
         if (value != null) {
             return value instanceof Long ? (Long)value : Long.parseLong(value.toString());
-        } else {
-            return null;
         }
+        return null;
     }
     public Boolean getBooleanProperty(String name) {
         Object value = getProperty(name);
         if (value != null) {
             return value instanceof Boolean ? (Boolean)value : Boolean.parseBoolean(value.toString());
-        } else {
-            return null;
         }
+        return null;
     }
     public String getStringProperty(String name) {
         Object value = getProperty(name);
         if (value != null) {
             return value.toString();
-        } else {
-            return null;
         }
+        return null;
     }
     public List<String> getListStringProperty(String name) {
         Object value = getProperty(name);
         if (value != null) {
             return CastUtils.cast((List<?>)value);
-        } else {
-            return null;
         }
+        return null;
     }
-    public int hashCode() { 
+    public List<Map<String, Object>> getListMapProperty(String name) {
+        Object value = getProperty(name);
+        List<Map<String, Object>> list = null;
+        if (value != null) {
+            list = CastUtils.cast((List<?>)value);
+        }
+        return list;
+    }
+    public int hashCode() {
         return values.hashCode();
     }
-    
+
     public boolean equals(Object obj) {
         return obj instanceof JsonMapObject && ((JsonMapObject)obj).values.equals(this.values);
     }
+    
+    public int size() {
+        return values.size();
+    }
+    
     public Map<String, Object> getUpdateCount() {
         return updateCount == null ? null : Collections.<String, Object>unmodifiableMap(updateCount);
+    }
+    
+    public Object removeProperty(String name) {
+        return values.remove(name);
     }
 }

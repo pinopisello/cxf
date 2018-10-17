@@ -3,24 +3,19 @@ JAX-RS Brave/OpenZipkin Tracing Demo
 
 The demo shows a basic usage of Brave/OpenZipkin distributed tracer with REST based 
 Web Services using  JAX-RS 2.0 (JSR-339). The REST server provides the 
-following services: 
+following services at URL http://localhost:9000/catalog: 
 
-A RESTful catalog service is provided on URL http://localhost:9000/catalog 
-
-A HTTP GET request to URL http://localhost:9000/catalog generates following 
-traces:
-
-A HTTP POST request to URL http://localhost:9000/catalog generates following 
-traces:
-
-A HTTP GET request to URL http://localhost:9000/catalog/<id> generates following 
-traces:
-
-A HTTP DELETE request to URL http://localhost:9000/catalog/<id> generates following 
-traces:
-
+ - GET to http://localhost:9000/catalog
+ - POST to http://localhost:9000/catalog 
+ - GET to URL http://localhost:9000/catalog/<id>
+ - DELETE to URL http://localhost:9000/catalog/<id>
+ 
 Building and running the demo using Maven
 ---------------------------------------
+
+Run OpenZipkin server (or point CatalogTracing to the existing one): 
+
+  docker run -d -p 9411:9411 openzipkin/zipkin
 
 From the base directory of this sample (i.e., where this README file is
 located), the Maven pom.xml file can be used to build and run the demo. 
@@ -34,6 +29,10 @@ Using either UNIX or Windows:
     
 
 To remove the target dir, run mvn clean".
+
+Navigate to Zipkin UI to explore the traces (or point to existing deployment): 
+  
+  http://localhost:9411/ 
 
 
 

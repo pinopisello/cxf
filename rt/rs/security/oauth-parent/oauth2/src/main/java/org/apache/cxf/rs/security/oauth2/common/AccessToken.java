@@ -27,6 +27,7 @@ import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.Transient;
 
 /**
  * Base Access Token representation
@@ -35,33 +36,35 @@ import javax.persistence.MappedSuperclass;
 public abstract class AccessToken implements Serializable {
 
     private static final long serialVersionUID = -5750544301887053480L;
-    
+
     private String tokenKey;
     private String tokenType;
     private String refreshToken;
     private long expiresIn = -1;
     private long issuedAt = -1;
+    private long notBefore = -1;
     private String issuer;
-    
-    
+    private String encodedToken;
+
+
     private Map<String, String> parameters = new LinkedHashMap<String, String>();
-    
+
     protected AccessToken() {
-        
+
     }
-    
+
     protected AccessToken(String tokenType, String tokenKey) {
         this.tokenType = tokenType;
         this.tokenKey = tokenKey;
     }
-    
+
     protected AccessToken(String tokenType, String tokenKey,
                           long expiresIn, long issuedAt) {
         this(tokenType, tokenKey);
         this.expiresIn = expiresIn;
         this.issuedAt = issuedAt;
     }
-    
+
     protected AccessToken(String tokenType, String tokenKey,
                           long expiresIn, long issuedAt,
                           String refreshToken,
@@ -78,11 +81,11 @@ public abstract class AccessToken implements Serializable {
     public String getTokenType() {
         return tokenType;
     }
-    
+
     public void setTokenType(String type) {
         this.tokenType = type;
     }
-    
+
     /**
      * Returns the token key
      * @return the key
@@ -91,7 +94,7 @@ public abstract class AccessToken implements Serializable {
     public String getTokenKey() {
         return tokenKey;
     }
-    
+
     public void setTokenKey(String key) {
         this.tokenKey = key;
     }
@@ -113,9 +116,9 @@ public abstract class AccessToken implements Serializable {
     public String getRefreshToken() {
         return refreshToken;
     }
-    
+
     /**
-     * Gets token parameters 
+     * Gets token parameters
      * @return
      */
     @ElementCollection(fetch = FetchType.EAGER)
@@ -143,7 +146,7 @@ public abstract class AccessToken implements Serializable {
     public void setIssuedAt(long issuedAt) {
         this.issuedAt = issuedAt;
     }
-    
+
     /**
      * Sets additional token parameters
      * @param parameters the token parameters
@@ -158,5 +161,25 @@ public abstract class AccessToken implements Serializable {
 
     public void setIssuer(String issuer) {
         this.issuer = issuer;
+    }
+
+    @Transient
+    public String getEncodedToken() {
+        return encodedToken;
+    }
+
+    public void setEncodedToken(String encodedToken) {
+        this.encodedToken = encodedToken;
+    }
+
+    /**
+     * @return the Not Before" timestamp, -1 means no 'nbf' parameter was returned
+     */
+    public long getNotBefore() {
+        return notBefore;
+    }
+
+    public void setNotBefore(long notBefore) {
+        this.notBefore = notBefore;
     }
 }

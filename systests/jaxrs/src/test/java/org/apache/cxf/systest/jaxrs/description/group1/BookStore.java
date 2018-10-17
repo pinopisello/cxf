@@ -35,9 +35,6 @@ import org.apache.cxf.systest.jaxrs.Book;
 
 import io.swagger.annotations.Api;
 
-//FIXME swagger-jaxrs 1.5.3 can't handle a self-recursive sub resource like Book. so hide Book for now
-//import org.apache.cxf.systest.jaxrs.Book;
-
 @Path("/bookstore")
 @Api("/bookstore")
 public class BookStore {
@@ -52,7 +49,7 @@ public class BookStore {
             )
         ).build();
     }
-    
+
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("/{id}")
     @GET

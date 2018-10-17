@@ -30,7 +30,7 @@ import javax.ws.rs.core.Response;
 @Path("/customerservice/")
 @Produces("application/xml")
 public interface CustomerService {
-    
+
     @GET
     @Path("/customers/{id}/")
  
@@ -39,7 +39,7 @@ public interface CustomerService {
     @PUT
     @Path("/customers/{id}")
     Response updateCustomer(@PathParam("id") Long id, Customer customer);
-    
+
     @POST
     @Path("/customers/")
     Response addCustomer(Customer customer);

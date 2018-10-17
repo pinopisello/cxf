@@ -20,7 +20,6 @@
 package demo.ws_rm.server;
 
 import java.net.URL;
-
 import javax.xml.ws.Endpoint;
 
 import org.apache.cxf.Bus;

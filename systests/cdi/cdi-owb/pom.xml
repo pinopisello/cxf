@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.cxf.systests</groupId>
         <artifactId>cxf-systests-cdi</artifactId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>3.3.0-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -31,9 +31,10 @@
     <description>Apache CXF CDI Integration System Tests - OpenWebBeans</description>
     <url>http://cxf.apache.org</url>
 
-	<modules>
+    <modules>
         <module>cdi-multiple-apps-owb</module>
         <module>cdi-no-apps-owb</module>
+        <module>cdi-producers-owb</module>
     </modules>
 
     <dependencies>
@@ -130,20 +131,19 @@
             </dependencies>
         </profile>
         <profile>
-            <id>java9</id>
+            <id>java9plus</id>
             <properties>
-                <cxf.server.launcher.vmargs>-ea --patch-module java.annotations.common=${project.basedir}/target/java9/javax.annotation-api-1.2.jar --add-opens java.xml.ws/javax.xml.ws=ALL-UNNAMED --add-opens jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED  --add-opens jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-opens java.xml.ws/javax.xml.ws.wsaddressing=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-exports=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-exports=java.base/sun.security.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.jaxp=ALL-UNNAMED --add-exports=java.xml.bind/com.sun.xml.internal.bind.marshaller=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.dom=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver.tools=ALL-UNNAMED --add-exports=java.xml.ws/com.sun.xml.internal.messaging.saaj.soap=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal.writer=ALL-UNNAMED --add-exports=java.annotations.common/javax.annotation.security=ALL-UNNAMED --add-modules java.activation,java.xml.bind,java.xml.ws,jdk.xml.bind</cxf.server.launcher.vmargs>
-                <cxf.surefire.fork.vmargs>-ea --patch-module java.annotations.common=${project.basedir}/target/java9/javax.annotation-api-1.2.jar --add-opens java.xml.ws/javax.xml.ws=ALL-UNNAMED --add-opens jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED  --add-opens jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-opens java.xml.ws/javax.xml.ws.wsaddressing=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-exports=java.base/sun.security.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs=ALL-UNNAMED --add-exports=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.jaxp=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.dom=ALL-UNNAMED --add-exports=java.xml.bind/com.sun.xml.internal.bind.marshaller=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver.tools=ALL-UNNAMED --add-exports=java.xml.ws/com.sun.xml.internal.messaging.saaj.soap=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal.writer=ALL-UNNAMED --add-exports=java.annotations.common/javax.annotation.security=ALL-UNNAMED --add-modules java.activation,java.xml.bind,java.xml.ws,jdk.xml.bind</cxf.surefire.fork.vmargs>
+                <cxf.server.launcher.vmargs>-ea --patch-module java.xml.ws.annotation=${project.basedir}/target/java9/javax.annotation-api-${cxf.javax.annotation-api.version}.jar --add-opens java.xml.ws/javax.xml.ws=ALL-UNNAMED --add-opens jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED  --add-opens jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-opens java.xml.ws/javax.xml.ws.wsaddressing=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-exports=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-exports=java.base/sun.security.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.jaxp=ALL-UNNAMED --add-exports=java.xml.bind/com.sun.xml.internal.bind.marshaller=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.dom=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver.tools=ALL-UNNAMED --add-exports=java.xml.ws/com.sun.xml.internal.messaging.saaj.soap=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal.writer=ALL-UNNAMED --add-exports=java.xml.ws.annotation/javax.annotation.security=ALL-UNNAMED</cxf.server.launcher.vmargs>
+                <cxf.surefire.fork.vmargs>-ea --patch-module java.xml.ws.annotation=${project.basedir}/target/java9/javax.annotation-api-${cxf.javax.annotation-api.version}.jar --add-opens java.xml.ws/javax.xml.ws=ALL-UNNAMED --add-opens jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED  --add-opens jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-opens java.xml.ws/javax.xml.ws.wsaddressing=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-exports=java.base/sun.security.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs=ALL-UNNAMED --add-exports=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.impl.xs.util=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.jaxp=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xerces.internal.dom=ALL-UNNAMED --add-exports=java.xml.bind/com.sun.xml.internal.bind.marshaller=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver=ALL-UNNAMED --add-exports=java.xml/com.sun.org.apache.xml.internal.resolver.tools=ALL-UNNAMED --add-exports=java.xml.ws/com.sun.xml.internal.messaging.saaj.soap=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api.impl.s2j=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.tools.internal.xjc.api=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal=ALL-UNNAMED --add-exports=jdk.xml.bind/com.sun.codemodel.internal.writer=ALL-UNNAMED --add-exports=java.xml.ws.annotation/javax.annotation.security=ALL-UNNAMED</cxf.surefire.fork.vmargs>
             </properties>
             <activation>
-                <jdk>9</jdk>
+                <jdk>[9,)</jdk>
             </activation>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
-                        <version>2.10</version>
                         <executions>
                             <execution>
                                 <id>copy</id>

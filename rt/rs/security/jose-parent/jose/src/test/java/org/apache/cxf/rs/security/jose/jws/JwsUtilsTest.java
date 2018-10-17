@@ -28,6 +28,8 @@ import org.apache.cxf.message.ExchangeImpl;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.rs.security.jose.common.JoseConstants;
+import org.apache.cxf.rs.security.jose.jwa.AlgorithmUtils;
+import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKey;
 import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
 import org.apache.cxf.rs.security.jose.jwk.KeyType;
@@ -36,25 +38,51 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class JwsUtilsTest extends Assert {
+
+    @Test
+    public void testSignatureAlgorithm() {
+        assertTrue(AlgorithmUtils.isRsaSign(SignatureAlgorithm.RS256));
+        assertFalse(AlgorithmUtils.isRsaSign(SignatureAlgorithm.NONE));
+
+        try {
+            AlgorithmUtils.RSA_SHA_SIGN_SET.add(SignatureAlgorithm.NONE.getJwaName());
+            fail("Failure expected on trying to modify the algorithm lists");
+        } catch (UnsupportedOperationException ex) {
+            // expected
+        }
+    }
+
     @Test
     public void testLoadSignatureProviderFromJKS() throws Exception {
         Properties p = new Properties();
-        p.put(JoseConstants.RSSEC_KEY_STORE_FILE, 
+        p.put(JoseConstants.RSSEC_KEY_STORE_FILE,
             "org/apache/cxf/rs/security/jose/jws/alice.jks");
         p.put(JoseConstants.RSSEC_KEY_STORE_PSWD, "password");
         p.put(JoseConstants.RSSEC_KEY_PSWD, "password");
         p.put(JoseConstants.RSSEC_KEY_STORE_ALIAS, "alice");
         JwsHeaders headers = new JwsHeaders();
         JwsSignatureProvider jws = JwsUtils.loadSignatureProvider(createMessage(),
-                                                                  p, 
+                                                                  p,
                                                                   headers);
         assertNotNull(jws);
         assertEquals("alice", headers.getKeyId());
     }
     @Test
+    public void testLoadSignatureVerifierFromJKS() throws Exception {
+        Properties p = new Properties();
+        p.put(JoseConstants.RSSEC_KEY_STORE_FILE,
+            "org/apache/cxf/rs/security/jose/jws/alice.jks");
+        p.put(JoseConstants.RSSEC_KEY_STORE_PSWD, "password");
+        p.put(JoseConstants.RSSEC_KEY_STORE_ALIAS, "alice");
+        JwsSignatureVerifier jws = JwsUtils.loadSignatureVerifier(createMessage(),
+                                                                  p,
+                                                                  new JwsHeaders());
+        assertNotNull(jws);
+    }
+    @Test
     public void testLoadVerificationKey() throws Exception {
         Properties p = new Properties();
-        p.put(JoseConstants.RSSEC_KEY_STORE_FILE, 
+        p.put(JoseConstants.RSSEC_KEY_STORE_FILE,
             "org/apache/cxf/rs/security/jose/jws/alice.jks");
         p.put(JoseConstants.RSSEC_KEY_STORE_PSWD, "password");
         p.put(JoseConstants.RSSEC_KEY_STORE_ALIAS, "alice");
@@ -73,7 +101,7 @@ public class JwsUtilsTest extends Assert {
     @Test
     public void testLoadVerificationKeyWithCert() throws Exception {
         Properties p = new Properties();
-        p.put(JoseConstants.RSSEC_KEY_STORE_FILE, 
+        p.put(JoseConstants.RSSEC_KEY_STORE_FILE,
             "org/apache/cxf/rs/security/jose/jws/alice.jks");
         p.put(JoseConstants.RSSEC_KEY_STORE_PSWD, "password");
         p.put(JoseConstants.RSSEC_KEY_STORE_ALIAS, "alice");
@@ -92,7 +120,7 @@ public class JwsUtilsTest extends Assert {
         assertNotNull(chain);
         assertEquals(2, chain.size());
     }
-    
+
     private Message createMessage() {
         Message m = new MessageImpl();
         Exchange e = new ExchangeImpl();

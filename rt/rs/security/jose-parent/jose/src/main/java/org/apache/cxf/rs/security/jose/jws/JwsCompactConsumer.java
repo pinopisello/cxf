@@ -76,6 +76,7 @@ public class JwsCompactConsumer {
     }
     public String getDecodedJwsPayload() {
         if (decodedJwsPayload == null) {
+            getJwsHeaders();
             if (JwsUtils.isPayloadUnencoded(jwsHeaders)) {
                 decodedJwsPayload = jwsPayload;
             } else {
@@ -133,5 +134,5 @@ public class JwsCompactConsumer {
     protected JsonMapObjectReaderWriter getReader() {
         return reader;
     }
-    
+
 }

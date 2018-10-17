@@ -40,14 +40,14 @@ import org.apache.cxf.message.Exchange;
 import org.apache.cxf.message.ExchangeImpl;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageImpl;
-import org.easymock.EasyMock;
 
+import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class DOM4JProviderTest extends Assert {
 
-    
+
     @Test
     public void testReadXML() throws Exception {
         String str = readXML().asXML();
@@ -71,27 +71,25 @@ public class DOM4JProviderTest extends Assert {
                                                  new ByteArrayInputStream(strBytes));
         DOM4JProvider p = new DOM4JProvider();
         p.setProviders(new ProvidersImpl(createMessage(false)));
-        org.dom4j.Document dom = p.readFrom(org.dom4j.Document.class, org.dom4j.Document.class, 
-            new Annotation[] {}, MediaType.valueOf("text/xml;a=b"), 
+        return p.readFrom(org.dom4j.Document.class, org.dom4j.Document.class,
+            new Annotation[] {}, MediaType.valueOf("text/xml;a=b"),
             new MetadataMap<String, String>(),
             is);
-        return dom;
     }
     private org.dom4j.Document readXML(MediaType ct, final String xml) throws Exception {
         DOM4JProvider p = new DOM4JProvider();
         p.setProviders(new ProvidersImpl(createMessage(false)));
-        org.dom4j.Document dom = p.readFrom(org.dom4j.Document.class, org.dom4j.Document.class, 
+        return p.readFrom(org.dom4j.Document.class, org.dom4j.Document.class,
             new Annotation[] {}, ct, new MetadataMap<String, String>(),
             new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
-        return dom;
     }
-    
+
     @Test
     public void testReadJSONConvertToXML() throws Exception {
         final String xml = "{\"a\":{\"b\":2}}";
         DOM4JProvider p = new DOM4JProvider();
         p.setProviders(new ProvidersImpl(createMessage(false)));
-        org.dom4j.Document dom = p.readFrom(org.dom4j.Document.class, org.dom4j.Document.class, 
+        org.dom4j.Document dom = p.readFrom(org.dom4j.Document.class, org.dom4j.Document.class,
                    new Annotation[]{}, MediaType.APPLICATION_JSON_TYPE, new MetadataMap<String, String>(),
                    new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
         String str = dom.asXML();
@@ -103,17 +101,17 @@ public class DOM4JProviderTest extends Assert {
     public void testWriteXML() throws Exception {
         doTestWriteXML(MediaType.APPLICATION_XML_TYPE, false);
     }
-    
+
     @Test
     public void testWriteXMLCustomCt() throws Exception {
         doTestWriteXML(MediaType.valueOf("application/custom+xml"), false);
     }
-    
+
     @Test
     public void testWriteXMLAsDOMW3C() throws Exception {
         doTestWriteXML(MediaType.APPLICATION_XML_TYPE, true);
     }
-    
+
     @Test
     public void testWriteXMLSuppressDeclaration() throws Exception {
         org.dom4j.Document dom = readXML(MediaType.APPLICATION_XML_TYPE, "<a/>");
@@ -126,13 +124,13 @@ public class DOM4JProviderTest extends Assert {
         };
         p.setProviders(providers);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class, 
+        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class,
             new Annotation[]{}, MediaType.APPLICATION_XML_TYPE, new MetadataMap<String, Object>(), bos);
         String str = bos.toString();
         assertFalse(str.startsWith("<?xml"));
         assertTrue(str.contains("<a/>") || str.contains("<a></a>"));
     }
-    
+
     private void doTestWriteXML(MediaType ct, boolean convert) throws Exception {
         org.dom4j.Document dom = readXML(ct, "<a/>");
         final Message message = createMessage(false);
@@ -145,7 +143,7 @@ public class DOM4JProviderTest extends Assert {
         p.setProviders(providers);
         p.convertToDOMAlways(convert);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class, 
+        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class,
             new Annotation[]{}, ct, new MetadataMap<String, Object>(), bos);
         String str = bos.toString();
         if (convert) {
@@ -155,40 +153,40 @@ public class DOM4JProviderTest extends Assert {
         }
         assertTrue(str.contains("<a/>") || str.contains("<a></a>"));
     }
-    
+
     @Test
     public void testWriteJSON() throws Exception {
         org.dom4j.Document dom = readXML();
         DOM4JProvider p = new DOM4JProvider();
         p.setProviders(new ProvidersImpl(createMessage(false)));
-        
+
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class, 
+        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class,
                    new Annotation[]{}, MediaType.APPLICATION_JSON_TYPE, new MetadataMap<String, Object>(),
                    bos);
         String str = bos.toString();
         assertEquals("{\"a\":\"\"}", str);
     }
-    
+
     @Test
     public void testWriteJSONDropRoot() throws Exception {
         org.dom4j.Document dom = readXML(MediaType.APPLICATION_XML_TYPE, "<root><a/></root>");
         DOM4JProvider p = new DOM4JProvider();
         p.setProviders(new ProvidersImpl(createMessageWithJSONProvider()));
-        
+
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class, 
+        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class,
                    new Annotation[]{}, MediaType.APPLICATION_JSON_TYPE, new MetadataMap<String, Object>(),
                    bos);
         String str = bos.toString();
         assertEquals("{\"a\":\"\"}", str);
     }
-    
+
     @Test
     public void testWriteJSONAsArray() throws Exception {
         org.dom4j.Document dom = readXML(MediaType.APPLICATION_XML_TYPE, "<root><a>1</a></root>");
         DOM4JProvider p = new DOM4JProvider();
-        
+
         ProviderFactory factory = ServerProviderFactory.getInstance();
         JSONProvider<Object> provider = new JSONProvider<Object>();
         provider.setSerializeAsArray(true);
@@ -197,15 +195,15 @@ public class DOM4JProviderTest extends Assert {
         provider.setIgnoreNamespaces(true);
         factory.registerUserProvider(provider);
         p.setProviders(new ProvidersImpl(createMessage(factory)));
-        
+
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class, 
+        p.writeTo(dom, org.dom4j.Document.class, org.dom4j.Document.class,
                    new Annotation[]{}, MediaType.APPLICATION_JSON_TYPE, new MetadataMap<String, Object>(),
                    bos);
         String str = bos.toString();
         assertEquals("[{\"a\":1}]", str);
     }
-    
+
     private Message createMessage(boolean suppress) {
         ProviderFactory factory = ServerProviderFactory.getInstance();
         Message m = new MessageImpl();
@@ -229,7 +227,7 @@ public class DOM4JProviderTest extends Assert {
         e.put(Endpoint.class, endpoint);
         return m;
     }
-    
+
     private Message createMessageWithJSONProvider() {
         ProviderFactory factory = ServerProviderFactory.getInstance();
         JSONProvider<Object> provider = new JSONProvider<Object>();
@@ -259,6 +257,6 @@ public class DOM4JProviderTest extends Assert {
         e.put(Endpoint.class, endpoint);
         return m;
     }
-            
-    
+
+
 }

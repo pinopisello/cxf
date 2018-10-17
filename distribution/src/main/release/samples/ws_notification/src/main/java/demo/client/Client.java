@@ -30,7 +30,7 @@ import org.apache.cxf.wsn.client.Subscription;
 import org.oasis_open.docs.wsn.b_2.NotificationMessageHolderType;
 
 /**
- * 
+ *
  */
 public final class Client {
     private Client() {
@@ -45,7 +45,7 @@ public final class Client {
         if (args.length > 0) {
             wsnPort = args[0];
         }
-        
+
         // Start a consumer that will listen for notification messages
         // We'll just print the text content out for now.
         Consumer consumer = new Consumer(new Consumer.Callback() {
@@ -56,22 +56,36 @@ public final class Client {
                     System.out.println(((Element)o).getTextContent());
                 }
             }
+<<<<<<< HEAD
         }, "http://localhost:9001/MyConsumer");//Dove il consumer attende le notifiche
         
         
         // Create a subscription for a Topic on the broker
         NotificationBroker notificationBroker   = new NotificationBroker("http://localhost:" + wsnPort + "/wsn/NotificationBroker");
+=======
+        }, "http://localhost:9001/MyConsumer");
+
+
+        // Create a subscription for a Topic on the broker
+        NotificationBroker notificationBroker
+            = new NotificationBroker("http://localhost:" + wsnPort + "/wsn/NotificationBroker");
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         Subscription subscription = notificationBroker.subscribe(consumer, "MyTopic");
 
 
         // Send a notification on the Topic
-        notificationBroker.notify("MyTopic", 
+        notificationBroker.notify("MyTopic",
                                   new JAXBElement<String>(new QName("urn:test:org", "foo"),
                                           String.class, "Hello World!"));
-        
+
         // Just sleep for a bit to make sure the notification gets delivered
+<<<<<<< HEAD
         Thread.sleep(10000);
         
+=======
+        Thread.sleep(5000);
+
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         // Cleanup and exit
         subscription.unsubscribe();  //Invia un unsubscrive soap message verso http://localhost:9000/wsn/subscriptions/ID-127-0-0-1-152fac1f002-0-7 
         consumer.stop();

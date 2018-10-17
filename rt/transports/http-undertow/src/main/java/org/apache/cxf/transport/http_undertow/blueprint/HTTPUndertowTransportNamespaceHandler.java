@@ -48,9 +48,8 @@ public class HTTPUndertowTransportNamespaceHandler implements NamespaceHandler {
         if (UNDERTOW_TRANSPORT.equals(s)) {
             return getClass().getClassLoader().
                 getResource("schemas/configuration/http-undertow.xsd");
-        } else {
-            return null;
         }
+        return null;
     }
 
     @SuppressWarnings("rawtypes")
@@ -74,8 +73,8 @@ public class HTTPUndertowTransportNamespaceHandler implements NamespaceHandler {
         return null;
     }
 
-    public ComponentMetadata decorate(Node node, 
-                                      ComponentMetadata componentMetadata, 
+    public ComponentMetadata decorate(Node node,
+                                      ComponentMetadata componentMetadata,
                                       ParserContext parserContext) {
         LOG.info("Decorating node " + node + " " + componentMetadata);
         return componentMetadata;

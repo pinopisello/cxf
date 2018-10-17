@@ -26,35 +26,45 @@ import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.ext.Provider;
 
-import com.github.kristofa.brave.Brave;
-import com.twitter.zipkin.gen.Span;
-
+import brave.Tracing;
+import brave.http.HttpTracing;
 import org.apache.cxf.tracing.brave.AbstractBraveClientProvider;
+import org.apache.cxf.tracing.brave.HttpClientSpanParser;
+import org.apache.cxf.tracing.brave.TraceScope;
 
 @Provider
-public class BraveClientProvider extends AbstractBraveClientProvider 
+public class BraveClientProvider extends AbstractBraveClientProvider
         implements ClientRequestFilter, ClientResponseFilter {
-    
-    public BraveClientProvider(final Brave brave) {
+
+    public BraveClientProvider(final Tracing brave) {
+        this(
+            HttpTracing
+                .newBuilder(brave)
+                .clientParser(new HttpClientSpanParser())
+                .build()
+        );
+    }
+
+    public BraveClientProvider(final HttpTracing brave) {
         super(brave);
     }
 
     @Override
     public void filter(final ClientRequestContext requestContext) throws IOException {
-        final TraceScopeHolder<Span> holder = super.startTraceSpan(requestContext.getStringHeaders(), 
+        final TraceScopeHolder<TraceScope> holder = super.startTraceSpan(requestContext.getStringHeaders(),
             requestContext.getUri(), requestContext.getMethod());
 
         if (holder != null) {
             requestContext.setProperty(TRACE_SPAN, holder);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public void filter(final ClientRequestContext requestContext,
             final ClientResponseContext responseContext) throws IOException {
-        final TraceScopeHolder<Span> holder = 
-            (TraceScopeHolder<Span>)requestContext.getProperty(TRACE_SPAN);
+        final TraceScopeHolder<TraceScope> holder =
+            (TraceScopeHolder<TraceScope>)requestContext.getProperty(TRACE_SPAN);
         super.stopTraceSpan(holder, responseContext.getStatus());
     }
 }

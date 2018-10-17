@@ -38,7 +38,8 @@ import org.apache.hello_world_async_soap_http.types.GreetMeSometimeResponse;
             targetNamespace = "http://apache.org/hello_world_async_soap_http")
                   
 public class GreeterImpl implements GreeterAsync {
-    private static final Logger LOG =  Logger.getLogger(GreeterImpl.class.getPackage().getName());
+    private static final Logger LOG =
+        Logger.getLogger(GreeterImpl.class.getPackage().getName());
  
     /* (non-Javadoc)
      * @see org.apache.hello_world_soap_http.Greeter#greetMeSometime(java.lang.String)

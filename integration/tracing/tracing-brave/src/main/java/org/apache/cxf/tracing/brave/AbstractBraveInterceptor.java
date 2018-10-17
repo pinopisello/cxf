@@ -19,7 +19,6 @@
 package org.apache.cxf.tracing.brave;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,24 +27,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.http.SpanNameProvider;
-
+import brave.http.HttpTracing;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
 import org.apache.cxf.phase.PhaseInterceptor;
+import org.apache.cxf.tracing.AbstractTracingProvider;
 
 public abstract class AbstractBraveInterceptor extends AbstractBraveProvider implements PhaseInterceptor<Message> {
     private final String phase;
-    
+
     protected static class ParsedMessage {
         private Message message;
 
         ParsedMessage(Message message) {
             this.message = message;
         }
-        
+
         String safeGet(String key) {
             if (!message.containsKey(key)) {
                 return null;
@@ -53,50 +51,20 @@ public abstract class AbstractBraveInterceptor extends AbstractBraveProvider imp
             Object value = message.get(key);
             return (value instanceof String) ? value.toString() : null;
         }
-        
-        private String getUriSt() {
-            String uri = safeGet(Message.REQUEST_URL);
-            if (uri == null) {
-                String address = safeGet(Message.ENDPOINT_ADDRESS);
-                uri = safeGet(Message.REQUEST_URI);
-                if (uri != null && uri.startsWith("/")) {
-                    if (address != null && !address.startsWith(uri)) {
-                        if (address.endsWith("/") && address.length() > 1) {
-                            address = address.substring(0, address.length());
-                        }
-                        uri = address + uri;
-                    }
-                } else {
-                    uri = address;
-                }
-            }
-            String query = safeGet(Message.QUERY_STRING);
-            if (query != null) {
-                return uri + "?" + query;
-            } else {
-                return uri;
-            }
-        }
-        
+      
         URI getUri() {
-            try {
-                String uriSt = getUriSt();
-                return uriSt != null ? new URI(uriSt) : new URI("");
-            } catch (URISyntaxException e) {
-                throw new RuntimeException(e.getMessage(), e);
-            }
+            return AbstractTracingProvider.getUri(message);
         }
-        
+
         Message getEffectiveMessage() {
             boolean isRequestor = MessageUtils.isRequestor(message);
             boolean isOutbound = MessageUtils.isOutbound(message);
             if (isRequestor) {
                 return isOutbound ? message : message.getExchange().getOutMessage();
-            } else {
-                return isOutbound ? message.getExchange().getInMessage() : message;
             }
+            return isOutbound ? message.getExchange().getInMessage() : message;
         }
-        
+
         Map<String, List<String>> getHeaders() {
             Map<String, List<String>> headers = CastUtils.cast((Map<?, ?>)message.get(Message.PROTOCOL_HEADERS));
 
@@ -106,11 +74,11 @@ public abstract class AbstractBraveInterceptor extends AbstractBraveProvider imp
 
             return headers;
         }
-        
+
         void addHeader(String key, String value) {
             Map<String, List<String>> headers = CastUtils.cast((Map<?, ?>)message.get(Message.PROTOCOL_HEADERS));
             if (headers == null) {
-                headers = new HashMap<String, List<String>>();
+                headers = new HashMap<>();
                 message.put(Message.PROTOCOL_HEADERS, headers);
             }
             headers.put(key, Arrays.asList(value));
@@ -122,11 +90,11 @@ public abstract class AbstractBraveInterceptor extends AbstractBraveProvider imp
         }
     }
 
-    protected AbstractBraveInterceptor(String phase, Brave brave, SpanNameProvider spanNameProvider) {
-        super(brave, spanNameProvider);
+    protected AbstractBraveInterceptor(String phase, HttpTracing brave) {
+        super(brave);
         this.phase = phase;
     }
-    
+
     @Override
     public Set<String> getAfter() {
         return Collections.emptySet();
@@ -146,12 +114,12 @@ public abstract class AbstractBraveInterceptor extends AbstractBraveProvider imp
     public String getPhase() {
         return phase;
     }
-    
+
     @Override
     public Collection<PhaseInterceptor<? extends Message>> getAdditionalInterceptors() {
         return null;
     }
-    
+
     @Override
     public void handleFault(Message message) {
     }

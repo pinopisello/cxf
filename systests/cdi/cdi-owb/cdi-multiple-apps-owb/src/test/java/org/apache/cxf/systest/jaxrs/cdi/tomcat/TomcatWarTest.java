@@ -22,6 +22,7 @@ package org.apache.cxf.systest.jaxrs.cdi.tomcat;
 import org.apache.cxf.jaxrs.model.AbstractResourceInfo;
 import org.apache.cxf.systests.cdi.base.AbstractCdiMultiAppTest;
 import org.apache.cxf.systests.cdi.base.tomcat.AbstractTomcatServer;
+
 import org.junit.BeforeClass;
 
 public class TomcatWarTest extends AbstractCdiMultiAppTest {
@@ -32,14 +33,14 @@ public class TomcatWarTest extends AbstractCdiMultiAppTest {
             super("/jaxrs_cdi", "/", PORT);
         }
     }
-    
+
     @BeforeClass
     public static void startServers() throws Exception {
         AbstractResourceInfo.clearAllMaps();
         assertTrue("server did not launch correctly", launchServer(EmbeddedTomcatServer.class, true));
         createStaticBus();
     }
-    
+
     @Override
     protected int getPort() {
         return EmbeddedTomcatServer.PORT;

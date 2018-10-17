@@ -40,16 +40,17 @@ import org.apache.cxf.rt.security.utils.SecurityUtils;
 import org.apache.cxf.security.SecurityContext;
 import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.wss4j.common.saml.SamlAssertionWrapper;
+import org.apache.wss4j.common.token.PKIPathSecurity;
+import org.apache.wss4j.common.token.X509Security;
 import org.apache.wss4j.dom.WSConstants;
 import org.apache.wss4j.dom.engine.WSSecurityEngineResult;
 import org.apache.wss4j.dom.handler.WSHandlerResult;
-import org.apache.wss4j.dom.message.token.KerberosSecurity;
 
 /**
  * The default implementation to create a SecurityContext from a set of WSS4J processing results.
  */
 public class DefaultWSS4JSecurityContextCreator implements WSS4JSecurityContextCreator {
-    
+
     private static final List<Integer> DEFAULT_SECURITY_PRIORITIES = new ArrayList<>();
     static {
         DEFAULT_SECURITY_PRIORITIES.add(WSConstants.ST_SIGNED);
@@ -61,75 +62,84 @@ public class DefaultWSS4JSecurityContextCreator implements WSS4JSecurityContextC
     }
 
     private List<Integer> securityPriorities = new ArrayList<>(DEFAULT_SECURITY_PRIORITIES);
-    
+
     /**
      * Create a SecurityContext and store it on the SoapMessage parameter
      */
     public void createSecurityContext(SoapMessage msg, WSHandlerResult handlerResult) {
-        
-        String allowUnsigned = 
-            (String)SecurityUtils.getSecurityPropertyValue(
-                SecurityConstants.ENABLE_UNSIGNED_SAML_ASSERTION_PRINCIPAL, msg
+
+        boolean allowUnsignedSamlPrincipals =
+            SecurityUtils.getSecurityPropertyBoolean(
+                SecurityConstants.ENABLE_UNSIGNED_SAML_ASSERTION_PRINCIPAL, msg, false
             );
-        boolean allowUnsignedSamlPrincipals = Boolean.parseBoolean(allowUnsigned);
-        boolean useJAASSubject = true; 
-        String useJAASSubjectStr = 
+        boolean allowUTNoPassword =
+            SecurityUtils.getSecurityPropertyBoolean(
+                SecurityConstants.ENABLE_UT_NOPASSWORD_PRINCIPAL, msg, false
+            );
+
+        boolean useJAASSubject = true;
+        String useJAASSubjectStr =
             (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SC_FROM_JAAS_SUBJECT, msg);
         if (useJAASSubjectStr != null) {
             useJAASSubject = Boolean.parseBoolean(useJAASSubjectStr);
         }
-        
+
         // Now go through the results in a certain order to set up a security context. Highest priority is first.
         Map<Integer, List<WSSecurityEngineResult>> actionResults = handlerResult.getActionResults();
         for (Integer resultPriority : securityPriorities) {
-            if (resultPriority == WSConstants.ST_UNSIGNED && !allowUnsignedSamlPrincipals) {
+            if ((resultPriority == WSConstants.ST_UNSIGNED && !allowUnsignedSamlPrincipals)
+                || (resultPriority == WSConstants.UT_NOPASSWORD && !allowUTNoPassword)) {
                 continue;
             }
-            
+
             List<WSSecurityEngineResult> foundResults = actionResults.get(resultPriority);
             if (foundResults != null && !foundResults.isEmpty()) {
                 for (WSSecurityEngineResult result : foundResults) {
-                    final Object binarySecurity = result.get(WSSecurityEngineResult.TAG_BINARY_SECURITY_TOKEN);
-                    PublicKey publickey = 
-                        (PublicKey)result.get(WSSecurityEngineResult.TAG_PUBLIC_KEY);
-                    X509Certificate cert = 
-                        (X509Certificate)result.get(WSSecurityEngineResult.TAG_X509_CERTIFICATE);
-                    
-                    if ((resultPriority == WSConstants.BST && !(binarySecurity instanceof KerberosSecurity))
-                        || (resultPriority == WSConstants.SIGN && publickey == null && cert == null)) {
-                        continue;
-                    }
-                    SecurityContext context = createSecurityContext(msg, useJAASSubject, result);
-                    if (context != null) {
-                        msg.put(SecurityContext.class, context);
-                        return;
+
+                    if (!skipResult(resultPriority, result)) {
+                        SecurityContext context = createSecurityContext(msg, useJAASSubject, result);
+                        if (context != null) {
+                            msg.put(SecurityContext.class, context);
+                            return;
+                        }
                     }
                 }
             }
         }
     }
-    
+
+    private boolean skipResult(Integer resultPriority, WSSecurityEngineResult result) {
+        Object binarySecurity = result.get(WSSecurityEngineResult.TAG_BINARY_SECURITY_TOKEN);
+        PublicKey publickey =
+            (PublicKey)result.get(WSSecurityEngineResult.TAG_PUBLIC_KEY);
+        X509Certificate cert =
+            (X509Certificate)result.get(WSSecurityEngineResult.TAG_X509_CERTIFICATE);
+
+        return resultPriority == WSConstants.BST
+            && (binarySecurity instanceof X509Security || binarySecurity instanceof PKIPathSecurity)
+            || resultPriority == WSConstants.SIGN && publickey == null && cert == null;
+    }
+
     protected SecurityContext createSecurityContext(
         SoapMessage msg, boolean useJAASSubject, WSSecurityEngineResult wsResult
     ) {
         final Principal p = (Principal)wsResult.get(WSSecurityEngineResult.TAG_PRINCIPAL);
         final Subject subject = (Subject)wsResult.get(WSSecurityEngineResult.TAG_SUBJECT);
-        
+
         if (subject != null && !(p instanceof KerberosPrincipal) && useJAASSubject) {
-            String roleClassifier = 
+            String roleClassifier =
                 (String)msg.getContextualProperty(SecurityConstants.SUBJECT_ROLE_CLASSIFIER);
             if (roleClassifier != null && !"".equals(roleClassifier)) {
-                String roleClassifierType = 
+                String roleClassifierType =
                     (String)msg.getContextualProperty(SecurityConstants.SUBJECT_ROLE_CLASSIFIER_TYPE);
                 if (roleClassifierType == null || "".equals(roleClassifierType)) {
                     roleClassifierType = "prefix";
                 }
                 return new RolePrefixSecurityContextImpl(subject, roleClassifier, roleClassifierType);
-            } else {
-                return new DefaultSecurityContext(p, subject);
             }
+            return new DefaultSecurityContext(p, subject);
         } else if (p != null) {
-            boolean utWithCallbacks = 
+            boolean utWithCallbacks =
                 MessageUtils.getContextualBoolean(msg, SecurityConstants.VALIDATE_TOKEN, true);
             if (!utWithCallbacks) {
                 WSS4JTokenConverter.convertToken(msg, p);
@@ -139,35 +149,34 @@ public class DefaultWSS4JSecurityContextCreator implements WSS4JSecurityContextC
                 receivedAssertion = wsResult.get(WSSecurityEngineResult.TAG_SAML_ASSERTION);
             }
             if (wsResult.get(WSSecurityEngineResult.TAG_DELEGATION_CREDENTIAL) != null) {
-                msg.put(SecurityConstants.DELEGATED_CREDENTIAL, 
+                msg.put(SecurityConstants.DELEGATED_CREDENTIAL,
                         wsResult.get(WSSecurityEngineResult.TAG_DELEGATION_CREDENTIAL));
             }
-            
+
             if (receivedAssertion instanceof SamlAssertionWrapper) {
                 String roleAttributeName = (String)SecurityUtils.getSecurityPropertyValue(
                         SecurityConstants.SAML_ROLE_ATTRIBUTENAME, msg);
                 if (roleAttributeName == null || roleAttributeName.length() == 0) {
                     roleAttributeName = WSS4JInInterceptor.SAML_ROLE_ATTRIBUTENAME_DEFAULT;
                 }
-                
-                ClaimCollection claims = 
+
+                ClaimCollection claims =
                     SAMLUtils.getClaims((SamlAssertionWrapper)receivedAssertion);
-                Set<Principal> roles = 
+                Set<Principal> roles =
                     SAMLUtils.parseRolesFromClaims(claims, roleAttributeName, null);
-                
-                SAMLSecurityContext context = 
+
+                SAMLSecurityContext context =
                     new SAMLSecurityContext(p, roles, claims);
                 context.setIssuer(SAMLUtils.getIssuer(receivedAssertion));
                 context.setAssertionElement(SAMLUtils.getAssertionElement(receivedAssertion));
                 return context;
-            } else {
-                return createSecurityContext(p);
             }
+            return createSecurityContext(p);
         }
-        
+
         return null;
     }
-    
+
     protected SecurityContext createSecurityContext(final Principal p) {
         return new SecurityContext() {
 
@@ -180,7 +189,7 @@ public class DefaultWSS4JSecurityContextCreator implements WSS4JSecurityContextC
             }
         };
     }
-    
+
     public List<Integer> getSecurityPriorities() {
         return securityPriorities;
     }

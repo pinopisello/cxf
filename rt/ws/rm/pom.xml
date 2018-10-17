@@ -27,14 +27,17 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>3.3.0-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
+        <cxf.module.name>org.apache.cxf.ws.rm</cxf.module.name>
         <cxf.bundle.activator>org.apache.cxf.ws.rm.blueprint.Activator</cxf.bundle.activator>
         <cxf.osgi.import>
+            javax.xml.soap;version="${cxf.osgi.saaj.version}",
             org.apache.aries*;version="${cxf.aries.version.range}";resolution:=optional,
-            org.springframework*;resolution:="optional";version="${cxf.osgi.spring.version}"
+            org.springframework*;resolution:="optional";version="${cxf.osgi.spring.version}",
+            javax.xml.bind*;version="${cxf.osgi.javax.bind.version}"
         </cxf.osgi.import>
         <!-- keep in sync with services exported in activator -->
         <cxf.export.service>
@@ -95,10 +98,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.wss4j</groupId>
-            <artifactId>wss4j-policy</artifactId>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -115,9 +114,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-features-logging</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
-            <version>${cxf.derby.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -129,6 +134,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -154,6 +164,10 @@
                                     <deleteDirs>
                                         <deleteDir>${basedir}/target/generated/src/main/java/org/apache/cxf/ws/addressing</deleteDir>
                                     </deleteDirs>
+                                    <extensionArgs>
+                                        <extensionArg>-npa</extensionArg>
+                                        <extensionArg>-Xdv</extensionArg>
+                                    </extensionArgs>
                                 </xsdOption>
                                 <xsdOption>
                                     <xsd>${basedir}/src/main/resources/schemas/wsdl/wsrm-1.0-wsa15.xsd</xsd>
@@ -162,6 +176,10 @@
                                     <deleteDirs>
                                         <deleteDir>${basedir}/target/generated/src/main/java/org/apache/cxf/ws/addressing</deleteDir>
                                     </deleteDirs>
+                                    <extensionArgs>
+                                        <extensionArg>-npa</extensionArg>
+                                        <extensionArg>-Xdv</extensionArg>
+                                    </extensionArgs>
                                 </xsdOption>
                                 <xsdOption>
                                     <xsd>${basedir}/src/main/resources/schemas/wsdl/wsrm-1.1.xsd</xsd>
@@ -170,6 +188,10 @@
                                     <deleteDirs>
                                         <deleteDir>${basedir}/target/generated/src/main/java/org/apache/cxf/ws/addressing</deleteDir>
                                     </deleteDirs>
+                                    <extensionArgs>
+                                        <extensionArg>-npa</extensionArg>
+                                        <extensionArg>-Xdv</extensionArg>
+                                    </extensionArgs>
                                 </xsdOption>
                                 <xsdOption>
                                     <xsd>${basedir}/src/main/resources/schemas/wsdl/wsmc-1.1.xsd</xsd>
@@ -178,6 +200,10 @@
                                     <deleteDirs>
                                         <deleteDir>${basedir}/target/generated/src/main/java/org/apache/cxf/ws/addressing</deleteDir>
                                     </deleteDirs>
+                                    <extensionArgs>
+                                        <extensionArg>-npa</extensionArg>
+                                        <extensionArg>-Xdv</extensionArg>
+                                    </extensionArgs>
                                 </xsdOption>
                                 <xsdOption>
                                     <xsd>${basedir}/src/main/resources/schemas/configuration/wsrm-manager-types.xsd</xsd>

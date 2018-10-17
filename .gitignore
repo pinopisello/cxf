@@ -8,8 +8,7 @@
 .classpath
 .ekstazi
 .pmd
-.pmdruleset
-.pmdruleset.xml
+.eclipse-pmd
 .project
 .ruleset
 .settings/
@@ -17,4 +16,5 @@ target/
 velocity.log
 bin/
 node_modules/
-.metadata
+derby.log
+.pmdruleset.xml

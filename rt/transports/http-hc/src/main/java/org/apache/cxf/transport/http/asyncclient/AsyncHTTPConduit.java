@@ -47,8 +47,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
 
 import org.apache.cxf.Bus;
+import org.apache.cxf.common.util.PropertyUtils;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.configuration.jsse.SSLUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
@@ -92,22 +94,22 @@ import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.util.HeapByteBufferAllocator;
 
 /**
- * 
+ *
  */
 public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
     public static final String USE_ASYNC = "use.async.http.conduit";
 
     final AsyncHTTPConduitFactory factory;
     volatile int lastTlsHash = -1;
-    volatile Object sslState; 
+    volatile Object sslState;
     volatile URI sslURL;
     volatile SSLContext sslContext;
     volatile SSLSession session;
     volatile CloseableHttpAsyncClient client;
-        
+
 
     public AsyncHTTPConduit(Bus b,
-                            EndpointInfo ei, 
+                            EndpointInfo ei,
                             EndpointReferenceType t,
                             AsyncHTTPConduitFactory factory) throws IOException {
         super(b, ei, t);
@@ -126,7 +128,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
     public AsyncHTTPConduitFactory getAsyncHTTPConduitFactory() {
         return factory;
     }
-    
+
     @Override
     protected void setupConnection(Message message, Address address, HTTPClientPolicy csPolicy) throws IOException {
         if (factory.isShutdown()) {
@@ -151,7 +153,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         if (!"http".equals(s) && !"https".equals(s)) {
             throw new MalformedURLException("unknown protocol: " + s);
         }
-        
+
         Object o = message.getContextualProperty(USE_ASYNC);
         if (o == null) {
             o = factory.getUseAsyncPolicy();
@@ -168,13 +170,13 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             o = !message.getExchange().isSynchronous();
             break;
         }
-            
+
         // check tlsClientParameters from message header
         TLSClientParameters clientParameters = message.get(TLSClientParameters.class);
         if (clientParameters == null) {
             clientParameters = tlsClientParameters;
         }
-        if (uri.getScheme().equals("https") 
+        if (uri.getScheme().equals("https")
             && clientParameters != null
             && clientParameters.getSSLSocketFactory() != null) {
             //if they configured in an SSLSocketFactory, we cannot do anything
@@ -182,13 +184,13 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             //the SSLSocketFactory.
             o = false;
         }
-        if (!MessageUtils.isTrue(o)) {
+        if (!PropertyUtils.isTrue(o)) {
             message.put(USE_ASYNC, Boolean.FALSE);
             super.setupConnection(message, addressChanged ? new Address(uriString, uri) : address, csPolicy);
             return;
         }
         if (StringUtils.isEmpty(uri.getPath())) {
-            //hc needs to have the path be "/" 
+            //hc needs to have the path be "/"
             uri = uri.resolve("/");
             addressChanged = true;
         }
@@ -198,7 +200,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             LOG.fine("Asynchronous connection to " + uri.toString() + " has been set up");
         }
         message.put("http.scheme", uri.getScheme());
-        String httpRequestMethod = 
+        String httpRequestMethod =
             (String)message.get(Message.HTTP_REQUEST_METHOD);
         if (httpRequestMethod == null) {
             httpRequestMethod = "POST";
@@ -213,34 +215,34 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         entity.setChunked(true);
         entity.setContentType((String)message.get(Message.CONTENT_TYPE));
         e.setURI(uri);
-        
+
         e.setEntity(entity);
 
         RequestConfig.Builder b = RequestConfig.custom()
                 .setConnectTimeout((int) csPolicy.getConnectionTimeout())
                 .setSocketTimeout((int) csPolicy.getReceiveTimeout())
-                .setConnectionRequestTimeout((int) csPolicy.getReceiveTimeout());
+                .setConnectionRequestTimeout((int) csPolicy.getConnectionRequestTimeout());
         Proxy p = proxyFactory.createProxy(csPolicy, uri);
         if (p != null && p.type() != Proxy.Type.DIRECT) {
             InetSocketAddress isa = (InetSocketAddress)p.address();
-            HttpHost proxy = new HttpHost(isa.getHostName(), isa.getPort());
+            HttpHost proxy = new HttpHost(isa.getHostString(), isa.getPort());
             b.setProxy(proxy);
         }
         e.setConfig(b.build());
 
         message.put(CXFHttpRequest.class, e);
     }
-    
-    
-    protected OutputStream createOutputStream(Message message, 
-                                              boolean needToCacheRequest, 
+
+
+    protected OutputStream createOutputStream(Message message,
+                                              boolean needToCacheRequest,
                                               boolean isChunking,
                                               int chunkThreshold) throws IOException {
-        
+
         if (Boolean.TRUE.equals(message.get(USE_ASYNC))) {
             CXFHttpRequest entity = message.get(CXFHttpRequest.class);
             AsyncWrappedOutputStream out = new AsyncWrappedOutputStream(message,
-                                                needToCacheRequest, 
+                                                needToCacheRequest,
                                                 isChunking,
                                                 chunkThreshold,
                                                 getConduitName(),
@@ -250,9 +252,9 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         }
         return super.createOutputStream(message, needToCacheRequest, isChunking, chunkThreshold);
     }
-    
-    
-    public class AsyncWrappedOutputStream extends WrappedOutputStream 
+
+
+    public class AsyncWrappedOutputStream extends WrappedOutputStream
         implements CopyingOutputStream, WritableByteChannel {
         final HTTPClientPolicy csPolicy;
 
@@ -262,7 +264,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         boolean isAsync;
         SharedInputBuffer inbuf;
         SharedOutputBuffer outbuf;
-        
+
         // Objects for the response
         volatile HttpResponse httpResponse;
         volatile Exception exception;
@@ -271,17 +273,17 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
 
         private Object sessionLock = new Object();
         private boolean closed;
-        
+
         public AsyncWrappedOutputStream(Message message,
-                                        boolean needToCacheRequest, 
+                                        boolean needToCacheRequest,
                                         boolean isChunking,
-                                        int chunkThreshold, 
+                                        int chunkThreshold,
                                         String conduitName,
                                         URI uri) {
-            super(message, 
+            super(message,
                   needToCacheRequest,
                   isChunking,
-                  chunkThreshold, 
+                  chunkThreshold,
                   conduitName,
                   uri);
             csPolicy = getClient(message);
@@ -292,10 +294,10 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             int bufSize = csPolicy.getChunkLength() > 0 ? csPolicy.getChunkLength() : 16320;
             inbuf = new SharedInputBuffer(bufSize, allocator);
             outbuf = new SharedOutputBuffer(bufSize, allocator);
-            isAsync = outMessage != null && outMessage.getExchange() != null 
+            isAsync = outMessage != null && outMessage.getExchange() != null
                 && !outMessage.getExchange().isSynchronous();
         }
-        
+
         public boolean retransmitable() {
             return cachedStream != null;
         }
@@ -303,12 +305,12 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             return cachedStream;
         }
 
-        
+
         protected void setProtocolHeaders() throws IOException {
             Headers h = new Headers(outMessage);
             basicEntity.setContentType(h.determineContentType());
-            boolean addHeaders = MessageUtils.isTrue(outMessage.getContextualProperty(Headers.ADD_HEADERS_PROPERTY));
-            
+            boolean addHeaders = MessageUtils.getContextualBoolean(outMessage, Headers.ADD_HEADERS_PROPERTY, false);
+
             for (Map.Entry<String, List<String>> header : h.headerMap().entrySet()) {
                 if (HttpHeaderHelper.CONTENT_TYPE.equalsIgnoreCase(header.getKey())) {
                     continue;
@@ -326,13 +328,13 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                         }
                     }
                     entity.setHeader(header.getKey(), b.toString());
-                }        
+                }
                 if (!entity.containsHeader("User-Agent")) {
                     entity.setHeader("User-Agent", Version.getCompleteVersionString());
                 }
             }
         }
-        
+
         protected void setFixedLengthStreamingMode(int i) {
             basicEntity.setChunked(false);
             basicEntity.setContentLength(i);
@@ -345,9 +347,9 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             connect(false);
             outbuf.writeCompleted();
         }
-        
+
         public boolean isOpen() {
-            return true;
+            return !closed;
         }
 
         public int write(ByteBuffer src) throws IOException {
@@ -390,7 +392,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                     return count;
                 }
             }
-           
+
             if (cachingForRetransmission) {
                 count += IOUtils.copy(in, wrappedStream);
             } else {
@@ -398,7 +400,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             }
             return count;
         }
-        
+
         @Override
         public void close() throws IOException {
             if (closed) {
@@ -414,7 +416,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             }
             super.close();
         }
-        
+
         @Override
         protected void onFirstWrite() throws IOException {
             if (chunking) {
@@ -423,21 +425,27 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 wrappedStream = new CachedOutputStream();
             }
         }
-        
+
         protected void setupWrappedStream() throws IOException {
             connect(true);
             wrappedStream = new OutputStream() {
                 public void write(byte b[], int off, int len) throws IOException {
+                    if (exception instanceof IOException) {
+                        throw (IOException) exception;
+                    }
                     outbuf.write(b, off, len);
                 }
                 public void write(int b) throws IOException {
+                    if (exception instanceof IOException) {
+                        throw (IOException) exception;
+                    }
                     outbuf.write(b);
                 }
                 public void close() throws IOException {
                     outbuf.writeCompleted();
                 }
             };
-                        
+
             // If we need to cache for retransmission, store data in a
             // CacheAndWriteOutputStream. Otherwise write directly to the output stream.
             if (cachingForRetransmission) {
@@ -445,25 +453,25 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 wrappedStream = cachedStream;
             }
         }
-                
+
         protected void connect(boolean output) throws IOException {
             if (connectionFuture != null) {
                 return;
             }
-                       
+
             CXFResponseCallback responseCallback = new CXFResponseCallback() {
                 @Override
                 public void responseReceived(HttpResponse response) {
                     setHttpResponse(response);
                 }
-                
+
             };
-            
+
             FutureCallback<Boolean> callback = new FutureCallback<Boolean>() {
 
                 public void completed(Boolean result) {
                 }
-                
+
                 public void failed(Exception ex) {
                     setException(ex);
                     inbuf.shutdown();
@@ -474,15 +482,15 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                     inbuf.shutdown();
                     outbuf.shutdown();
                 }
-                
+
             };
-            
+
             if (!output) {
                 entity.removeHeaders("Transfer-Encoding");
                 entity.removeHeaders("Content-Type");
                 entity.setEntity(null);
             }
-            
+
             HttpClientContext ctx = HttpClientContext.create();
 
             BasicCredentialsProvider credsProvider = new BasicCredentialsProvider() {
@@ -505,13 +513,13 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             };
 
             ctx.setCredentialsProvider(credsProvider);
-            
+
             if ("https".equals(url.getScheme())) {
                 try {
-                    RegistryBuilder<SchemeIOSessionStrategy> regBuilder 
+                    RegistryBuilder<SchemeIOSessionStrategy> regBuilder
                         = RegistryBuilder.<SchemeIOSessionStrategy>create()
                             .register("http", NoopIOSessionStrategy.INSTANCE);
-                    
+
                     // check tlsClientParameters from message header
                     TLSClientParameters tlsClientParameters = outMessage.get(TLSClientParameters.class);
                     if (tlsClientParameters == null) {
@@ -537,7 +545,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                                     if (!verifier.verify(host.getHostName(), sslsession)) {
                                         throw new SSLException("Could not verify host " + host.getHostName());
                                     }
-                                    
+
                                     iosession.setAttribute("cxf.handshake.done", Boolean.TRUE);
                                     setSSLSession(sslsession);
                                 }
@@ -547,8 +555,8 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-            } 
-            
+            }
+
 
             if (sslURL != null && !sslURL.equals(url)) {
                 sslURL = null;
@@ -569,7 +577,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             @SuppressWarnings("unchecked")
             Registry<AuthSchemeProvider> asp = (Registry<AuthSchemeProvider>)outMessage
                 .getContextualProperty(AuthSchemeProvider.class.getName());
-            if (asp != null) {              
+            if (asp != null) {
                 ctx.setAuthSchemeRegistry(asp);
             }
 
@@ -578,7 +586,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                       ctx,
                       callback);
         }
-        
+
         protected void retrySetHttpResponse(HttpResponse r) {
             if (httpResponse == null && isAsync) {
                 setHttpResponse(r);
@@ -628,7 +636,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                     inbuf.shutdown();
                     //outbuf = null;
                     //inbuf = null;
-                    
+
                     if (exception != null) {
                         if (exception instanceof IOException) {
                             throw (IOException)exception;
@@ -638,17 +646,17 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                         }
                         throw new IOException(exception);
                     }
-                    
+
                     throw new SocketTimeoutException("Read Timeout");
                 }
             }
             return httpResponse;
         }
-        
+
         protected void handleResponseAsync() throws IOException {
             isAsync = true;
         }
-        
+
         protected void closeInputStream() throws IOException {
             byte bytes[] = new byte[1024];
             while (inbuf.read(bytes) > 0) {
@@ -657,7 +665,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             inbuf.close();
             inbuf.shutdown();
         }
-        
+
         protected synchronized InputStream getInputStream() throws IOException {
             return new InputStream() {
                 public int read() throws IOException {
@@ -677,12 +685,11 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 }
             };
         }
-        
+
         protected boolean usingProxy() {
-            //FIXME - need to get the Proxy stuff from the connection
-            return false;
+            return this.entity.getConfig().getProxy() != null;
         }
-        
+
         protected HttpsURLConnectionInfo getHttpsURLConnectionInfo() throws IOException {
             if ("http".equals(outMessage.get("http.scheme"))) {
                 return null;
@@ -705,7 +712,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             if (!verifier.verify(url.getHost(), session)) {
                 throw new IOException("Could not verify host " + url.getHost());
             }
-            
+
             String method = (String)outMessage.get(Message.HTTP_REQUEST_METHOD);
             String cipherSuite = null;
             Certificate[] localCerts = null;
@@ -719,18 +726,18 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 serverCerts = session.getPeerCertificates();
                 peer = session.getPeerPrincipal();
             }
-            
+
             return new HttpsURLConnectionInfo(url, method, cipherSuite, localCerts, principal, serverCerts, peer);
         }
-        
+
         protected int getResponseCode() throws IOException {
             return getHttpResponse().getStatusLine().getStatusCode();
         }
-        
+
         protected String getResponseMessage() throws IOException {
             return getHttpResponse().getStatusLine().getReasonPhrase();
         }
-        
+
         private String readHeaders(Headers h) throws IOException {
             Header headers[] = getHttpResponse().getAllHeaders();
             h.headerMap().clear();
@@ -738,29 +745,29 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             for (Header header : headers) {
                 List<String> s = h.headerMap().get(header.getName());
                 if (s == null) {
-                    s = new ArrayList<String>(1);
+                    s = new ArrayList<>(1);
                     h.headerMap().put(header.getName(), s);
                 }
                 s.add(header.getValue());
                 if ("Content-Type".equalsIgnoreCase(header.getName())) {
                     ct = header.getValue();
                 }
-            } 
+            }
             return ct;
         }
-        
+
         protected void updateResponseHeaders(Message inMessage) throws IOException {
             Headers h = new Headers(inMessage);
             inMessage.put(Message.CONTENT_TYPE, readHeaders(h));
             cookies.readFromHeaders(h);
         }
-        
+
         protected InputStream getPartialResponse() throws IOException {
             InputStream in = null;
             int responseCode = getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_ACCEPTED
                 || responseCode == HttpURLConnection.HTTP_OK) {
-                
+
                 Header head = httpResponse.getFirstHeader(HttpHeaderHelper.CONTENT_LENGTH);
                 int cli = 0;
                 if (head != null) {
@@ -775,7 +782,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 } else if (isChunked || isEofTerminated) {
                     // ensure chunked or EOF-terminated response is non-empty
                     try {
-                        PushbackInputStream pin = 
+                        PushbackInputStream pin =
                             new PushbackInputStream(getInputStream());
                         int c = pin.read();
                         if (c != -1) {
@@ -784,23 +791,23 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                         }
                     } catch (IOException ioe) {
                         // ignore
-                    }    
+                    }
                 }
             }
             return in;
         }
-        
+
         protected void updateCookiesBeforeRetransmit() throws IOException {
             Headers h = new Headers();
             readHeaders(h);
             cookies.readFromHeaders(h);
         }
-        
+
         protected boolean authorizationRetransmit() throws IOException {
             boolean b = super.authorizationRetransmit();
             if (!b) {
                 //HTTPClient may be handling the authorization things instead of us, we
-                //just need to make sure we set the cookies and proceed and HC 
+                //just need to make sure we set the cookies and proceed and HC
                 //will do the negotiation and such.
                 try {
                     closeInputStream();
@@ -812,8 +819,8 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 return true;
             }
             return b;
-        }        
-        
+        }
+
         protected void retransmitStream() throws IOException {
             cachingForRetransmission = false; //already cached
             setupWrappedStream();
@@ -824,14 +831,14 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
 
         protected void setupNewConnection(String newURL) throws IOException {
             httpResponse = null;
-            isAsync = outMessage != null && outMessage.getExchange() != null 
+            isAsync = outMessage != null && outMessage.getExchange() != null
                 && !outMessage.getExchange().isSynchronous();
             exception = null;
             connectionFuture = null;
             session = null;
             sslState = null;
             sslURL = null;
-            
+
             //reset the buffers
             HeapByteBufferAllocator allocator = new HeapByteBufferAllocator();
             int bufSize = csPolicy.getChunkLength() > 0 ? csPolicy.getChunkLength() : 16320;
@@ -852,9 +859,9 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 throw new IOException(e);
             }
         }
-        
-    
-        public void setSSLSession(SSLSession sslsession) {            
+
+
+        public void setSSLSession(SSLSession sslsession) {
             session = sslsession;
             synchronized (sessionLock) {
                 sslState = sslsession.getLocalPrincipal();
@@ -867,28 +874,38 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
 
     public synchronized SSLContext getSSLContext(TLSClientParameters tlsClientParameters)
         throws GeneralSecurityException {
-        
+
         int hash = tlsClientParameters.hashCode();
         if (hash == lastTlsHash && sslContext != null) {
             return sslContext;
         }
-        
-        String provider = tlsClientParameters.getJsseProvider();
 
-        String protocol = tlsClientParameters.getSecureSocketProtocol() != null ? tlsClientParameters
-            .getSecureSocketProtocol() : "TLS";
+        SSLContext ctx = null;
+        if (tlsClientParameters.getSslContext() != null) {
+            ctx = tlsClientParameters.getSslContext();
+        } else {
+            String provider = tlsClientParameters.getJsseProvider();
 
-        SSLContext ctx = provider == null ? SSLContext.getInstance(protocol) : SSLContext
-            .getInstance(protocol, provider);
-        ctx.getClientSessionContext().setSessionTimeout(tlsClientParameters.getSslCacheTimeout());
-        
-        KeyManager[] keyManagers = tlsClientParameters.getKeyManagers();
-        org.apache.cxf.transport.https.SSLUtils.configureKeyManagersWithCertAlias(
-            tlsClientParameters, keyManagers);
+            String protocol = tlsClientParameters.getSecureSocketProtocol() != null ? tlsClientParameters
+                .getSecureSocketProtocol() : "TLS";
 
-        ctx.init(keyManagers, tlsClientParameters.getTrustManagers(),
-                 tlsClientParameters.getSecureRandom());
-        
+            ctx = provider == null ? SSLContext.getInstance(protocol) : SSLContext
+                .getInstance(protocol, provider);
+            ctx.getClientSessionContext().setSessionTimeout(tlsClientParameters.getSslCacheTimeout());
+
+            KeyManager[] keyManagers = tlsClientParameters.getKeyManagers();
+            KeyManager[] configuredKeyManagers =
+                org.apache.cxf.transport.https.SSLUtils.configureKeyManagersWithCertAlias(
+                    tlsClientParameters, keyManagers);
+
+            TrustManager[] trustManagers = tlsClientParameters.getTrustManagers();
+            if (trustManagers == null) {
+                trustManagers = org.apache.cxf.configuration.jsse.SSLUtils.getDefaultTrustStoreManagers(LOG);
+            }
+
+            ctx.init(configuredKeyManagers, trustManagers, tlsClientParameters.getSecureRandom());
+        }
+
         sslContext = ctx;
         lastTlsHash = hash;
         sslState = null;
@@ -902,26 +919,26 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         if (tlsClientParameters == null) {
             tlsClientParameters = new TLSClientParameters();
         }
-        
-        String[] cipherSuites = 
-            SSLUtils.getCiphersuitesToInclude(tlsClientParameters.getCipherSuites(), 
-                                              tlsClientParameters.getCipherSuitesFilter(), 
+
+        String[] cipherSuites =
+            SSLUtils.getCiphersuitesToInclude(tlsClientParameters.getCipherSuites(),
+                                              tlsClientParameters.getCipherSuitesFilter(),
                                               sslcontext.getSocketFactory().getDefaultCipherSuites(),
-                                              SSLUtils.getSupportedCipherSuites(sslcontext), 
+                                              SSLUtils.getSupportedCipherSuites(sslcontext),
                                               LOG);
         sslengine.setEnabledCipherSuites(cipherSuites);
-        
+
         String protocol = tlsClientParameters.getSecureSocketProtocol() != null ? tlsClientParameters
-            .getSecureSocketProtocol() : "TLS";
-            
-        String p[] = findProtocols(protocol, sslengine.getSupportedProtocols());
+            .getSecureSocketProtocol() : sslcontext.getProtocol();
+
+        String[] p = findProtocols(protocol, sslengine.getSupportedProtocols());
         if (p != null) {
             sslengine.setEnabledProtocols(p);
         }
     }
-    
+
     private String[] findProtocols(String p, String[] options) {
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         for (String s : options) {
             if (s.equals(p)) {
                 return new String[] {p};
@@ -932,7 +949,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         if (list.isEmpty()) {
             return null;
         }
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
 }

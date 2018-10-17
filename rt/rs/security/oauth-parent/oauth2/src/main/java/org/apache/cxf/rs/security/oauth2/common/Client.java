@@ -28,6 +28,7 @@ import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.OneToOne;
@@ -50,6 +51,7 @@ public class Client implements Serializable {
     private String applicationDescription;
     private String applicationWebUri;
     private String applicationLogoUri;
+    private String applicationLogoutUri;
     private List<String> applicationCertificates = new LinkedList<String>();
     private List<String> redirectUris = new LinkedList<String>();
 
@@ -58,13 +60,14 @@ public class Client implements Serializable {
     private List<String> registeredScopes = new LinkedList<String>();
     private List<String> registeredAudiences = new LinkedList<String>();
 
-    private Map<String, String> properties = new HashMap<String, String>();
+    private Map<String, String> properties = new HashMap<>();
     private UserSubject subject;
     private UserSubject resourceOwnerSubject;
     private long registeredAt;
     private String homeRealm;
     private boolean registeredDynamically;
-    
+    private String tokenEndpointAuthMethod;
+
     public Client() {
 
     }
@@ -316,12 +319,12 @@ public class Client implements Serializable {
     }
 
     /**
-     * Set the list of registered scopes. 
+     * Set the list of registered scopes.
      * Registering the scopes will allow the clients not to include the scopes
      * and delegate to the runtime to enforce that the current request scopes are
      * a subset of the pre-registered scopes.
      *
-     * Client Registration service is expected to reject unknown scopes. 
+     * Client Registration service is expected to reject unknown scopes.
      * @param registeredScopes the scopes
      */
     public void setRegisteredScopes(List<String> registeredScopes) {
@@ -344,13 +347,14 @@ public class Client implements Serializable {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @OrderColumn
+    @Lob
     public List<String> getApplicationCertificates() {
         return applicationCertificates;
     }
 
     /*
      * Set the Base64 encoded Application Public X509 Certificate
-     * It can be used in combination with the clientSecret property to support 
+     * It can be used in combination with the clientSecret property to support
      * Basic or other password-aware authentication on top of 2-way TLS.
      */
     public void setApplicationCertificates(List<String> applicationCertificates) {
@@ -379,7 +383,7 @@ public class Client implements Serializable {
 
     /**
      * Hint to the authentication system how the users
-     * redirected by this client need to be authenticated   
+     * redirected by this client need to be authenticated
      * @param homeRealm user home realm
      */
     public void setHomeRealm(String homeRealm) {
@@ -392,5 +396,21 @@ public class Client implements Serializable {
 
     public void setRegisteredDynamically(boolean registeredDynamically) {
         this.registeredDynamically = registeredDynamically;
+    }
+
+    public String getApplicationLogoutUri() {
+        return applicationLogoutUri;
+    }
+
+    public void setApplicationLogoutUri(String applicationLogoutUri) {
+        this.applicationLogoutUri = applicationLogoutUri;
+    }
+
+    public String getTokenEndpointAuthMethod() {
+        return tokenEndpointAuthMethod;
+    }
+
+    public void setTokenEndpointAuthMethod(String tokenEndpointAuthMethod) {
+        this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
     }
 }

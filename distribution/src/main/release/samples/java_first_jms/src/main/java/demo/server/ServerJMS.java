@@ -20,15 +20,17 @@
 package demo.server;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
 
 import javax.xml.ws.Endpoint;
 
-import demo.service.HelloWorld;
-import demo.service.impl.HelloWorldImpl;
-
-import org.apache.activemq.broker.BrokerService;
+import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.jaxws.JaxWsServerFactoryBean;
 import org.apache.cxf.transport.jms.spec.JMSSpecConstants;
+
+import demo.service.HelloWorld;
+import demo.service.impl.HelloWorldImpl;
 
 
 public final class ServerJMS {
@@ -50,10 +52,10 @@ public final class ServerJMS {
         for (String arg : args) {
             if ("-activemqbroker".equals(arg)) {
                 launchAmqBroker = true;
-            } 
+            }
             if ("-jaxws".equals(arg)) {
                 jaxws = true;
-            } 
+            }
         }
 
         if (launchAmqBroker) {
@@ -73,7 +75,7 @@ public final class ServerJMS {
     }
 
     private static void launchAMQBroker() throws ClassNotFoundException, InstantiationException,
-        IllegalAccessException, NoSuchMethodException, InvocationTargetException,Exception {
+        IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         /*
          * The following make it easier to run this against something other than ActiveMQ. You will have
          * to get a JMS broker onto the right port of localhost.
@@ -84,22 +86,13 @@ public final class ServerJMS {
             System.err.println("ActiveMQ is not in the classpath, cannot launch broker.");
             return;
         }
-        
-        BrokerService broker = new BrokerService();
-        broker.addConnector("tcp://localhost:61616");
-        broker.setDataDirectory( "target/activemq-data");
-        broker.start();
-        
-        /*Per quale cazzo di motivo dovrei usare mai le reflection API??
-         * 
-         * 
         Object broker = brokerClass.newInstance();
         Method addConnectorMethod = brokerClass.getMethod("addConnector", String.class);
         addConnectorMethod.invoke(broker, "tcp://localhost:61616");
         Method setDataDirectory = brokerClass.getMethod("setDataDirectory", String.class);
         setDataDirectory.invoke(broker, "target/activemq-data");
         Method startMethod = brokerClass.getMethod("start");
-        startMethod.invoke(broker);*/
+        startMethod.invoke(broker);
     }
 
     private static void launchCxfApi() {
@@ -109,10 +102,11 @@ public final class ServerJMS {
         svrFactory.setTransportId(JMSSpecConstants.SOAP_JMS_SPECIFICATION_TRANSPORTID);
         svrFactory.setAddress(JMS_ENDPOINT_URI);
         svrFactory.setServiceBean(implementor);
+        svrFactory.setFeatures(Collections.singletonList(new LoggingFeature()));
         svrFactory.create();
     }
 
     private static void launchJaxwsApi() {
-        Endpoint.publish(JMS_ENDPOINT_URI, new HelloWorldImpl());
+        Endpoint.publish(JMS_ENDPOINT_URI, new HelloWorldImpl(), new LoggingFeature());
     }
 }

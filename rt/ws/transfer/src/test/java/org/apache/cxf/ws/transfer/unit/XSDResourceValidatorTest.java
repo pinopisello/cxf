@@ -20,17 +20,21 @@
 package org.apache.cxf.ws.transfer.unit;
 
 import java.io.InputStream;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.stream.StreamSource;
+
 import org.w3c.dom.Document;
+
 import org.apache.cxf.staxutils.StaxUtils;
 import org.apache.cxf.ws.transfer.Representation;
 import org.apache.cxf.ws.transfer.validationtransformation.XSDResourceValidator;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 public class XSDResourceValidatorTest {
-    
+
 
     private Representation loadRepresentation(InputStream input) throws XMLStreamException {
         Document doc = StaxUtils.read(input);
@@ -38,7 +42,7 @@ public class XSDResourceValidatorTest {
         representation.setAny(doc.getDocumentElement());
         return representation;
     }
-    
+
     @Test
     public void validRepresentationTest() throws XMLStreamException {
         XSDResourceValidator validator = new XSDResourceValidator(
@@ -47,7 +51,7 @@ public class XSDResourceValidatorTest {
                 getClass().getResourceAsStream("/xml/xsdresourcevalidator/validRepresentation.xml")), null);
         Assert.assertTrue(result);
     }
-    
+
     @Test
     public void invalidRepresentationTest() throws XMLStreamException {
         XSDResourceValidator validator = new XSDResourceValidator(
@@ -56,5 +60,5 @@ public class XSDResourceValidatorTest {
                 getClass().getResourceAsStream("/xml/xsdresourcevalidator/invalidRepresentation.xml")), null);
         Assert.assertFalse(result);
     }
-    
+
 }

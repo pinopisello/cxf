@@ -29,21 +29,20 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.webresources.DirResourceSet;
 import org.apache.catalina.webresources.StandardRoot;
 import org.apache.cxf.transport.servlet.CXFServlet;
-import org.apache.cxf.transport.sse.SseHttpTransportFactory;
 import org.springframework.web.context.ContextLoaderListener;
 
 public final class StatsServer {
     private StatsServer() {
     }
-    
+
     public static void main(final String[] args) throws Exception {
         // Register and map the dispatcher servlet
         final File base = new File(System.getProperty("java.io.tmpdir"));
-        
+
         final Tomcat server = new Tomcat();
         server.setPort(8686);
         server.setBaseDir(base.getAbsolutePath());
-        
+
         final StandardContext context = (StandardContext)server.addWebapp("/", base.getAbsolutePath());
         context.setConfigFile(StatsServer.class.getResource("/META-INF/context.xml"));
         context.addApplicationListener(ContextLoaderListener.class.getName());
@@ -51,15 +50,15 @@ public final class StatsServer {
         context.setResources(resourcesFrom(context, "target/classes"));
 
         final Wrapper cxfServlet = Tomcat.addServlet(context, "cxfServlet", new CXFServlet());
-        cxfServlet.addInitParameter(CXFServlet.TRANSPORT_ID, SseHttpTransportFactory.TRANSPORT_ID);
+        cxfServlet.setAsyncSupported(true);
         context.addServletMapping("/rest/*", "cxfServlet");
 
         final Context staticContext = server.addWebapp("/static", base.getAbsolutePath());
         Tomcat.addServlet(staticContext, "cxfStaticServlet", new DefaultServlet());
         staticContext.addServletMapping("/static/*", "cxfStaticServlet");
         staticContext.setResources(resourcesFrom(staticContext, "target/classes/web-ui"));
-        staticContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());       
-        
+        staticContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
+
         server.start();
         server.getServer().await();
     }

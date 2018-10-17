@@ -21,6 +21,7 @@ package org.apache.cxf.jaxrs.spring;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.cxf.Bus;
 import org.apache.cxf.bus.spring.SpringBus;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.endpoint.Server;
@@ -32,22 +33,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-public abstract class AbstractSpringConfigurationFactory 
+public abstract class AbstractSpringConfigurationFactory
     extends AbstractBasicInterceptorProvider implements ApplicationContextAware {
 
     protected ApplicationContext applicationContext;
     @Value("${cxf.jaxrs.server.address:}")
     private String jaxrsServerAddress;
-    
+
     protected Server createJaxRsServer() {
 
         JAXRSServerFactoryBean factory = new JAXRSServerFactoryBean();
         factory.setAddress(getAddress());
         factory.setTransportId(getTransportId());
-        factory.setBus(applicationContext.getBean(SpringBus.class));
-        
+        factory.setBus(getBus());
+
         setJaxrsResources(factory);
-        
+
         factory.setInInterceptors(getInInterceptors());
         factory.setOutInterceptors(getOutInterceptors());
         factory.setOutFaultInterceptors(getOutFaultInterceptors());
@@ -56,33 +57,36 @@ public abstract class AbstractSpringConfigurationFactory
         return factory.create();
     }
     
+    protected Bus getBus() {
+        return applicationContext.getBean(SpringBus.class);
+    }
+
     @Override
     public void setApplicationContext(ApplicationContext ac) throws BeansException {
         applicationContext = ac;
     }
-    
+
     protected abstract void setJaxrsResources(JAXRSServerFactoryBean factory);
-    
+
     protected List<Object> getJaxrsProviders() {
         return Collections.emptyList();
     }
-    
+
     public List<Feature> getFeatures() {
         return Collections.emptyList();
     }
-    
+
     protected String getAddress() {
         if (!StringUtils.isEmpty(jaxrsServerAddress)) {
             return jaxrsServerAddress;
-        } else {
-            return "/";
         }
+        return "/";
     }
-    
+
     protected String getTransportId() {
         return "http://cxf.apache.org/transports/http";
     }
-    
+
     protected void finalizeFactorySetup(JAXRSServerFactoryBean factory) {
         // complete
     }

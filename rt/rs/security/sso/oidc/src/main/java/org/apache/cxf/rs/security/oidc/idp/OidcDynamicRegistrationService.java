@@ -18,40 +18,59 @@
  */
 package org.apache.cxf.rs.security.oidc.idp;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.services.ClientRegistration;
 import org.apache.cxf.rs.security.oauth2.services.ClientRegistrationResponse;
 import org.apache.cxf.rs.security.oauth2.services.DynamicRegistrationService;
 
 public class OidcDynamicRegistrationService extends DynamicRegistrationService {
+    private static final String POST_LOGOUT_LOGOUT_URIS = "post_logout_redirect_uris";
+    private static final String BACK_CHANNEL_LOGOUT_URI = "backchannel_logout_uri";
     private boolean protectIdTokenWithClientSecret;
-    
+
     @Override
     protected Client createNewClient(ClientRegistration request) {
-        //TODO: set OIDC specific properties as Client extra properties 
-        return super.createNewClient(request);
+        Client client = super.createNewClient(request);
+        List<String> postLogoutUris = request.getListStringProperty(POST_LOGOUT_LOGOUT_URIS);
+        if (postLogoutUris != null) {
+            client.getProperties().put(POST_LOGOUT_LOGOUT_URIS,
+                                       String.join(" ", postLogoutUris));
+        }
+        String backChannelLogoutUri = request.getStringProperty(BACK_CHANNEL_LOGOUT_URI);
+        if (backChannelLogoutUri != null) {
+            client.getProperties().put(BACK_CHANNEL_LOGOUT_URI, backChannelLogoutUri);
+        }
+        return client;
     }
-    
+
     @Override
     protected ClientRegistrationResponse fromClientToRegistrationResponse(Client client) {
-        //TODO: check OIDC specific properties in Client extra properties
         return super.fromClientToRegistrationResponse(client);
     }
-    
+
     @Override
     protected ClientRegistration fromClientToClientRegistration(Client client) {
-        //TODO: check OIDC specific properties in Client extra properties
-        return super.fromClientToClientRegistration(client);
+        ClientRegistration resp = super.fromClientToClientRegistration(client);
+        String logoutUris = client.getProperties().get(POST_LOGOUT_LOGOUT_URIS);
+        if (logoutUris != null) {
+            List<String> list = new LinkedList<String>();
+            for (String s : logoutUris.split(" ")) { 
+                list.add(s);
+            }
+            resp.setProperty(POST_LOGOUT_LOGOUT_URIS, list);
+        }
+        return resp;
     }
-    
+
     protected int getClientSecretSizeInBytes(ClientRegistration request) {
-           
+
         // TODO: may need to be 384/8 or 512/8 if not a default HS256 but HS384 or HS512
-        int keySizeOctets = protectIdTokenWithClientSecret
+        return protectIdTokenWithClientSecret
             ? 32
             : super.getClientSecretSizeInBytes(request);
-       
-        return keySizeOctets;
     }
     public void setProtectIdTokenWithClientSecret(boolean protectIdTokenWithClientSecret) {
         this.protectIdTokenWithClientSecret = protectIdTokenWithClientSecret;

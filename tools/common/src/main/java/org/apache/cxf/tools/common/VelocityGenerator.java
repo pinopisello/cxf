@@ -37,15 +37,14 @@ import org.apache.cxf.version.Version;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.runtime.RuntimeConstants;
 
 public final class VelocityGenerator {
     private static final Logger LOG = LogUtils.getL7dLogger(VelocityGenerator.class);
     private static boolean initialized;
-    
-    private final Map<String, Object> attributes = new HashMap<String, Object>();
+
+    private final Map<String, Object> attributes = new HashMap<>();
     private String baseDir;
-    
+
     public VelocityGenerator() {
         this(false);
     }
@@ -72,10 +71,10 @@ public final class VelocityGenerator {
             props.put("resource.loader", "class");
             props.put("class.resource.loader.class", clzName);
             props.put("runtime.log", getVelocityLogFile("velocity.log"));
-            if (!log) {
-                props.put(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, 
-                          "org.apache.velocity.runtime.log.NullLogSystem");
-            }
+//            if (!log) {
+//                props.put(VelocityEngine.RUNTIME_LOG_INSTANCE,
+//                          "org.apache.velocity.runtime.log.NullLogSystem");
+//            }
             Velocity.init(props);
         } catch (Exception e) {
             Message msg = new Message("FAIL_TO_INITIALIZE_VELOCITY_ENGINE", LOG);
@@ -113,7 +112,7 @@ public final class VelocityGenerator {
     public void setBaseDir(String dir) {
         this.baseDir = dir;
     }
-    
+
     public File parseOutputName(String packageName, String filename) throws ToolException {
         return parseOutputName(packageName, filename, ".java");
     }
@@ -128,7 +127,7 @@ public final class VelocityGenerator {
             throw new ToolException(msg, ioe);
         }
     }
-    
+
     public void setCommonAttributes() {
         attributes.put("currentdate", Calendar.getInstance().getTime());
         attributes.put("version", Version.getCurrentVersion());

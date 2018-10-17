@@ -57,12 +57,13 @@ import org.eclipse.jetty.server.Request;
 
 
 public class JettyHTTPDestination extends ServletDestination {
-    
+
     private static final Logger LOG =
         LogUtils.getL7dLogger(JettyHTTPDestination.class);
 
     protected JettyHTTPServerEngine engine;
     protected JettyHTTPServerEngineFactory serverEngineFactory;
+    protected JettyHTTPHandler handler;
     protected ServletContext servletContext;
     protected URL nurl;
     protected ClassLoader loader;
@@ -74,7 +75,7 @@ public class JettyHTTPDestination extends ServletDestination {
      * are reset, such as setTlsServerParameters().
      */
     private boolean configFinalized;
-     
+
     /**
      * Constructor
      *
@@ -86,37 +87,47 @@ public class JettyHTTPDestination extends ServletDestination {
      */
     public JettyHTTPDestination(
             Bus bus,
-            DestinationRegistry registry, 
-            EndpointInfo ei, 
+            DestinationRegistry registry,
+            EndpointInfo ei,
             JettyHTTPServerEngineFactory serverEngineFactory
     ) throws IOException {
+        this(bus, registry, ei, 
+             serverEngineFactory == null ? null : new URL(getAddressValue(ei, true).getAddress()),
+             serverEngineFactory);
+    }
+
+    
+    protected JettyHTTPDestination(Bus bus,
+                                   DestinationRegistry registry,
+                                   EndpointInfo ei,
+                                   URL nurl,
+                                   JettyHTTPServerEngineFactory serverEngineFactory)
+        throws IOException {
         //Add the default port if the address is missing it
         super(bus, registry, ei, getAddressValue(ei, true).getAddress(), true);
         this.serverEngineFactory = serverEngineFactory;
-        if (serverEngineFactory != null) {
-            nurl = new URL(getAddress(endpointInfo));
-        }
+        this.nurl = nurl;
         loader = bus.getExtension(ClassLoader.class);
     }
-
+    
     protected Logger getLogger() {
         return LOG;
     }
-    
+
     public void setServletContext(ServletContext sc) {
         servletContext = sc;
     }
-    
+
     /**
      * Post-configure retreival of server engine.
      */
     protected void retrieveEngine()
-        throws GeneralSecurityException, 
+        throws GeneralSecurityException,
                IOException {
         if (serverEngineFactory == null) {
             return;
         }
-        engine = 
+        engine =
             serverEngineFactory.retrieveJettyHTTPServerEngine(nurl.getPort());
         if (engine == null) {
             engine = serverEngineFactory.
@@ -131,18 +142,18 @@ public class JettyHTTPDestination extends ServletDestination {
                 certConstraints = CertConstraintsJaxBUtils.createCertConstraints(constraints);
             }
         }
-        
+
         // When configuring for "http", however, it is still possible that
-        // Spring configuration has configured the port for https. 
+        // Spring configuration has configured the port for https.
         if (!nurl.getProtocol().equals(engine.getProtocol())) {
             throw new IllegalStateException(
-                "Port " + engine.getPort() 
-                + " is configured with wrong protocol \"" 
+                "Port " + engine.getPort()
+                + " is configured with wrong protocol \""
                 + engine.getProtocol()
                 + "\" for \"" + nurl + "\"");
         }
     }
-    
+
     /**
      * This method is used to finalize the configuration
      * after the configuration items have been set.
@@ -150,7 +161,7 @@ public class JettyHTTPDestination extends ServletDestination {
      */
     public void finalizeConfig() {
         assert !configFinalized;
-        
+
         try {
             retrieveEngine();
         } catch (Exception e) {
@@ -162,7 +173,7 @@ public class JettyHTTPDestination extends ServletDestination {
     protected String getAddress(EndpointInfo endpointInfo) {
         return endpointInfo.getAddress();
     }
-    
+
     /**
      * Activate receipt of incoming messages.
      */
@@ -170,10 +181,10 @@ public class JettyHTTPDestination extends ServletDestination {
         super.activate();
         LOG.log(Level.FINE, "Activating receipt of incoming messages");
         // pick the handler supporting websocket if jetty-websocket is available otherwise pick the default handler.
-        
+
         if (engine != null) {
-            JettyHTTPHandler jhd = createJettyHTTPHandler(this, contextMatchOnExact());
-            engine.addServant(nurl, jhd);
+            handler = createJettyHTTPHandler(this, contextMatchOnExact());
+            engine.addServant(nurl, handler);
         }
     }
 
@@ -191,10 +202,11 @@ public class JettyHTTPDestination extends ServletDestination {
         if (engine != null) {
             engine.removeServant(nurl);
         }
-    }   
-     
+        handler = null;
+    }
 
-    
+
+
     protected String getBasePathForFullAddress(String addr) {
         try {
             return new URL(addr).getPath();
@@ -202,21 +214,21 @@ public class JettyHTTPDestination extends ServletDestination {
             return null;
         }
     }
-       
+
     protected void doService(HttpServletRequest req,
                              HttpServletResponse resp) throws IOException {
         doService(servletContext, req, resp);
     }
-        
+
     protected void doService(ServletContext context,
                              HttpServletRequest req,
                              HttpServletResponse resp) throws IOException {
         if (context == null) {
             context = servletContext;
         }
-        Request baseRequest = (req instanceof Request) 
+        Request baseRequest = (req instanceof Request)
             ? (Request)req : getCurrentRequest();
-            
+
         HTTPServerPolicy sp = getServer();
         if (sp.isSetRedirectURL()) {
             resp.sendRedirect(sp.getRedirectURL());
@@ -237,30 +249,30 @@ public class JettyHTTPDestination extends ServletDestination {
             if (origBus != bus) {
                 BusFactory.setThreadDefaultBus(origBus);
             }
-            if (origLoader != null) { 
+            if (origLoader != null) {
                 origLoader.reset();
             }
-        }    
+        }
     }
-    
-    protected void invokeComplete(final ServletContext context, 
-                                  final HttpServletRequest req, 
+
+    protected void invokeComplete(final ServletContext context,
+                                  final HttpServletRequest req,
                                   final HttpServletResponse resp,
                                   Message m) throws IOException {
         resp.flushBuffer();
-        Request baseRequest = (req instanceof Request) 
+        Request baseRequest = (req instanceof Request)
             ? (Request)req : getCurrentRequest();
         if (baseRequest != null) {
             baseRequest.setHandled(true);
         }
         super.invokeComplete(context, req, resp, m);
     }
-    
+
     protected OutputStream flushHeaders(Message outMessage, boolean getStream) throws IOException {
         OutputStream out = super.flushHeaders(outMessage, getStream);
         return wrapOutput(out);
     }
-    
+
     private OutputStream wrapOutput(OutputStream out) {
         try {
             if (out instanceof HttpOutput) {
@@ -271,8 +283,8 @@ public class JettyHTTPDestination extends ServletDestination {
         }
         return out;
     }
-    
-    
+
+
     static class JettyOutputStream extends FilterOutputStream implements CopyingOutputStream {
         final HttpOutput out;
         boolean written;
@@ -325,7 +337,7 @@ public class JettyHTTPDestination extends ServletDestination {
         public int getCount() {
             return count;
         }
-        
+
         @Override
         public int read() throws IOException {
             int i = super.read();
@@ -351,31 +363,31 @@ public class JettyHTTPDestination extends ServletDestination {
             return i;
         }
     }
-    
- 
+
+
     public ServerEngine getEngine() {
         return engine;
     }
-   
+
     protected Message retrieveFromContinuation(HttpServletRequest req) {
         return (Message)req.getAttribute(CXF_CONTINUATION_MESSAGE);
     }
     protected void setupContinuation(Message inMessage,
-                      final HttpServletRequest req, 
+                      final HttpServletRequest req,
                       final HttpServletResponse resp) {
         if (engine != null && engine.getContinuationsEnabled()) {
             super.setupContinuation(inMessage, req, resp);
             if (!inMessage.containsKey(ContinuationProvider.class.getName())) {
-                inMessage.put(ContinuationProvider.class.getName(), 
+                inMessage.put(ContinuationProvider.class.getName(),
                     new JettyContinuationProvider(req, resp, inMessage));
             }
         }
     }
-    
+
     private Request getCurrentRequest() {
         try {
             HttpConnection con = HttpConnection.getCurrentConnection();
-            
+
             HttpChannel channel = con.getHttpChannel();
             return channel.getRequest();
         } catch (Throwable t) {

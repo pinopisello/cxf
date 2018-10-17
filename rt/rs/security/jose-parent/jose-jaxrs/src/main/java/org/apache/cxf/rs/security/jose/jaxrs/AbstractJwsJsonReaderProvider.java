@@ -21,11 +21,15 @@ package org.apache.cxf.rs.security.jose.jaxrs;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
+
+import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.rs.security.jose.jws.JwsException;
+import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
 import org.apache.cxf.rs.security.jose.jws.JwsJsonConsumer;
 import org.apache.cxf.rs.security.jose.jws.JwsJsonSignatureEntry;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureVerifier;
@@ -33,10 +37,12 @@ import org.apache.cxf.rs.security.jose.jws.JwsUtils;
 
 public class AbstractJwsJsonReaderProvider {
     protected static final Logger LOG = LogUtils.getL7dLogger(AbstractJwsJsonReaderProvider.class);
-    
+    private Set<String> protectedHttpHeaders;
+    private boolean validateHttpHeaders;
     private JwsSignatureVerifier sigVerifier;
     private String defaultMediaType;
     private Map<String, Object> entryProps;
+    private boolean checkEmptyStream;
     
     public void setSignatureVerifier(JwsSignatureVerifier signatureVerifier) {
         this.sigVerifier = signatureVerifier;
@@ -44,11 +50,11 @@ public class AbstractJwsJsonReaderProvider {
 
     protected JwsSignatureVerifier getInitializedSigVerifier() {
         if (sigVerifier != null) {
-            return sigVerifier;    
-        } 
+            return sigVerifier;
+        }
         return JwsUtils.loadSignatureVerifier(null, true);
     }
-    
+
     public String getDefaultMediaType() {
         return defaultMediaType;
     }
@@ -56,11 +62,11 @@ public class AbstractJwsJsonReaderProvider {
     public void setDefaultMediaType(String defaultMediaType) {
         this.defaultMediaType = defaultMediaType;
     }
-    
-    
+
+
     protected void validate(JwsJsonConsumer c, JwsSignatureVerifier theSigVerifier) throws JwsException {
-        
-        List<JwsJsonSignatureEntry> remaining = 
+
+        List<JwsJsonSignatureEntry> remaining =
             c.verifyAndGetNonValidated(Collections.singletonList(theSigVerifier), entryProps);
         if (!remaining.isEmpty()) {
             JAXRSUtils.getCurrentMessage().put("jws.json.remaining.entries", remaining);
@@ -75,5 +81,30 @@ public class AbstractJwsJsonReaderProvider {
     public void setEntryProps(Map<String, Object> entryProps) {
         this.entryProps = entryProps;
     }
+
+    public void setValidateHttpHeaders(boolean validateHttpHeaders) {
+        this.validateHttpHeaders = validateHttpHeaders;
+    }
+    public boolean isValidateHttpHeaders() {
+        return validateHttpHeaders;
+    }
+    
+    protected void validateHttpHeadersIfNeeded(MultivaluedMap<String, String> httpHeaders, JwsHeaders jwsHeaders) {
+        JoseJaxrsUtils.validateHttpHeaders(httpHeaders, 
+                                           jwsHeaders, 
+                                           protectedHttpHeaders);
+    }
+    public void setProtectedHttpHeaders(Set<String> protectedHttpHeaders) {
+        this.protectedHttpHeaders = protectedHttpHeaders;
+    }
+
+    public boolean isCheckEmptyStream() {
+        return checkEmptyStream;
+    }
+
+    public void setCheckEmptyStream(boolean checkEmptyStream) {
+        this.checkEmptyStream = checkEmptyStream;
+    }
+
     
 }

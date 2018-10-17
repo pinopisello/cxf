@@ -21,7 +21,7 @@
     <parent>
         <artifactId>cxf-parent</artifactId>
         <groupId>org.apache.cxf</groupId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>3.3.0-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -30,6 +30,11 @@
     <name>Apache CXF Undertow Transport System Tests</name>
     <description>Apache CXF Undertow Transport System Tests</description>
     <url>http://cxf.apache.org</url>
+    
+    <properties>
+        <cxf.module.name>org.apache.cxf.systests.transport.undertow</cxf.module.name>
+    </properties>
+    
     <build>
         <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
         <testResources>
@@ -74,6 +79,13 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                        <configuration>
+                            <archive>
+                                <manifestEntries>
+                                    <Automatic-Module-Name>${cxf.module.name}.tests</Automatic-Module-Name>
+                                </manifestEntries>
+                            </archive>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -107,6 +119,66 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-websocket</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-rs-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.ning</groupId>
+            <artifactId>async-http-client</artifactId>
+            <version>${cxf.ahc.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-rs-extension-providers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.atmosphere</groupId>
+            <artifactId>atmosphere-runtime</artifactId>
+            <version>${cxf.atmosphere.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http-hc</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -132,11 +204,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-testutils</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -148,6 +215,12 @@
             <scope>test</scope>
             <classifier>keys</classifier>
         </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-features-logging</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>        
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>

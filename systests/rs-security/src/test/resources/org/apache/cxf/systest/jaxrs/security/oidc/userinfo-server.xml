@@ -27,7 +27,7 @@ under the License.
     xmlns:util="http://www.springframework.org/schema/util"
     xsi:schemaLocation="http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd
              http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd
-             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
              http://www.springframework.org/schema/util  http://www.springframework.org/schema/util/spring-util-4.2.xsd
              http://cxf.apache.org/transports/http/configuration http://cxf.apache.org/schemas/configuration/http-conf.xsd
              http://cxf.apache.org/transports/http-jetty/configuration http://cxf.apache.org/schemas/configuration/http-jetty.xsd 
@@ -171,9 +171,9 @@ under the License.
         </jaxrs:providers>
         <jaxrs:properties>
            <entry key="rs.security.keystore.type" value="jks" />
-           <entry key="rs.security.keystore.alias" value="bob"/>
+           <entry key="rs.security.keystore.alias" value="alice"/>
            <entry key="rs.security.keystore.password" value="password"/>
-           <entry key="rs.security.keystore.file"  value="keys/bob.jks" />
+           <entry key="rs.security.keystore.file"  value="keys/alice.jks" />
            <entry key="rs.security.signature.algorithm" value="RS256" />
        </jaxrs:properties>
 

@@ -28,11 +28,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -59,7 +58,7 @@ public class Headers {
     public static final String KEY_HTTP_CONNECTION = "http.connection";
     /**
      * Each header value is added as a separate HTTP header, example, given A header with 'a' and 'b'
-     * values, two A headers will be added as opposed to a single A header with the "a,b" value. 
+     * values, two A headers will be added as opposed to a single A header with the "a,b" value.
      */
     public static final String ADD_HEADERS_PROPERTY = "org.apache.cxf.http.add-headers";
 
@@ -72,20 +71,10 @@ public class Headers {
     private static final Logger LOG = LogUtils.getL7dLogger(Headers.class);
 
     private static final List<String> SENSITIVE_HEADERS = Arrays.asList("Authorization", "Proxy-Authorization");
-    private static final List<String> SENSITIVE_HEADER_MARKER = Arrays.asList("***");
+    private static final List<Object> SENSITIVE_HEADER_MARKER = Arrays.asList("***");
     private static final String ALLOW_LOGGING_SENSITIVE_HEADERS = "allow.logging.sensitive.headers";
-    /**
-     * Known HTTP headers whose values have to be represented as individual HTTP headers
-     */
-    private static final Set<String> HTTP_HEADERS_SINGLE_VALUE_ONLY;
-    private static final String USER_AGENT;
-    static {
-        HTTP_HEADERS_SINGLE_VALUE_ONLY = new HashSet<String>();
-        HTTP_HEADERS_SINGLE_VALUE_ONLY.add(HTTP_HEADERS_SETCOOKIE);
-        HTTP_HEADERS_SINGLE_VALUE_ONLY.add(HTTP_HEADERS_LINK);
-        USER_AGENT = initUserAgent();
-    }
-    
+    private static final String USER_AGENT = initUserAgent();
+
     private final Message message;
     private final Map<String, List<String>> headers;
 
@@ -97,11 +86,11 @@ public class Headers {
         this.headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
         this.message = null;
     }
-    
+
     public static String getUserAgent() {
         return USER_AGENT;
     }
-    
+
     private static String initUserAgent() {
         String name = Version.getName();
         if ("Apache CXF".equals(name)) {
@@ -110,7 +99,7 @@ public class Headers {
         String version = Version.getCurrentVersion();
         return name + "/" + version;
     }
-    
+
     /**
      * Returns a traceable string representation of the passed-in headers map.
      * The value for any keys in the map that are in the <code>SENSITIVE_HEADERS</code>
@@ -119,8 +108,8 @@ public class Headers {
      * filtered keys), so it should be used sparingly - i.e. only when debug is
      * enabled.
      */
-    static String toString(Map<String, List<String>> headers, boolean logSensitiveHeaders) {
-        Map<String, List<String>> filteredHeaders = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
+    static String toString(Map<String, List<Object>> headers, boolean logSensitiveHeaders) {
+        Map<String, List<Object>> filteredHeaders = new TreeMap<String, List<Object>>(String.CASE_INSENSITIVE_ORDER);
         filteredHeaders.putAll(headers);
         if (!logSensitiveHeaders) {
             for (String filteredKey : SENSITIVE_HEADERS) {
@@ -133,11 +122,11 @@ public class Headers {
     public Map<String, List<String>> headerMap() {
         return headers;
     }
-    
+
 
     /**
      * Write cookie header from given session cookies
-     * 
+     *
      * @param sessionCookies
      */
     public void writeSessionCookies(Map<String, Cookie> sessionCookies) {
@@ -149,9 +138,9 @@ public class Headers {
             }
         }
         if (cookies == null) {
-            cookies = new ArrayList<String>();
+            cookies = new ArrayList<>();
         } else {
-            cookies = new ArrayList<String>(cookies);
+            cookies = new ArrayList<>(cookies);
         }
         headers.put(HttpHeaderHelper.COOKIE, cookies);
         for (Cookie c : sessionCookies.values()) {
@@ -162,8 +151,8 @@ public class Headers {
     /**
      * This call places HTTP Header strings into the headers that are relevant
      * to the ClientPolicy that is set on this conduit by configuration.
-     * 
-     * REVISIT: A cookie is set statically from configuration? 
+     *
+     * REVISIT: A cookie is set statically from configuration?
      */
     void setFromClientPolicy(HTTPClientPolicy policy) {
         if (policy == null) {
@@ -252,12 +241,12 @@ public class Headers {
         headers.remove("Authorization");
         headers.remove("Proxy-Authorization");
     }
-    
+
     public void setAuthorization(String authorization) {
         headers.put("Authorization",
                 createMutableList(authorization));
     }
-    
+
     public void setProxyAuthorization(String authorization) {
         headers.put("Proxy-Authorization",
                 createMutableList(authorization));
@@ -269,7 +258,7 @@ public class Headers {
      * this call ensures that the Message.PROTOCOL_HEADERS property is
      * set on the Message. If it is not set, an empty map is placed there, and
      * then returned.
-     * 
+     *
      * @param message The outbound message
      * @return The PROTOCOL_HEADERS map
      */
@@ -279,7 +268,7 @@ public class Headers {
         if (null == headers) {
             headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
         } else if (headers instanceof HashMap) {
-            Map<String, List<String>> headers2 
+            Map<String, List<String>> headers2
                 = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
             headers2.putAll(headers);
             headers = headers2;
@@ -291,36 +280,44 @@ public class Headers {
     public void readFromConnection(HttpURLConnection connection) {
         Map<String, List<String>> origHeaders = connection.getHeaderFields();
         headers.clear();
-        for (String key : connection.getHeaderFields().keySet()) {
-            if (key != null) {
-                headers.put(HttpHeaderHelper.getHeaderKey(key), 
-                    origHeaders.get(key));
+        for (Entry<String, List<String>> entry : origHeaders.entrySet()) {
+            if (entry.getKey() != null) {
+                String key = HttpHeaderHelper.getHeaderKey(entry.getKey());
+                List<String> old = headers.get(key);
+                if (old != null) {
+                    List<String> nl = new ArrayList<>(old.size() + entry.getValue().size()); 
+                    nl.addAll(old);
+                    nl.addAll(entry.getValue());
+                    headers.put(key, nl);
+                } else {
+                    headers.put(key, entry.getValue());
+                }
             }
         }
     }
 
     private static List<String> createMutableList(String val) {
-        return new ArrayList<String>(Arrays.asList(new String[] {val}));
+        return new ArrayList<>(Arrays.asList(val));
     }
 
     /**
-     * This procedure logs the PROTOCOL_HEADERS from the 
+     * This procedure logs the PROTOCOL_HEADERS from the
      * Message at the specified logging level.
-     * 
+     *
      * @param logger     The Logger to log to.
      * @param level   The Logging Level.
      * @param headers The Message protocol headers.
      */
-    static void logProtocolHeaders(Logger logger, Level level, 
-                                   Map<String, List<String>> headersMap,
+    static void logProtocolHeaders(Logger logger, Level level,
+                                   Map<String, List<Object>> headersMap,
                                    boolean logSensitiveHeaders) {
         if (logger.isLoggable(level)) {
-            for (Map.Entry<String, List<String>> entry : headersMap.entrySet()) {
+            for (Map.Entry<String, List<Object>> entry : headersMap.entrySet()) {
                 String key = entry.getKey();
                 boolean sensitive = !logSensitiveHeaders && SENSITIVE_HEADERS.contains(key);
-                List<String> headerList = sensitive ? SENSITIVE_HEADER_MARKER : entry.getValue();
-                for (String value : headerList) {
-                    logger.log(level, key + ": " 
+                List<Object> headerList = sensitive ? SENSITIVE_HEADER_MARKER : entry.getValue();
+                for (Object value : headerList) {
+                    logger.log(level, key + ": "
                         + (value == null ? "<null>" : value.toString()));
                 }
             }
@@ -329,16 +326,16 @@ public class Headers {
 
     /**
      * Set content type and protocol headers (Message.PROTOCOL_HEADERS) headers into the URL
-     * connection. 
+     * connection.
      * Note, this does not mean they immediately get written to the output
      * stream or the wire. They just just get set on the HTTP request.
-     * 
-     * @param connection 
+     *
+     * @param connection
      * @throws IOException
      */
     public void setProtocolHeadersInConnection(HttpURLConnection connection) throws IOException {
         // If no Content-Type is set for empty requests then HttpUrlConnection:
-        // - sets a form Content-Type for empty POST 
+        // - sets a form Content-Type for empty POST
         // - replaces custom Accept value with */* if HTTP proxy is used
         boolean contentTypeSet = headers.containsKey(Message.CONTENT_TYPE);
         if (!contentTypeSet) {
@@ -347,7 +344,7 @@ public class Headers {
             boolean getRequest = "GET".equals(message.get(Message.HTTP_REQUEST_METHOD));
             boolean emptyRequest = getRequest || PropertyUtils.isTrue(message.get(EMPTY_REQUEST_PROPERTY));
             // If it is an empty request (without a request body) then check further if CT still needs be set
-            if (emptyRequest) { 
+            if (emptyRequest) {
                 Object setCtForEmptyRequestProp = message.getContextualProperty(SET_EMPTY_REQUEST_CT_PROPERTY);
                 if (setCtForEmptyRequestProp != null) {
                     // If SET_EMPTY_REQUEST_CT_PROPERTY is set then do as a user prefers.
@@ -362,12 +359,14 @@ public class Headers {
                 String ct = emptyRequest && !contentTypeSet ? "*/*" : determineContentType();
                 connection.setRequestProperty(HttpHeaderHelper.CONTENT_TYPE, ct);
             }
-        } else {        
+        } else {
             connection.setRequestProperty(HttpHeaderHelper.CONTENT_TYPE, determineContentType());
         }
-         
+
         transferProtocolHeadersToURLConnection(connection);
-        logProtocolHeaders(LOG, Level.FINE, headers, logSensitiveHeaders());
+
+        Map<String, List<Object>> theHeaders = CastUtils.cast(headers);
+        logProtocolHeaders(LOG, Level.FINE, theHeaders, logSensitiveHeaders());
     }
 
     public String determineContentType() {
@@ -376,13 +375,13 @@ public class Headers {
         if (ctList != null && ctList.size() == 1 && ctList.get(0) != null) {
             ct = ctList.get(0).toString();
         } else {
-            ct  = (String)message.get(Message.CONTENT_TYPE);
+            ct = (String)message.get(Message.CONTENT_TYPE);
         }
-        
+
         String enc = (String)message.get(Message.ENCODING);
 
         if (null != ct) {
-            if (enc != null 
+            if (enc != null
                 && ct.indexOf("charset=") == -1
                 && !ct.toLowerCase().contains("multipart/related")) {
                 ct = ct + "; charset=" + enc;
@@ -400,28 +399,18 @@ public class Headers {
      * from the PROTOCOL_HEADERS in the message.
      */
     private void transferProtocolHeadersToURLConnection(URLConnection connection) {
-        boolean addHeaders = MessageUtils.isTrue(
-                message.getContextualProperty(ADD_HEADERS_PROPERTY));
+        boolean addHeaders = MessageUtils.getContextualBoolean(message, ADD_HEADERS_PROPERTY, false);
         for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
             String header = entry.getKey();
-            List<String> headerList = entry.getValue();
-
             if (HttpHeaderHelper.CONTENT_TYPE.equalsIgnoreCase(header)) {
                 continue;
             }
+
+            List<String> headerList = entry.getValue();
             if (addHeaders || HttpHeaderHelper.COOKIE.equalsIgnoreCase(header)) {
-                for (String s : headerList) {
-                    connection.addRequestProperty(header, s);
-                }
+                headerList.forEach(s -> connection.addRequestProperty(header, s));
             } else {
-                StringBuilder b = new StringBuilder();
-                for (int i = 0; i < headerList.size(); i++) {
-                    b.append(headerList.get(i));
-                    if (i + 1 < headerList.size()) {
-                        b.append(',');
-                    }
-                }
-                connection.setRequestProperty(header, b.toString());
+                connection.setRequestProperty(header, String.join(",", headerList));
             }
         }
         // make sure we don't add more than one User-Agent header
@@ -432,23 +421,29 @@ public class Headers {
 
     /**
      * Copy the request headers into the message.
-     * 
+     *
      * @param message the current message
      * @param headers the current set of headers
      */
     protected void copyFromRequest(HttpServletRequest req) {
 
-        //TODO how to deal with the fields        
+        //TODO how to deal with the fields
         for (Enumeration<String> e = req.getHeaderNames(); e.hasMoreElements();) {
             String fname = e.nextElement();
             String mappedName = HttpHeaderHelper.getHeaderKey(fname);
             List<String> values = headers.get(mappedName);
             if (values == null) {
-                values = new ArrayList<String>();
+                values = new ArrayList<>();
                 headers.put(mappedName, values);
             }
             for (Enumeration<String> e2 = req.getHeaders(fname); e2.hasMoreElements();) {
                 String val = e2.nextElement();
+                if ("Accept".equals(mappedName) && values.size() > 0) {
+                    //ensure we collapse Accept into first line
+                    String firstAccept = values.get(0);
+                    firstAccept = firstAccept + ", " + val;
+                    values.set(0, firstAccept);
+                }
                 values.add(val);
             }
         }
@@ -456,7 +451,8 @@ public class Headers {
             headers.put(Message.CONTENT_TYPE, Collections.singletonList(req.getContentType()));
         }
         if (LOG.isLoggable(Level.FINE)) {
-            LOG.log(Level.FINE, "Request Headers: " + toString(headers, 
+            Map<String, List<Object>> theHeaders = CastUtils.cast(headers);
+            LOG.log(Level.FINE, "Request Headers: " + toString(theHeaders,
                                                                logSensitiveHeaders()));
         }
     }
@@ -465,18 +461,18 @@ public class Headers {
         // Not allowed by default
         return PropertyUtils.isTrue(message.getContextualProperty(ALLOW_LOGGING_SENSITIVE_HEADERS));
     }
+
     private String getContentTypeFromMessage() {
-        final String ct  = (String)message.get(Message.CONTENT_TYPE);
+        final String ct = (String)message.get(Message.CONTENT_TYPE);
         final String enc = (String)message.get(Message.ENCODING);
 
-        if (null != ct 
+        if (null != ct
             && null != enc
             && ct.indexOf("charset=") == -1
             && !ct.toLowerCase().contains("multipart/related")) {
             return ct + "; charset=" + enc;
-        } else {
-            return ct;
         }
+        return ct;
     }
 
     // Assumes that response body is not available only
@@ -496,27 +492,30 @@ public class Headers {
         return true;
     }
 
+    private boolean isSingleHeader(String header) {
+        return HTTP_HEADERS_SETCOOKIE.equalsIgnoreCase(header) || HTTP_HEADERS_LINK.equalsIgnoreCase(header);
+    }
+    
     /**
      * Copy the response headers into the response.
-     * 
+     *
      * @param message the current message
      * @param headers the current set of headers
      */
     protected void copyToResponse(HttpServletResponse response) {
         String contentType = getContentTypeFromMessage();
- 
-        if (!headers.containsKey(Message.CONTENT_TYPE) && contentType != null 
+
+        if (!headers.containsKey(Message.CONTENT_TYPE) && contentType != null
             && isResponseBodyAvailable()) {
             response.setContentType(contentType);
         }
 
-        boolean addHeaders = MessageUtils.isTrue(
-                message.getContextualProperty(ADD_HEADERS_PROPERTY));
+        boolean addHeaders = MessageUtils.getContextualBoolean(message, ADD_HEADERS_PROPERTY, false);
         for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
             String header = entry.getKey();
             List<?> headerList = entry.getValue();
 
-            if (addHeaders || HTTP_HEADERS_SINGLE_VALUE_ONLY.contains(header)) {
+            if (addHeaders || isSingleHeader(header)) {
                 for (int i = 0; i < headerList.size(); i++) {
                     Object headerObject = headerList.get(i);
                     if (headerObject != null) {
@@ -542,24 +541,18 @@ public class Headers {
 
     private String headerObjectToString(Object headerObject) {
         if (headerObject.getClass() == String.class) {
-            // Most likely 
-            return headerObject.toString();    
-        } else {
-            // We may consider introducing CXF HeaderDelegate interface 
-            // so that the below code may be pushed back to the JAX-RS 
-            // front-end where non String header objects are more likely 
-            // to be set. Though the below code may be generally useful
-
-            String headerString;
-            if (headerObject instanceof Date) {
-                headerString = toHttpDate((Date)headerObject);
-            } else if (headerObject instanceof Locale) {
-                headerString = toHttpLanguage((Locale)headerObject);
-            } else {
-                headerString = headerObject.toString();
-            }
-            return headerString;
+            // Most likely
+            return headerObject.toString();
         }
+        String headerString;
+        if (headerObject instanceof Date) {
+            headerString = toHttpDate((Date)headerObject);
+        } else if (headerObject instanceof Locale) {
+            headerString = toHttpLanguage((Locale)headerObject);
+        } else {
+            headerString = headerObject.toString();
+        }
+        return headerString;
     }
 
     void removeContentType() {
@@ -586,12 +579,6 @@ public class Headers {
     }
 
     public static String toHttpLanguage(Locale locale) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(locale.getLanguage());
-        if (locale.getCountry() != null) {
-            // Locale.toString() will add "_" instead, '-' is typically expected
-            sb.append('-').append(locale.getCountry());
-        }
-        return sb.toString();
+        return locale.toString().replace('_', '-');
     }
 }

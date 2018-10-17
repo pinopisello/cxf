@@ -22,6 +22,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.ws.soap.SOAPFaultException;
 
 import org.w3c.dom.Element;
+
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.ws.addressing.ReferenceParametersType;
@@ -35,11 +36,12 @@ import org.apache.cxf.ws.transfer.dialect.fragment.ValueType;
 import org.apache.cxf.ws.transfer.manager.MemoryResourceManager;
 import org.apache.cxf.ws.transfer.manager.ResourceManager;
 import org.apache.cxf.ws.transfer.resource.Resource;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
-    
+
     @Test
     public void insertAfter1Test() throws XMLStreamException {
         String content = "<a><b/><c/></a>";
@@ -47,7 +49,7 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         ReferenceParametersType refParams = resourceManager.create(getRepresentation(content));
         Server resource = createLocalResource(resourceManager);
         Resource client = createClient(refParams);
-        
+
         Put request = new Put();
         request.setDialect(FragmentDialectConstants.FRAGMENT_2011_03_IRI);
         Fragment fragment = new Fragment();
@@ -55,13 +57,13 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         expression.setLanguage(FragmentDialectConstants.XPATH10_LANGUAGE_IRI);
         expression.setMode(FragmentDialectConstants.FRAGMENT_MODE_INSERT_AFTER);
         expression.getContent().add("/a/b");
-        Element addedElement = DOMUtils.createDocument().createElement("d");
+        Element addedElement = DOMUtils.getEmptyDocument().createElement("d");
         ValueType value = new ValueType();
         value.getContent().add(addedElement);
         fragment.setExpression(expression);
         fragment.setValue(value);
         request.getAny().add(fragment);
-        
+
         PutResponse response = client.put(request);
         Element rootEl = (Element) response.getRepresentation().getAny();
         Element child0 = (Element) rootEl.getChildNodes().item(0);
@@ -71,10 +73,10 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         Assert.assertEquals("b", child0.getNodeName());
         Assert.assertEquals("d", child1.getNodeName());
         Assert.assertEquals("c", child2.getNodeName());
-        
+
         resource.destroy();
     }
-    
+
     @Test
     public void insertAfter2Test() throws XMLStreamException {
         String content = "<a><b/><b/></a>";
@@ -82,7 +84,7 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         ReferenceParametersType refParams = resourceManager.create(getRepresentation(content));
         Server resource = createLocalResource(resourceManager);
         Resource client = createClient(refParams);
-        
+
         Put request = new Put();
         request.setDialect(FragmentDialectConstants.FRAGMENT_2011_03_IRI);
         Fragment fragment = new Fragment();
@@ -90,13 +92,13 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         expression.setLanguage(FragmentDialectConstants.XPATH10_LANGUAGE_IRI);
         expression.setMode(FragmentDialectConstants.FRAGMENT_MODE_INSERT_AFTER);
         expression.getContent().add("/a/b[last()]");
-        Element addedElement = DOMUtils.createDocument().createElement("c");
+        Element addedElement = DOMUtils.getEmptyDocument().createElement("c");
         ValueType value = new ValueType();
         value.getContent().add(addedElement);
         fragment.setExpression(expression);
         fragment.setValue(value);
         request.getAny().add(fragment);
-        
+
         PutResponse response = client.put(request);
         Element rootEl = (Element) response.getRepresentation().getAny();
         Element child0 = (Element) rootEl.getChildNodes().item(0);
@@ -106,17 +108,17 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         Assert.assertEquals("b", child0.getNodeName());
         Assert.assertEquals("b", child1.getNodeName());
         Assert.assertEquals("c", child2.getNodeName());
-        
+
         resource.destroy();
     }
-    
+
     @Test
     public void insertAfterEmptyDocTest() {
         ResourceManager resourceManager = new MemoryResourceManager();
         ReferenceParametersType refParams = resourceManager.create(new Representation());
         Server resource = createLocalResource(resourceManager);
         Resource client = createClient(refParams);
-        
+
         Put request = new Put();
         request.setDialect(FragmentDialectConstants.FRAGMENT_2011_03_IRI);
         Fragment fragment = new Fragment();
@@ -124,20 +126,20 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         expression.setLanguage(FragmentDialectConstants.XPATH10_LANGUAGE_IRI);
         expression.setMode(FragmentDialectConstants.FRAGMENT_MODE_INSERT_AFTER);
         expression.getContent().add("/");
-        Element addedElement = DOMUtils.createDocument().createElement("a");
+        Element addedElement = DOMUtils.getEmptyDocument().createElement("a");
         ValueType value = new ValueType();
         value.getContent().add(addedElement);
         fragment.setExpression(expression);
         fragment.setValue(value);
         request.getAny().add(fragment);
-        
+
         PutResponse response = client.put(request);
         Element rootEl = (Element) response.getRepresentation().getAny();
         Assert.assertEquals("a", rootEl.getNodeName());
-        
+
         resource.destroy();
     }
-    
+
     @Test(expected = SOAPFaultException.class)
     public void insertAfterRootTest() throws XMLStreamException {
         String content = "<a/>";
@@ -145,7 +147,7 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         ReferenceParametersType refParams = resourceManager.create(getRepresentation(content));
         Server resource = createLocalResource(resourceManager);
         Resource client = createClient(refParams);
-        
+
         Put request = new Put();
         request.setDialect(FragmentDialectConstants.FRAGMENT_2011_03_IRI);
         Fragment fragment = new Fragment();
@@ -153,18 +155,18 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         expression.setLanguage(FragmentDialectConstants.XPATH10_LANGUAGE_IRI);
         expression.setMode(FragmentDialectConstants.FRAGMENT_MODE_INSERT_AFTER);
         expression.getContent().add("/");
-        Element addedElement = DOMUtils.createDocument().createElement("b");
+        Element addedElement = DOMUtils.getEmptyDocument().createElement("b");
         ValueType value = new ValueType();
         value.getContent().add(addedElement);
         fragment.setExpression(expression);
         fragment.setValue(value);
         request.getAny().add(fragment);
-        
+
         client.put(request);
-        
+
         resource.destroy();
     }
-    
+
     @Test(expected = SOAPFaultException.class)
     public void insertAfterAttrTest() throws XMLStreamException {
         String content = "<a foo=\"1\"/>";
@@ -172,7 +174,7 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         ReferenceParametersType refParams = resourceManager.create(getRepresentation(content));
         Server resource = createLocalResource(resourceManager);
         Resource client = createClient(refParams);
-        
+
         Put request = new Put();
         request.setDialect(FragmentDialectConstants.FRAGMENT_2011_03_IRI);
         Fragment fragment = new Fragment();
@@ -180,15 +182,15 @@ public class FragmentPutInsertAfterTest extends IntegrationBaseTest {
         expression.setLanguage(FragmentDialectConstants.XPATH10_LANGUAGE_IRI);
         expression.setMode(FragmentDialectConstants.FRAGMENT_MODE_INSERT_AFTER);
         expression.getContent().add("/a/@foo");
-        Element addedElement = DOMUtils.createDocument().createElement("b");
+        Element addedElement = DOMUtils.getEmptyDocument().createElement("b");
         ValueType value = new ValueType();
         value.getContent().add(addedElement);
         fragment.setExpression(expression);
         fragment.setValue(value);
         request.getAny().add(fragment);
-        
+
         client.put(request);
-        
+
         resource.destroy();
     }
 }

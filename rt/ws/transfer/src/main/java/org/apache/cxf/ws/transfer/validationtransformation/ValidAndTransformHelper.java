@@ -20,6 +20,7 @@
 package org.apache.cxf.ws.transfer.validationtransformation;
 
 import java.util.List;
+
 import org.apache.cxf.ws.transfer.Representation;
 import org.apache.cxf.ws.transfer.shared.faults.InvalidRepresentation;
 
@@ -27,11 +28,11 @@ import org.apache.cxf.ws.transfer.shared.faults.InvalidRepresentation;
  * Helper class for validation and transformation.
  */
 public final class ValidAndTransformHelper {
-    
+
     private ValidAndTransformHelper() {
-        
+
     }
-    
+
     /**
      * Validation and transformation process.
      * @param resourceTypeIdentifiers List of resourceTypeIdentifiers.
@@ -59,5 +60,5 @@ public final class ValidAndTransformHelper {
             throw new InvalidRepresentation();
         }
     }
-    
+
 }

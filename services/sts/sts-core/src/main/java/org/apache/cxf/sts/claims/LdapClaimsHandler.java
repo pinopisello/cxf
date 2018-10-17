@@ -18,8 +18,6 @@
  */
 package org.apache.cxf.sts.claims;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,8 +55,8 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
     private String userNameAttribute = "cn";
     private List<String> supportedRealms;
     private String realm;
-    
-    
+
+
     public void setSupportedRealms(List<String> supportedRealms) {
         this.supportedRealms = supportedRealms;
     }
@@ -66,7 +64,7 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
     public void setRealm(String realm) {
         this.realm = realm;
     }
-    
+
     public String getObjectClass() {
         return objectClass;
     }
@@ -106,7 +104,7 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
     public String getUserBaseDN() {
         return userBaseDn;
     }
-    
+
     public void setDelimiter(String delimiter) {
         this.delimiter = delimiter;
     }
@@ -114,34 +112,25 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
     public String getDelimiter() {
         return delimiter;
     }
-    
+
     public boolean isX500FilterEnabled() {
         return x500FilterEnabled;
     }
-    
+
     public void setX500FilterEnabled(boolean x500FilterEnabled) {
         this.x500FilterEnabled = x500FilterEnabled;
     }
-    
-    
-    public List<URI> getSupportedClaimTypes() {
-        List<URI> uriList = new ArrayList<URI>();
-        for (String uri : getClaimsLdapAttributeMapping().keySet()) {
-            try {
-                uriList.add(new URI(uri));
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-        }
 
-        return uriList;
-    }    
-    
+
+    public List<String> getSupportedClaimTypes() {
+        return new ArrayList<>(getClaimsLdapAttributeMapping().keySet());
+    }
+
     public ProcessedClaimCollection retrieveClaimValues(
             ClaimCollection claims, ClaimsParameters parameters) {
         String user = null;
         boolean useLdapLookup = false;
-        
+
         Principal principal = parameters.getPrincipal();
         if (principal instanceof KerberosPrincipal) {
             KerberosPrincipal kp = (KerberosPrincipal)principal;
@@ -158,19 +147,19 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
                 return new ProcessedClaimCollection();
             }
             useLdapLookup = LdapUtils.isDN(user);
-            
+
         } else {
             LOG.warning("Principal is null");
             return new ProcessedClaimCollection();
         }
-       
+
         if (LOG.isLoggable(Level.FINEST)) {
             LOG.finest("Retrieve claims for user " + user);
         }
-        
+
         Map<String, Attribute> ldapAttributes = null;
         if (useLdapLookup) {
-            AttributesMapper<Map<String, Attribute>> mapper = 
+            AttributesMapper<Map<String, Attribute>> mapper =
                 new AttributesMapper<Map<String, Attribute>>() {
                     public Map<String, Attribute> mapFromAttributes(Attributes attrs) throws NamingException {
                         Map<String, Attribute> map = new HashMap<>();
@@ -182,7 +171,7 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
                         return map;
                     }
                 };
-                
+
             ldapAttributes = ldap.lookup(user, mapper);
         } else {
             List<String> searchAttributeList = new ArrayList<>();
@@ -199,31 +188,31 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
                 }
             }
 
-            String[] searchAttributes = searchAttributeList.toArray(new String[searchAttributeList.size()]);
-            
+            String[] searchAttributes = searchAttributeList.toArray(new String[0]);
+
             if (this.userBaseDn != null) {
                 ldapAttributes = LdapUtils.getAttributesOfEntry(ldap, this.userBaseDn, this.getObjectClass(), this
                     .getUserNameAttribute(), user, searchAttributes);
             }
-            if (this.userBaseDNs != null && (ldapAttributes == null || ldapAttributes.size() == 0)) {
+            if (this.userBaseDNs != null && (ldapAttributes == null || ldapAttributes.isEmpty())) {
                 for (String userBase : userBaseDNs) {
                     ldapAttributes = LdapUtils.getAttributesOfEntry(ldap, userBase, this.getObjectClass(), this
                         .getUserNameAttribute(), user, searchAttributes);
-                    if (ldapAttributes != null && ldapAttributes.size() > 0) {
+                    if (ldapAttributes != null && !ldapAttributes.isEmpty()) {
                         break; // User found
                     }
                 }
             }
         }
-        
-        if (ldapAttributes == null || ldapAttributes.size() == 0) {
+
+        if (ldapAttributes == null || ldapAttributes.isEmpty()) {
             //No result
             if (LOG.isLoggable(Level.INFO)) {
                 LOG.info("User '" + user + "' not found");
             }
             return new ProcessedClaimCollection();
         }
-        
+
         ProcessedClaimCollection claimsColl = new ProcessedClaimCollection();
         for (Claim claim : claims) {
             ProcessedClaim c = processClaim(claim, ldapAttributes, principal);
@@ -234,27 +223,27 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
                 claimsColl.add(c);
             }
         }
-        
+
         return claimsColl;
     }
 
     protected ProcessedClaim processClaim(Claim claim, Map<String, Attribute> ldapAttributes, Principal principal) {
-        URI claimType = claim.getClaimType();
-        String ldapAttribute = getClaimsLdapAttributeMapping().get(claimType.toString());
+        String claimType = claim.getClaimType();
+        String ldapAttribute = getClaimsLdapAttributeMapping().get(claimType);
         Attribute attr = ldapAttributes.get(ldapAttribute);
         if (attr == null) {
             if (LOG.isLoggable(Level.FINEST)) {
                 LOG.finest("Claim '" + claim.getClaimType() + "' is null");
             }
             return null;
-        } 
-        
+        }
+
         ProcessedClaim c = new ProcessedClaim();
         c.setClaimType(claimType);
         c.setPrincipal(principal);
 
         try {
-            NamingEnumeration<?> list = (NamingEnumeration<?>)attr.getAll();
+            NamingEnumeration<?> list = attr.getAll();
             while (list.hasMore()) {
                 Object obj = list.next();
                 if (obj instanceof String) {
@@ -284,7 +273,7 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
                     // Just store byte[]
                     c.addValue(obj);
                 } else {
-                    LOG.warning("LDAP attribute '" + ldapAttribute 
+                    LOG.warning("LDAP attribute '" + ldapAttribute
                             + "' has got an unsupported value type");
                     break;
                 }
@@ -311,6 +300,6 @@ public class LdapClaimsHandler implements ClaimsHandler, RealmSupport {
 
     public void setUserBaseDNs(List<String> userBaseDNs) {
         this.userBaseDNs = userBaseDNs;
-    }  
+    }
 
 }

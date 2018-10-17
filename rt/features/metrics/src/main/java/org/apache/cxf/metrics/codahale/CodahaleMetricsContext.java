@@ -33,7 +33,7 @@ import org.apache.cxf.message.FaultMode;
 import org.apache.cxf.metrics.MetricsContext;
 
 /**
- * 
+ *
  */
 public class CodahaleMetricsContext implements MetricsContext, Closeable {
     protected Counter inFlight;
@@ -44,19 +44,23 @@ public class CodahaleMetricsContext implements MetricsContext, Closeable {
     protected Timer logicalRuntimeFaults;
     protected Meter incomingData;
     protected Meter outgoingData;
-    
+
     protected final String baseName;
     protected final MetricRegistry registry;
-    
+
     public CodahaleMetricsContext(String prefix, MetricRegistry registry) {
         baseName = prefix;
         this.registry = registry;
         totals = registry.timer(baseName + "Attribute=Totals");
+<<<<<<< HEAD
         /*totals timer contains:
            Histogram [misura statistiche "durata" processing in msecs] : 75thPercentile,95thPercentile,98thPercentile,99thPercentile,999thPercentile,max,min,mean,median,stddev
            meter     [misura statistiche "rate"   invocazioni nel tempo]: count,oneMinuteRate,fiveMinuteRate,fifteenMinuteRate,meanrate
         */
         uncheckedApplicationFaults = registry.timer(baseName 
+=======
+        uncheckedApplicationFaults = registry.timer(baseName
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
                                                     + "Attribute=Unchecked Application Faults");
         checkedApplicationFaults = registry.timer(baseName + "Attribute=Checked Application Faults");
         runtimeFaults = registry.timer(baseName + "Attribute=Runtime Faults");
@@ -78,11 +82,11 @@ public class CodahaleMetricsContext implements MetricsContext, Closeable {
         registry.remove(baseName + "Attribute=Data Written");
     }
 
-    
+
     public void start(Exchange ex) {
         inFlight.inc();
     }
-    
+
     public void stop(long timeInNS, long inSize, long outSize, Exchange ex) {
         totals.update(timeInNS, TimeUnit.NANOSECONDS); 
 
@@ -93,7 +97,7 @@ public class CodahaleMetricsContext implements MetricsContext, Closeable {
             outgoingData.mark(outSize);
         }
         FaultMode fm = ex.get(FaultMode.class);
-        if (fm == null && ex.getOutFaultMessage() != null) { 
+        if (fm == null && ex.getOutFaultMessage() != null) {
             fm = ex.getOutFaultMessage().get(FaultMode.class);
         }
         if (fm == null && ex.getInMessage() != null) {

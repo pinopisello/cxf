@@ -39,18 +39,18 @@ import org.apache.cxf.service.Service;
 import org.apache.cxf.service.model.BindingOperationInfo;
 
 /**
- * 
+ *
  */
 @NoJSR250Annotations
-public class CodahaleMetricsProvider implements MetricsProvider {    
+public class CodahaleMetricsProvider implements MetricsProvider {
     private static final String QUESTION_MARK = "?";
     private static final String ESCAPED_QUESTION_MARK = "\\?";
 
     protected Bus bus;
     protected MetricRegistry registry;
-    
+
     /**
-     * 
+     *
      */
     public CodahaleMetricsProvider(Bus b) {
         this.bus = b;
@@ -61,9 +61,15 @@ public class CodahaleMetricsProvider implements MetricsProvider {
             setupJMXReporter(b, registry);
         }
 
+<<<<<<< HEAD
     } 
     
     public static void setupJMXReporter(Bus b, MetricRegistry reg) {    
+=======
+    }
+
+    public static void setupJMXReporter(Bus b, MetricRegistry reg) {
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         InstrumentationManager im = b.getExtension(InstrumentationManager.class);
         if (im != null) {
             /*
@@ -141,8 +147,8 @@ public class CodahaleMetricsProvider implements MetricsProvider {
         }
         return buffer;
     }
-    
-    
+
+
     /** {@inheritDoc}*/
     @Override
     public MetricsContext createEndpointContext(final Endpoint endpoint, boolean isClient, String clientId) {
@@ -162,7 +168,7 @@ public class CodahaleMetricsProvider implements MetricsProvider {
 
     /** {@inheritDoc}*/
     @Override
-    public MetricsContext createResourceContext(Endpoint endpoint, String resourceName, 
+    public MetricsContext createResourceContext(Endpoint endpoint, String resourceName,
                                                 boolean asClient, String clientId) {
         StringBuilder buffer = getBaseServiceName(endpoint, asClient, clientId);
         buffer.append("Operation=").append(resourceName).append(',');

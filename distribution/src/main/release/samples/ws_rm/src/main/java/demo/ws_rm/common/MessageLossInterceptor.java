@@ -40,22 +40,33 @@ import org.apache.cxf.ws.rm.RMProperties;
 import org.apache.cxf.ws.rm.v200702.SequenceType;
 
 /**
+<<<<<<< HEAD:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossInterceptor.java
  * Rimuove, previene l'invio messaggi con sequence pari lato client.
  * Ergo il client li inviera'2 volte non ricevendo ack per il primo.
+=======
+ *
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossSimulator.java
  */
 public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
 
+<<<<<<< HEAD:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossInterceptor.java
     private static final Logger LOG = Logger.getLogger(MessageLossInterceptor.class.getName());
     private int appMessageCount; 
     private long lastrun=System.currentTimeMillis();
     
     
     public MessageLossInterceptor() {
+=======
+    private static final Logger LOG = Logger.getLogger(MessageLossSimulator.class.getName());
+    private int appMessageCount;
+
+    public MessageLossSimulator() {
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossSimulator.java
         super(Phase.PREPARE_SEND);
         addBefore(MessageSenderInterceptor.class.getName());
     }
 
-    
+    // CHECKSTYLE:OFF: ReturnCount 
     public void handleMessage(Message message) throws Fault {
         System.out.println("Last run:  "+(System.currentTimeMillis() - lastrun) );
         AddressingProperties maps =    RMContextUtils.retrieveMAPs(message, false, true);
@@ -71,7 +82,7 @@ public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
         if (maps != null && null != maps.getAction()) {
             action = maps.getAction().getValue();
         }
-        if (RMContextUtils.isRMProtocolMessage(action)) { 
+        if (RMContextUtils.isRMProtocolMessage(action)) {
             return;
         }
         appMessageCount++;
@@ -79,8 +90,8 @@ public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
         if (0 != (appMessageCount % 2)) {
             return;
         }
-        
-        
+
+
         // discard even-numbered message
         InterceptorChain chain = message.getInterceptorChain();
         ListIterator<Interceptor<? extends Message>> it = chain.getIterator();
@@ -92,8 +103,8 @@ public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
                 break;
             }
         }
-        
-        message.setContent(OutputStream.class, new WrappedOutputStream(message));  
+
+        message.setContent(OutputStream.class, new WrappedOutputStream(message));
 
         message.getInterceptorChain().add(new AbstractPhaseInterceptor<Message>(Phase.PREPARE_SEND_ENDING) {
 
@@ -104,10 +115,11 @@ public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
                     throw new Fault(e);
                 }
             }
-            
-        });   
+
+        });
     }
-    
+    // CHECKSTYLE:ON: ReturnCount 
+
     private class WrappedOutputStream extends AbstractWrappedOutputStream {
 
         private Message outMessage;
@@ -125,20 +137,20 @@ public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
             }
             wrappedStream = new DummyOutputStream();
         }
-    }    
+    }
 
-            
-    
+
+
     private class DummyOutputStream extends OutputStream {
 
         @Override
         public void write(int b) throws IOException {
             // TODO Auto-generated method stub
-            
+
         }
-        
+
     }
-    
-    
-    
+
+
+
 }

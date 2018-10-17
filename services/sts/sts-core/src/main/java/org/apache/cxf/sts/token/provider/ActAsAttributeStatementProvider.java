@@ -27,13 +27,13 @@ import org.apache.cxf.sts.request.ReceivedToken;
 import org.apache.cxf.sts.request.TokenRequirements;
 import org.apache.cxf.ws.security.sts.provider.STSException;
 import org.apache.cxf.ws.security.sts.provider.model.secext.UsernameTokenType;
+import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.ext.WSSecurityException;
 import org.apache.wss4j.common.principal.SAMLTokenPrincipal;
 import org.apache.wss4j.common.principal.SAMLTokenPrincipalImpl;
 import org.apache.wss4j.common.saml.SamlAssertionWrapper;
 import org.apache.wss4j.common.saml.bean.AttributeBean;
 import org.apache.wss4j.common.saml.bean.AttributeStatementBean;
-import org.apache.wss4j.dom.WSConstants;
 import org.opensaml.core.xml.XMLObject;
 
 /**
@@ -54,33 +54,33 @@ public class ActAsAttributeStatementProvider implements AttributeStatementProvid
             if (actAs != null) {
                 List<AttributeBean> attributeList = new ArrayList<>();
                 String tokenType = tokenRequirements.getTokenType();
-                
-                AttributeBean parameterBean = 
+
+                AttributeBean parameterBean =
                     handleAdditionalParameters(actAs.getToken(), tokenType);
                 if (!parameterBean.getAttributeValues().isEmpty()) {
                     attributeList.add(parameterBean);
                 }
-                
+
                 attrBean.setSamlAttributes(attributeList);
             }
         } catch (WSSecurityException ex) {
             throw new STSException(ex.getMessage(), ex);
         }
-        
+
         return attrBean;
     }
-    
+
     /**
      * Handle an ActAs element.
      */
     private AttributeBean handleAdditionalParameters(
-        Object parameter, 
+        Object parameter,
         String tokenType
     ) throws WSSecurityException {
         AttributeBean parameterBean = new AttributeBean();
 
         String claimType = "ActAs";
-        if (WSConstants.WSS_SAML_TOKEN_TYPE.equals(tokenType) || WSConstants.SAML_NS.equals(tokenType)) {
+        if (WSS4JConstants.WSS_SAML_TOKEN_TYPE.equals(tokenType) || WSS4JConstants.SAML_NS.equals(tokenType)) {
             parameterBean.setSimpleName(claimType);
             parameterBean.setQualifiedName("http://cxf.apache.org/sts");
         } else {
@@ -95,10 +95,10 @@ public class ActAsAttributeStatementProvider implements AttributeStatementProvid
             SamlAssertionWrapper wrapper = new SamlAssertionWrapper((Element)parameter);
             SAMLTokenPrincipal principal = new SAMLTokenPrincipalImpl(wrapper);
             parameterBean.addAttributeValue(principal.getName());
-            
+
             // Check for other ActAs attributes here + add them in
             if (wrapper.getSaml2() != null) {
-                for (org.opensaml.saml.saml2.core.AttributeStatement attributeStatement 
+                for (org.opensaml.saml.saml2.core.AttributeStatement attributeStatement
                     : wrapper.getSaml2().getAttributeStatements()) {
                     for (org.opensaml.saml.saml2.core.Attribute attribute : attributeStatement.getAttributes()) {
                         if ("ActAs".equals(attribute.getName())) {
@@ -111,7 +111,7 @@ public class ActAsAttributeStatementProvider implements AttributeStatementProvid
                     }
                 }
             } else if (wrapper.getSaml1() != null) {
-                for (org.opensaml.saml.saml1.core.AttributeStatement attributeStatement 
+                for (org.opensaml.saml.saml1.core.AttributeStatement attributeStatement
                     : wrapper.getSaml1().getAttributeStatements()) {
                     for (org.opensaml.saml.saml1.core.Attribute attribute : attributeStatement.getAttributes()) {
                         if ("ActAs".equals(attribute.getAttributeName())) {

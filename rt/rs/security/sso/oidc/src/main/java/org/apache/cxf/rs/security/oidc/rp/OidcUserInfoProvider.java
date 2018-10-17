@@ -43,13 +43,12 @@ public class OidcUserInfoProvider implements ContextProvider<UserInfoContext> {
                 @Override
                 public IdToken getIdToken() {
                     return idToken;
-                } 
-                
+                }
+
             };
-        } else {
-            return null;
         }
-        
+        return null;
+
     }
 
 }

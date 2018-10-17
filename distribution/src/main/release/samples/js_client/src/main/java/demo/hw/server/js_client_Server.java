@@ -21,17 +21,19 @@ package demo.hw.server;
 
 import javax.xml.ws.Endpoint;
 
-public class js_client_Server {
+import org.apache.cxf.ext.logging.LoggingFeature;
 
-    protected js_client_Server() throws Exception {
+public class Server {
+
+    protected Server() throws Exception {
         System.out.println("Starting Server");
         Object implementor = new GreeterImpl();
         String address = "http://localhost:9000/SoapContext/SoapPort";
-        Endpoint.publish(address, implementor);
+        Endpoint.publish(address, implementor, new LoggingFeature());
     }
 
     public static void main(String args[]) throws Exception {
-        new js_client_Server();
+        new Server();
         System.out.println("Server ready...");
 
         Thread.sleep(5 * 60 * 1000);

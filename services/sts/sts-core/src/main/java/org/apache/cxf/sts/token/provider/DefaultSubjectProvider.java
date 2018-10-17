@@ -45,6 +45,7 @@ import org.apache.cxf.sts.request.ReceivedToken.STATE;
 import org.apache.cxf.sts.request.TokenRequirements;
 import org.apache.cxf.sts.service.EncryptionProperties;
 import org.apache.cxf.ws.security.sts.provider.STSException;
+import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.crypto.Crypto;
 import org.apache.wss4j.common.crypto.CryptoType;
 import org.apache.wss4j.common.ext.WSSecurityException;
@@ -54,7 +55,6 @@ import org.apache.wss4j.common.saml.bean.KeyInfoBean.CERT_IDENTIFIER;
 import org.apache.wss4j.common.saml.bean.SubjectBean;
 import org.apache.wss4j.common.saml.builder.SAML1Constants;
 import org.apache.wss4j.common.saml.builder.SAML2Constants;
-import org.apache.wss4j.dom.WSConstants;
 import org.apache.wss4j.dom.message.WSSecEncryptedKey;
 
 /**
@@ -124,7 +124,7 @@ public class DefaultSubjectProvider implements SubjectProvider {
 
         Principal principal = null;
         //TokenValidator in IssueOperation has validated the ReceivedToken
-        //if validation was successful, the principal was set in ReceivedToken 
+        //if validation was successful, the principal was set in ReceivedToken
         if (providerParameters.getTokenRequirements().getOnBehalfOf() != null) {
             ReceivedToken receivedToken = providerParameters.getTokenRequirements().getOnBehalfOf();
             if (receivedToken.getState().equals(STATE.VALID)) {
@@ -202,22 +202,19 @@ public class DefaultSubjectProvider implements SubjectProvider {
      * Get the SubjectConfirmation method given a tokenType and keyType
      */
     protected String getSubjectConfirmationMethod(String tokenType, String keyType) {
-        if (WSConstants.WSS_SAML_TOKEN_TYPE.equals(tokenType)
-            || WSConstants.SAML_NS.equals(tokenType)) {
+        if (WSS4JConstants.WSS_SAML_TOKEN_TYPE.equals(tokenType)
+            || WSS4JConstants.SAML_NS.equals(tokenType)) {
             if (STSConstants.SYMMETRIC_KEY_KEYTYPE.equals(keyType)
                 || STSConstants.PUBLIC_KEY_KEYTYPE.equals(keyType)) {
                 return SAML1Constants.CONF_HOLDER_KEY;
-            } else {
-                return SAML1Constants.CONF_BEARER;
             }
-        } else {
-            if (STSConstants.SYMMETRIC_KEY_KEYTYPE.equals(keyType)
-                || STSConstants.PUBLIC_KEY_KEYTYPE.equals(keyType)) {
-                return SAML2Constants.CONF_HOLDER_KEY;
-            } else {
-                return SAML2Constants.CONF_BEARER;
-            }
+            return SAML1Constants.CONF_BEARER;
         }
+        if (STSConstants.SYMMETRIC_KEY_KEYTYPE.equals(keyType)
+            || STSConstants.PUBLIC_KEY_KEYTYPE.equals(keyType)) {
+            return SAML2Constants.CONF_HOLDER_KEY;
+        }
+        return SAML2Constants.CONF_BEARER;
     }
 
     /**
@@ -266,9 +263,7 @@ public class DefaultSubjectProvider implements SubjectProvider {
                 }
                 Document doc = subjectProviderParameters.getDoc();
                 byte[] secret = subjectProviderParameters.getSecret();
-                KeyInfoBean keyInfo =
-                    createEncryptedKeyKeyInfo(certs[0], secret, doc, encryptionProperties, crypto);
-                return keyInfo;
+                return createEncryptedKeyKeyInfo(certs[0], secret, doc, encryptionProperties, crypto);
             } catch (WSSecurityException ex) {
                 LOG.log(Level.WARNING, "", ex);
                 throw new STSException(ex.getMessage(), ex);
@@ -346,10 +341,10 @@ public class DefaultSubjectProvider implements SubjectProvider {
         // Append the EncryptedKey to a KeyInfo element
         Element keyInfoElement =
             doc.createElementNS(
-                WSConstants.SIG_NS, WSConstants.SIG_PREFIX + ":" + WSConstants.KEYINFO_LN
+                WSS4JConstants.SIG_NS, WSS4JConstants.SIG_PREFIX + ":" + WSS4JConstants.KEYINFO_LN
             );
         keyInfoElement.setAttributeNS(
-            WSConstants.XMLNS_NS, "xmlns:" + WSConstants.SIG_PREFIX, WSConstants.SIG_NS
+            WSS4JConstants.XMLNS_NS, "xmlns:" + WSS4JConstants.SIG_PREFIX, WSS4JConstants.SIG_NS
         );
         keyInfoElement.appendChild(encryptedKeyElement);
 

@@ -31,7 +31,7 @@ import javax.ws.rs.Produces;
 @Produces("application/xml")
 public class CustomerService {
     long currentId = 123;
-    Map<Long, Customer> customers = new HashMap<Long, Customer>();
+    Map<Long, Customer> customers = new HashMap<>();
 
     public CustomerService() {
         init();

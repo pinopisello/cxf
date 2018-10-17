@@ -21,12 +21,12 @@ package org.apache.cxf.bus.osgi;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import org.apache.cxf.bus.blueprint.BlueprintNameSpaceHandlerFactory;
 import org.apache.cxf.bus.blueprint.NamespaceHandlerRegisterer;
 import org.apache.cxf.bus.extension.Extension;
 import org.apache.cxf.bus.extension.ExtensionRegistry;
+import org.apache.cxf.common.util.CollectionUtils;
 import org.apache.cxf.internal.CXFAPINamespaceHandler;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -38,21 +38,21 @@ import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * Is called in OSGi on start and stop of the cxf bundle.
- * Manages 
+ * Manages
  * - CXFBundleListener
  * - Attaching ManagedWorkqueues to config admin service
  * - OsgiBusListener
  * - Blueprint namespaces
  */
 public class CXFActivator implements BundleActivator {
-    
+
     private List<Extension> extensions;
     private ManagedWorkQueueList workQueues;
-    private ServiceTracker configAdminTracker;
+    private ServiceTracker<ConfigurationAdmin, ConfigurationAdmin> configAdminTracker;
     private CXFExtensionBundleListener cxfBundleListener;
-    private ServiceRegistration workQueueServiceRegistration;
-    
-    
+    private ServiceRegistration<ManagedServiceFactory> workQueueServiceRegistration;
+
+
 
     /** {@inheritDoc}*/
     public void start(BundleContext context) throws Exception {
@@ -61,20 +61,21 @@ public class CXFActivator implements BundleActivator {
         context.addBundleListener(cxfBundleListener);
         cxfBundleListener.registerExistingBundles(context);
 
-        configAdminTracker = new ServiceTracker(context, ConfigurationAdmin.class.getName(), null);
+        configAdminTracker = new ServiceTracker<>(context, ConfigurationAdmin.class, null);
         configAdminTracker.open();
         workQueues.setConfigAdminTracker(configAdminTracker);
-        workQueueServiceRegistration = registerManagedServiceFactory(context, ManagedServiceFactory.class, 
+        workQueueServiceRegistration = registerManagedServiceFactory(context,
+                                                                     ManagedServiceFactory.class,
                                                                      workQueues,
                                                                      ManagedWorkQueueList.FACTORY_PID);
-                
-        extensions = new ArrayList<Extension>();
+
+        extensions = new ArrayList<>();
         extensions.add(createOsgiBusListenerExtension(context));
         extensions.add(createManagedWorkQueueListExtension(workQueues));
         ExtensionRegistry.addExtensions(extensions);
 
         BlueprintNameSpaceHandlerFactory factory = new BlueprintNameSpaceHandlerFactory() {
-                
+
             @Override
             public Object createNamespaceHandler() {
                 return new CXFAPINamespaceHandler();
@@ -91,13 +92,12 @@ public class CXFActivator implements BundleActivator {
 
     }
 
-    private ServiceRegistration registerManagedServiceFactory(BundleContext context,
-                                                              Class<?> serviceClass,
-                                                              Object service, 
-                                                              String servicePid) {
-        Properties props = new Properties();
-        props.put(Constants.SERVICE_PID, servicePid);  
-        return context.registerService(serviceClass.getName(), service, props);
+    private <T> ServiceRegistration<T> registerManagedServiceFactory(BundleContext context,
+                                                                     Class<T> serviceClass,
+                                                                     T service,
+                                                                     String servicePid) {
+        return context.registerService(serviceClass, service, 
+                                       CollectionUtils.singletonDictionary(Constants.SERVICE_PID, servicePid));
     }
 
     private Extension createOsgiBusListenerExtension(BundleContext context) {

@@ -47,8 +47,13 @@ public interface HelloWorld {
     /* Map passing
      * JAXB also does not support Maps.  It handles Lists great, but Maps are
      * not supported directly.  They also require use of a XmlAdapter to map
+<<<<<<< HEAD
      * the maps into beans that JAXB can use. 
      */    @WebMethod
+=======
+     * the maps into beans that JAXB can use.
+     */
+>>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
     @XmlJavaTypeAdapter(IntegerUserMapAdapter.class)
     Map<Integer, User> getUsers();
 }

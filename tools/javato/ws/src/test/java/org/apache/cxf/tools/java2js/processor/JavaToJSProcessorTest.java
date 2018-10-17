@@ -21,6 +21,7 @@ package org.apache.cxf.tools.java2js.processor;
 
 import java.io.File;
 
+import org.apache.cxf.helpers.JavaUtils;
 import org.apache.cxf.tools.common.ProcessorTestBase;
 import org.apache.cxf.tools.common.ToolConstants;
 import org.apache.cxf.tools.common.ToolContext;
@@ -29,6 +30,7 @@ import org.apache.cxf.tools.wsdlto.core.DataBindingProfile;
 import org.apache.cxf.tools.wsdlto.core.FrontEndProfile;
 import org.apache.cxf.tools.wsdlto.core.PluginLoader;
 import org.apache.cxf.tools.wsdlto.frontend.jaxws.JAXWSContainer;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,17 +38,17 @@ import org.junit.Test;
 public class JavaToJSProcessorTest extends ProcessorTestBase {
     JavaToJSProcessor processor = new JavaToJSProcessor();
     String classPath = "";
-    
+
     @Before
     public void startUp() throws Exception {
         env = new ToolContext();
         classPath = System.getProperty("java.class.path");
         System.setProperty("java.class.path", getClassPath());
-        if (System.getProperty("java.version").startsWith("9")) {
+        if (JavaUtils.isJava9Compatible()) {
             System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
         }
     }
-    
+
     @After
     public void tearDown() {
         super.tearDown();
@@ -70,9 +72,12 @@ public class JavaToJSProcessorTest extends ProcessorTestBase {
     public void testDocLitUseClassPathFlag() throws Exception {
         File classFile = new java.io.File(output.getCanonicalPath() + "/classes");
         classFile.mkdir();
-
+        String java9PlusFolder = output.getParent() + "/java9";
         System.setProperty("java.class.path", getClassPath() + classFile.getCanonicalPath()
-                           + File.separatorChar);
+                           + File.separatorChar + ":" + java9PlusFolder + "/jaxb-api-2.3.0.jar"
+                           + ":" + java9PlusFolder + "/jaxws-api-2.3.0.jar"
+                           + ":" + java9PlusFolder + "/geronimo-ws-metadata_2.0_spec-1.1.3.jar");
+        
 
         env.put(ToolConstants.CFG_COMPILE, ToolConstants.CFG_COMPILE);
         env.put(ToolConstants.CFG_CLASSDIR, output.getCanonicalPath() + "/classes");

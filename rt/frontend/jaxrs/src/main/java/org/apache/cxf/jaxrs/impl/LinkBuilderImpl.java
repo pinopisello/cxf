@@ -39,8 +39,8 @@ public class LinkBuilderImpl implements Builder {
     private static final String DOUBLE_QUOTE = "\"";
     private UriBuilder ub;
     private URI baseUri;
-    private Map<String, String> params = new HashMap<String, String>(6);
-    
+    private Map<String, String> params = new HashMap<>(6);
+
     @Override
     public Link build(Object... values) {
         URI resolvedLinkUri = getResolvedUri(values);
@@ -58,20 +58,19 @@ public class LinkBuilderImpl implements Builder {
         if (ub == null) {
             ub = new UriBuilderImpl();
             if (baseUri != null) {
-                ub.uri(baseUri);    
+                ub.uri(baseUri);
             }
-            
+
         }
         URI uri = ub.build(values);
-                
+
         if (!uri.isAbsolute() && baseUri != null && baseUri.isAbsolute()) {
             UriBuilder linkUriBuilder = UriBuilder.fromUri(baseUri);
-            return HttpUtils.resolve(linkUriBuilder, uri);    
-        } else {
-            return uri;
+            return HttpUtils.resolve(linkUriBuilder, uri);
         }
+        return uri;
     }
-    
+
     @Override
     public Builder link(Link link) {
         ub = UriBuilder.fromLink(link);
@@ -81,7 +80,7 @@ public class LinkBuilderImpl implements Builder {
 
     @Override
     public Builder link(String link) {
-        
+
         link = link.trim();
         if (link.length() > 1 && link.startsWith("<")) {
             int index = link.lastIndexOf(">", link.length());
@@ -95,7 +94,7 @@ public class LinkBuilderImpl implements Builder {
                 }
             }
         }
-        
+
         String[] tokens = StringUtils.split(link, ";");
         for (String token : tokens) {
             String theToken = token.trim();
@@ -122,7 +121,7 @@ public class LinkBuilderImpl implements Builder {
     @Override
     public Builder rel(String rel) {
         String exisingRel = params.get(Link.REL);
-        String newRel = exisingRel == null ? rel : exisingRel + " " + rel; 
+        String newRel = exisingRel == null ? rel : exisingRel + " " + rel;
         return param(Link.REL, newRel);
     }
 
@@ -163,18 +162,18 @@ public class LinkBuilderImpl implements Builder {
             throw new IllegalArgumentException(value);
         }
     }
-    
+
     static class LinkImpl extends Link {
-        private static final Set<String> MAIN_PARAMETERS = 
-            new HashSet<String>(Arrays.asList(Link.REL, Link.TITLE, Link.TYPE));
-        
+        private static final Set<String> MAIN_PARAMETERS =
+            new HashSet<>(Arrays.asList(Link.REL, Link.TITLE, Link.TYPE));
+
         private URI uri;
         private Map<String, String> params;
         LinkImpl(URI uri, Map<String, String> params) {
             this.uri = uri;
             this.params = params;
         }
-        
+
         @Override
         public Map<String, String> getParams() {
             return Collections.unmodifiableMap(params);
@@ -190,14 +189,13 @@ public class LinkBuilderImpl implements Builder {
             String rel = getRel();
             if (rel == null) {
                 return Collections.<String>emptyList();
-            } else {
-                String[] values = rel.split(" ");
-                List<String> rels = new ArrayList<String>(values.length);
-                for (String val : values) {
-                    rels.add(val.trim());
-                }
-                return rels;
             }
+            String[] values = rel.split(" ");
+            List<String> rels = new ArrayList<>(values.length);
+            for (String val : values) {
+                rels.add(val.trim());
+            }
+            return rels;
         }
 
         @Override
@@ -243,22 +241,21 @@ public class LinkBuilderImpl implements Builder {
                 }
             }
             return sb.toString();
-        } 
-    
+        }
+
         @Override
         public int hashCode() {
             return uri.hashCode() + 37 * params.hashCode();
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (o instanceof Link) {
                 Link other = (Link)o;
-                return uri.equals(other.getUri()) 
+                return uri.equals(other.getUri())
                     && getParams().equals(other.getParams());
-            } else {
-                return false;
             }
+            return false;
         }
     }
 
@@ -271,6 +268,6 @@ public class LinkBuilderImpl implements Builder {
     @Override
     public Builder baseUri(String uri) {
         baseUri = URI.create(uri);
-        return this;   
+        return this;
     }
 }

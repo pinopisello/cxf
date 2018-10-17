@@ -25,6 +25,7 @@ import org.apache.cxf.systests.cdi.base.jetty.AbstractJettyServer;
 import org.jboss.weld.environment.Container;
 import org.jboss.weld.environment.jetty.JettyContainer;
 import org.jboss.weld.environment.servlet.Listener;
+
 import org.junit.BeforeClass;
 
 public class JettyEmbeddedTest extends AbstractCdiMultiAppTest {
@@ -35,7 +36,7 @@ public class JettyEmbeddedTest extends AbstractCdiMultiAppTest {
             super("/", PORT, new Listener());
         }
     }
-    
+
     @BeforeClass
     public static void startServers() throws Exception {
         AbstractResourceInfo.clearAllMaps();
@@ -43,7 +44,7 @@ public class JettyEmbeddedTest extends AbstractCdiMultiAppTest {
         assertTrue("server did not launch correctly", launchServer(EmbeddedJettyServer.class, true));
         createStaticBus();
     }
-    
+
     @Override
     protected int getPort() {
         return EmbeddedJettyServer.PORT;

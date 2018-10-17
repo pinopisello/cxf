@@ -23,9 +23,7 @@ import javax.xml.ws.Endpoint;
 
 import com.example.customerservice.CustomerService;
 
-import org.apache.cxf.interceptor.LoggingInInterceptor;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
-import org.apache.cxf.jaxws.EndpointImpl;
+import org.apache.cxf.ext.logging.LoggingFeature;
 
 public class CustomerServiceServer {
 
@@ -42,7 +40,7 @@ public class CustomerServiceServer {
     public static void main(String args[]) throws Exception {
         new CustomerServiceServer();
         System.out.println("Server ready...");
-        Thread.sleep(25 * 60 * 1000);
+        Thread.sleep(5 * 60 * 1000);
         System.out.println("Server exiting");
         System.exit(0);
     }

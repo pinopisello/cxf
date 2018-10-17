@@ -58,14 +58,13 @@ public class HttpServletRequestFilter extends HttpServletRequestWrapper {
         }
         if (is instanceof ServletInputStream) {
             return (ServletInputStream)is;
-        } else {
-            return super.getInputStream();
         }
+        return super.getInputStream();
     }
     @Override
     public String getParameter(String name) {
         String[] values = this.getParameterValues(name);
-        return values == null ? null : values[0];
+        return values == null || values.length == 0 ? null : values[0];
     }
     @Override
     public String[] getParameterValues(String name) {
@@ -90,9 +89,8 @@ public class HttpServletRequestFilter extends HttpServletRequestWrapper {
                 map2.put(e.getKey(), e.getValue().toArray(new String[]{}));
             }
             return Collections.unmodifiableMap(map2);
-        } else {
-            return map1;
         }
+        return map1;
     }
     @Override
     public Enumeration<String> getParameterNames() {
@@ -109,19 +107,24 @@ public class HttpServletRequestFilter extends HttpServletRequestWrapper {
             public String nextElement() {
                 return it.next();
             }
-            
+
         };
     }
-    
+
+    @SuppressWarnings("unchecked")
     private void readFromParamsIfNeeded() {
         if (formParams == null) {
-            formParams = new MetadataMap<String, String>();
-            MediaType mt = JAXRSUtils.toMediaType((String)m.get(Message.CONTENT_TYPE));
-            String enc = HttpUtils.getEncoding(mt, StandardCharsets.UTF_8.name());
-            String body = FormUtils.readBody(m.getContent(InputStream.class), enc);
-            FormUtils.populateMapFromString(formParams, m, body, enc, true);
+            if (m.containsKey(FormUtils.FORM_PARAM_MAP)) {
+                formParams = (MultivaluedMap<String, String>)m.get(FormUtils.FORM_PARAM_MAP);
+            } else {
+                formParams = new MetadataMap<String, String>();
+                MediaType mt = JAXRSUtils.toMediaType((String)m.get(Message.CONTENT_TYPE));
+                String enc = HttpUtils.getEncoding(mt, StandardCharsets.UTF_8.name());
+                String body = FormUtils.readBody(m.getContent(InputStream.class), enc);
+                FormUtils.populateMapFromString(formParams, m, body, enc, true);
+            }
         }
-        
+
     }
 }
 

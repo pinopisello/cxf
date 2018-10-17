@@ -58,7 +58,6 @@ public class NodeDataReader implements DataReader<Node> {
             try (CachedOutputStream out = new CachedOutputStream()) {
                 StaxUtils.writeTo(input, out);
                 InputStream is = out.getInputStream();
-                out.close();
 
                 return new StreamSource(is);
             } catch (IOException e) {
@@ -66,28 +65,22 @@ public class NodeDataReader implements DataReader<Node> {
             } catch (XMLStreamException e) {
                 throw new Fault("COULD_NOT_READ_XML_STREAM_CAUSED_BY", LOG, e,
                                 e.getClass().getCanonicalName(), e.getMessage());
-            } 
-        }  
+            }
+        }
         return read(input);
     }
 
     public Object read(Node n) {
         return new DOMSource(n);
     }
-    
-    public void setSchema(Schema s) {
-        // TODO Auto-generated method stub
 
+    public void setSchema(Schema s) {
     }
 
     public void setAttachments(Collection<Attachment> attachments) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void setProperty(String prop, Object value) {
-        // TODO Auto-generated method stub
-        
     }
-    
+
 }

@@ -30,9 +30,11 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.security.auth.callback.CallbackHandler;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.Base64Exception;
 import org.apache.cxf.common.util.Base64Utility;
@@ -65,7 +67,8 @@ import org.opensaml.xmlsec.encryption.EncryptedData;
 import org.opensaml.xmlsec.signature.KeyInfo;
 import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureException;
-import org.opensaml.xmlsec.signature.support.SignatureValidator;
+import org.opensaml.xmlsec.signature.support.SignatureValidationProvider;
+import org.opensaml.xmlsec.signature.support.provider.ApacheSantuarioSignatureValidationProviderImpl;
 
 /**
  * Validate a SAML (1.1 or 2.0) Protocol Response. It validates the Response against the specs,
@@ -221,6 +224,12 @@ public class SAMLProtocolResponseValidator {
             return;
         }
 
+        // Required to make IdResolver happy in OpenSAML
+        Attr idAttr = samlResponse.getDOM().getAttributeNodeNS(null, "ID");
+        if (idAttr != null) {
+            samlResponse.getDOM().setIdAttributeNode(idAttr, true);
+        }
+
         validateResponseSignature(
             samlResponse.getSignature(), samlResponse.getDOM().getOwnerDocument(),
             sigCrypto, callbackHandler
@@ -237,6 +246,12 @@ public class SAMLProtocolResponseValidator {
     ) throws WSSecurityException {
         if (!samlResponse.isSigned()) {
             return;
+        }
+
+        // Required to make IdResolver happy in OpenSAML
+        Attr idAttr = samlResponse.getDOM().getAttributeNodeNS(null, "ID");
+        if (idAttr != null) {
+            samlResponse.getDOM().setIdAttributeNode(idAttr, true);
         }
 
         validateResponseSignature(
@@ -259,6 +274,7 @@ public class SAMLProtocolResponseValidator {
         WSSConfig wssConfig = WSSConfig.getNewInstance();
         requestData.setWssConfig(wssConfig);
         requestData.setCallbackHandler(callbackHandler);
+        requestData.setWsDocInfo(new WSDocInfo(doc));
 
         SAMLKeyInfo samlKeyInfo = null;
 
@@ -267,7 +283,7 @@ public class SAMLProtocolResponseValidator {
             try {
                 samlKeyInfo =
                     SAMLUtil.getCredentialFromKeyInfo(
-                        keyInfo.getDOM(), new WSSSAMLKeyInfoProcessor(requestData, new WSDocInfo(doc)), sigCrypto
+                        keyInfo.getDOM(), new WSSSAMLKeyInfoProcessor(requestData), sigCrypto
                     );
             } catch (WSSecurityException ex) {
                 LOG.log(Level.FINE, "Error in getting KeyInfo from SAML Response: " + ex.getMessage(), ex);
@@ -336,7 +352,9 @@ public class SAMLProtocolResponseValidator {
             throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, "invalidSAMLsecurity");
         }
         try {
-            SignatureValidator.validate(signature, credential);
+            SignatureValidationProvider responseSignatureValidator =
+                new ApacheSantuarioSignatureValidationProviderImpl();
+            responseSignatureValidator.validate(signature, credential);
         } catch (SignatureException ex) {
             LOG.log(Level.FINE, "Error in validating the SAML Signature: " + ex.getMessage(), ex);
             throw new WSSecurityException(WSSecurityException.ErrorCode.FAILURE, "invalidSAMLsecurity");
@@ -373,13 +391,14 @@ public class SAMLProtocolResponseValidator {
             try {
                 Signature sig = assertion.getSignature();
                 WSDocInfo docInfo = new WSDocInfo(sig.getDOM().getOwnerDocument());
+                requestData.setWsDocInfo(docInfo);
 
                 SAMLKeyInfo samlKeyInfo = null;
 
                 KeyInfo keyInfo = sig.getKeyInfo();
                 if (keyInfo != null) {
                     samlKeyInfo = SAMLUtil.getCredentialFromKeyInfo(
-                        keyInfo.getDOM(), new WSSSAMLKeyInfoProcessor(requestData, docInfo), sigCrypto
+                        keyInfo.getDOM(), new WSSSAMLKeyInfoProcessor(requestData), sigCrypto
                     );
                 } else if (!keyInfoMustBeAvailable) {
                     samlKeyInfo = createKeyInfoFromDefaultAlias(sigCrypto);
@@ -393,7 +412,7 @@ public class SAMLProtocolResponseValidator {
                 assertion.verifySignature(samlKeyInfo);
 
                 assertion.parseSubject(
-                    new WSSSAMLKeyInfoProcessor(requestData, new WSDocInfo(doc)),
+                    new WSSSAMLKeyInfoProcessor(requestData),
                     requestData.getSigVerCrypto(),
                     requestData.getCallbackHandler()
                 );

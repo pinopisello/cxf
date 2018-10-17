@@ -26,10 +26,11 @@ import javax.enterprise.inject.spi.ProcessBean;
 import javax.ws.rs.Path;
 
 import org.apache.cxf.Bus;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -44,9 +45,9 @@ public class JAXRSCdiResourceExtensionTest {
     @Mock
     private AfterBeanDiscovery event;
     @Mock
-    private Bean busBean;
+    private Bean<Bus> busBean;
     @Mock
-    private ProcessBean<? extends Object> processBean;
+    private ProcessBean<Bus> processBean;
     @Mock
     private Annotated annotated;
 
@@ -58,11 +59,13 @@ public class JAXRSCdiResourceExtensionTest {
         verify(event, never()).addBean(any(DefaultApplicationBean.class));
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
     public void shouldNotAddBusBeanIfBeanAlreadySent() {
         when(processBean.getBean()).thenReturn(busBean);
         when(processBean.getAnnotated()).thenReturn(annotated);
-        when(busBean.getBeanClass()).thenReturn(Bus.class);
+        Class cls = Bus.class;
+        when(busBean.getBeanClass()).thenReturn(cls);
         when(busBean.getName()).thenReturn(CdiBusBean.CXF);
         extension.collect(processBean);
 

@@ -25,6 +25,7 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.cxf.systest.ws.AbstractWSATestBase;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -59,7 +60,7 @@ public class WSAResponsesClientServerTest extends AbstractWSATestBase {
             } else {
                 throw e;
             }
-            
+
         }
     }
 

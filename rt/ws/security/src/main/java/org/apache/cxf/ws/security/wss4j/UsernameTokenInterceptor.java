@@ -21,7 +21,6 @@ package org.apache.cxf.ws.security.wss4j;
 
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +30,7 @@ import javax.security.auth.Subject;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
 import org.apache.cxf.binding.soap.SoapMessage;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.headers.Header;
@@ -49,6 +49,7 @@ import org.apache.cxf.ws.policy.AssertionInfo;
 import org.apache.cxf.ws.policy.AssertionInfoMap;
 import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.cxf.ws.security.policy.PolicyUtils;
+import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.bsp.BSPEnforcer;
 import org.apache.wss4j.common.cache.ReplayCache;
 import org.apache.wss4j.common.ext.WSPasswordCallback;
@@ -72,9 +73,10 @@ import org.apache.wss4j.policy.model.AbstractSecurityAssertion;
 import org.apache.wss4j.policy.model.SupportingTokens;
 import org.apache.wss4j.policy.model.UsernameToken;
 import org.apache.xml.security.exceptions.Base64DecodingException;
+import org.apache.xml.security.utils.XMLUtils;
 
 /**
- * 
+ *
  */
 public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
 
@@ -87,20 +89,20 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         if (h == null) {
             return;
         }
-        boolean utWithCallbacks = 
+        boolean utWithCallbacks =
             MessageUtils.getContextualBoolean(message, SecurityConstants.VALIDATE_TOKEN, true);
-        
+
         Element el = (Element)h.getObject();
         Element child = DOMUtils.getFirstElement(el);
         while (child != null) {
             if (SPConstants.USERNAME_TOKEN.equals(child.getLocalName())
-                && WSConstants.WSSE_NS.equals(child.getNamespaceURI())) {
+                && WSS4JConstants.WSSE_NS.equals(child.getNamespaceURI())) {
                 try {
                     boolean bspCompliant = isWsiBSPCompliant(message);
                     Principal principal = null;
                     Subject subject = null;
                     Object transformedToken = null;
-                    
+
                     if (utWithCallbacks) {
                         final WSSecurityEngineResult result = validateToken(child, message);
                         subject = (Subject)result.get(WSSecurityEngineResult.TAG_SUBJECT);
@@ -113,29 +115,29 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                         principal = parseTokenAndCreatePrincipal(child, bspCompliant);
                         WSS4JTokenConverter.convertToken(message, principal);
                     }
-                    
+
                     SecurityContext sc = message.get(SecurityContext.class);
                     if (sc == null || sc.getUserPrincipal() == null) {
                         if (transformedToken instanceof SamlAssertionWrapper) {
                             message.put(SecurityContext.class,
-                                        createSecurityContext(message, 
+                                        createSecurityContext(message,
                                                               (SamlAssertionWrapper)transformedToken));
                         } else if (subject != null && principal != null) {
-                            message.put(SecurityContext.class, 
+                            message.put(SecurityContext.class,
                                     createSecurityContext(principal, subject));
                         } else {
                             UsernameTokenPrincipal utPrincipal = (UsernameTokenPrincipal)principal;
                             String nonce = null;
                             if (utPrincipal.getNonce() != null) {
-                                nonce = Base64.getMimeEncoder().encodeToString(utPrincipal.getNonce());
+                                nonce = XMLUtils.encodeToString(utPrincipal.getNonce());
                             }
                             subject = createSubject(utPrincipal.getName(), utPrincipal.getPassword(),
                                     utPrincipal.isPasswordDigest(), nonce, utPrincipal.getCreatedTime());
-                            message.put(SecurityContext.class, 
+                            message.put(SecurityContext.class,
                                     createSecurityContext(utPrincipal, subject));
                         }
                     }
-                    
+
                     if (principal instanceof UsernameTokenPrincipal) {
                         storeResults((UsernameTokenPrincipal)principal, subject, message);
                     }
@@ -148,34 +150,34 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
             child = DOMUtils.getNextElement(child);
         }
     }
-    
+
     private SecurityContext createSecurityContext(Message msg,
                                                   SamlAssertionWrapper samlAssertion) {
-        String roleAttributeName = 
+        String roleAttributeName =
             (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SAML_ROLE_ATTRIBUTENAME, msg);
         if (roleAttributeName == null || roleAttributeName.length() == 0) {
             roleAttributeName = WSS4JInInterceptor.SAML_ROLE_ATTRIBUTENAME_DEFAULT;
         }
 
-        ClaimCollection claims = 
-            SAMLUtils.getClaims((SamlAssertionWrapper)samlAssertion);
-        Set<Principal> roles = 
+        ClaimCollection claims =
+            SAMLUtils.getClaims(samlAssertion);
+        Set<Principal> roles =
             SAMLUtils.parseRolesFromClaims(claims, roleAttributeName, null);
 
-        SAMLSecurityContext context = 
+        SAMLSecurityContext context =
             new SAMLSecurityContext(new SAMLTokenPrincipalImpl(samlAssertion), roles, claims);
         context.setIssuer(SAMLUtils.getIssuer(samlAssertion));
         context.setAssertionElement(SAMLUtils.getAssertionElement(samlAssertion));
         return context;
     }
-    
+
     private void storeResults(UsernameTokenPrincipal principal, Subject subject, SoapMessage message) {
         List<WSSecurityEngineResult> v = new ArrayList<>();
         int action = WSConstants.UT;
         if (principal.getPassword() == null) {
             action = WSConstants.UT_NOPASSWORD;
         }
-        
+
         WSSecurityEngineResult result = new WSSecurityEngineResult(action, principal, null, null, null);
         if (subject != null) {
             result.put(WSSecurityEngineResult.TAG_SUBJECT, subject);
@@ -187,8 +189,8 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
             results = new ArrayList<>();
             message.put(WSHandlerConstants.RECV_RESULTS, results);
         }
-        
-        WSHandlerResult rResult = 
+
+        WSHandlerResult rResult =
             new WSHandlerResult(null, v, Collections.singletonMap(action, v));
         results.add(0, rResult);
 
@@ -197,12 +199,11 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
 
     protected WSSecurityEngineResult validateToken(Element tokenElement, final SoapMessage message)
         throws WSSecurityException, Base64DecodingException {
-        
+
         boolean bspCompliant = isWsiBSPCompliant(message);
         boolean allowNoPassword = isAllowNoPassword(message.get(AssertionInfoMap.class));
         UsernameTokenProcessor p = new UsernameTokenProcessor();
-        WSDocInfo wsDocInfo = new WSDocInfo(tokenElement.getOwnerDocument());
-        
+
         RequestData data = new CXFRequestData();
         Object o = SecurityUtils.getSecurityPropertyValue(SecurityConstants.CALLBACK_HANDLER, message);
         try {
@@ -213,7 +214,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         data.setMsgContext(message);
 
         // Configure replay caching
-        ReplayCache nonceCache = 
+        ReplayCache nonceCache =
             WSS4JUtils.getReplayCache(
                 message, SecurityConstants.ENABLE_NONCE_CACHE, SecurityConstants.NONCE_CACHE_INSTANCE
             );
@@ -225,24 +226,26 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
             data.setDisableBSPEnforcement(true);
         }
         data.setMsgContext(message);
+
+        WSDocInfo wsDocInfo = new WSDocInfo(tokenElement.getOwnerDocument());
+        data.setWsDocInfo(wsDocInfo);
         try {
-            List<WSSecurityEngineResult> results = 
-                p.handleToken(tokenElement, data, wsDocInfo);
+            List<WSSecurityEngineResult> results = p.handleToken(tokenElement, data);
             return results.get(0);
         } catch (WSSecurityException ex) {
             throw WSS4JUtils.createSoapFault(message, message.getVersion(), ex);
         }
     }
-    
-    protected UsernameTokenPrincipal parseTokenAndCreatePrincipal(Element tokenElement, boolean bspCompliant) 
+
+    protected UsernameTokenPrincipal parseTokenAndCreatePrincipal(Element tokenElement, boolean bspCompliant)
         throws WSSecurityException, Base64DecodingException {
         BSPEnforcer bspEnforcer = new org.apache.wss4j.common.bsp.BSPEnforcer(!bspCompliant);
-        org.apache.wss4j.dom.message.token.UsernameToken ut = 
+        org.apache.wss4j.dom.message.token.UsernameToken ut =
             new org.apache.wss4j.dom.message.token.UsernameToken(tokenElement, false, bspEnforcer);
-        
+
         WSUsernameTokenPrincipalImpl principal = new WSUsernameTokenPrincipalImpl(ut.getName(), ut.isHashed());
         if (ut.getNonce() != null) {
-            principal.setNonce(Base64.getMimeDecoder().decode(ut.getNonce()));
+            principal.setNonce(XMLUtils.decode(ut.getNonce()));
         }
         principal.setPassword(ut.getPassword());
         principal.setCreatedTime(ut.getCreated());
@@ -250,15 +253,15 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
 
         return principal;
     }
-    
+
     protected boolean isWsiBSPCompliant(final SoapMessage message) {
         String bspc = (String)message.getContextualProperty(SecurityConstants.IS_BSP_COMPLIANT);
         // Default to WSI-BSP compliance enabled
         return !("false".equals(bspc) || "0".equals(bspc));
     }
-    
+
     private boolean isAllowNoPassword(AssertionInfoMap aim) throws WSSecurityException {
-        Collection<AssertionInfo> ais = 
+        Collection<AssertionInfo> ais =
             PolicyUtils.getAllAssertionsByLocalname(aim, SPConstants.USERNAME_TOKEN);
 
         if (!ais.isEmpty()) {
@@ -269,16 +272,16 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     protected SecurityContext createSecurityContext(final Principal p, Subject subject) {
         return new DefaultSecurityContext(p, subject);
     }
-    
+
     /**
-     * Create a Subject representing a current user and its roles. 
+     * Create a Subject representing a current user and its roles.
      * This Subject is expected to contain at least one Principal representing a user
      * and optionally followed by one or more principal Groups this user is a member of.
      * @param name username
@@ -289,14 +292,14 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
      * @return subject
      * @throws SecurityException
      */
-    protected Subject createSubject(String name, 
-                                    String password, 
+    protected Subject createSubject(String name,
+                                    String password,
                                     boolean isDigest,
                                     String nonce,
                                     String created) throws SecurityException {
         return null;
     }
-    
+
     protected UsernameToken assertTokens(SoapMessage message) {
         AssertionInfoMap aim = message.get(AssertionInfoMap.class);
         PolicyUtils.assertPolicy(aim, SPConstants.USERNAME_TOKEN10);
@@ -308,14 +311,14 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
 
         return (UsernameToken)assertTokens(message, SPConstants.USERNAME_TOKEN, true);
     }
-    
+
     private UsernameToken assertTokens(
-        SoapMessage message, 
+        SoapMessage message,
         UsernameTokenPrincipal princ,
         boolean signed
     ) {
         AssertionInfoMap aim = message.get(AssertionInfoMap.class);
-        Collection<AssertionInfo> ais = 
+        Collection<AssertionInfo> ais =
             PolicyUtils.getAllAssertionsByLocalname(aim, SPConstants.USERNAME_TOKEN);
         UsernameToken tok = null;
         for (AssertionInfo ai : ais) {
@@ -327,7 +330,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
             } else {
                 PolicyUtils.assertPolicy(aim, SPConstants.HASH_PASSWORD);
             }
-            
+
             if ((tok.getPasswordType() != UsernameToken.PasswordType.NoPassword)
                 && isNonEndorsingSupportingToken(tok)
                 && (princ == null || princ.getPassword() == null)) {
@@ -335,20 +338,20 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
             } else {
                 PolicyUtils.assertPolicy(aim, SPConstants.NO_PASSWORD);
             }
-            
+
             if (tok.isCreated() && princ.getCreatedTime() == null) {
                 ai.setNotAsserted("No Created Time");
             } else {
                 PolicyUtils.assertPolicy(aim, SP13Constants.CREATED);
             }
-            
+
             if (tok.isNonce() && princ.getNonce() == null) {
                 ai.setNotAsserted("No Nonce");
             } else {
                 PolicyUtils.assertPolicy(aim, SP13Constants.NONCE);
             }
         }
-        
+
         PolicyUtils.assertPolicy(aim, SPConstants.USERNAME_TOKEN10);
         PolicyUtils.assertPolicy(aim, SPConstants.USERNAME_TOKEN11);
         PolicyUtils.assertPolicy(aim, SPConstants.SUPPORTING_TOKENS);
@@ -358,7 +361,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         }
         return tok;
     }
-    
+
     /**
      * Return true if this UsernameToken policy is a (non-endorsing)SupportingToken. If this is
      * true then the corresponding UsernameToken must have a password element.
@@ -377,12 +380,12 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         Header h = findSecurityHeader(message, true);
         Element el = (Element)h.getObject();
         Document doc = el.getOwnerDocument();
-        
-        WSSecUsernameToken utBuilder = 
+
+        WSSecUsernameToken utBuilder =
             addUsernameToken(message, doc, tok);
         if (utBuilder == null) {
             AssertionInfoMap aim = message.get(AssertionInfoMap.class);
-            Collection<AssertionInfo> ais = 
+            Collection<AssertionInfo> ais =
                 PolicyUtils.getAllAssertionsByLocalname(aim, SPConstants.USERNAME_TOKEN);
             for (AssertionInfo ai : ais) {
                 if (ai.isAsserted()) {
@@ -397,7 +400,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
 
 
     protected WSSecUsernameToken addUsernameToken(SoapMessage message, Document doc, UsernameToken token) {
-        String userName = 
+        String userName =
             (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.USERNAME, message);
         WSSConfig wssConfig = (WSSConfig)message.getContextualProperty(WSSConfig.class.getName());
         if (wssConfig == null) {
@@ -414,41 +417,40 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                 utBuilder.setPasswordType(null);
                 return utBuilder;
             }
-            
-            String password = 
+
+            String password =
                 (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.PASSWORD, message);
             if (StringUtils.isEmpty(password)) {
                 password = getPassword(userName, token, WSPasswordCallback.USERNAME_TOKEN, message);
             }
-            
+
             if (!StringUtils.isEmpty(password)) {
                 //If the password is available then build the token
                 WSSecUsernameToken utBuilder = new WSSecUsernameToken(doc);
                 utBuilder.setIdAllocator(wssConfig.getIdAllocator());
                 utBuilder.setWsTimeSource(wssConfig.getCurrentTime());
                 if (token.getPasswordType() == UsernameToken.PasswordType.HashPassword) {
-                    utBuilder.setPasswordType(WSConstants.PASSWORD_DIGEST);  
+                    utBuilder.setPasswordType(WSS4JConstants.PASSWORD_DIGEST);
                 } else {
-                    utBuilder.setPasswordType(WSConstants.PASSWORD_TEXT);
+                    utBuilder.setPasswordType(WSS4JConstants.PASSWORD_TEXT);
                 }
-                
+
                 if (token.isCreated()) {
                     utBuilder.addCreated();
                 }
                 if (token.isNonce()) {
                     utBuilder.addNonce();
                 }
-                
+
                 utBuilder.setUserInfo(userName, password);
                 return utBuilder;
-            } else {
-                policyNotAsserted(token, "No username available", message);
             }
+            policyNotAsserted(token, "No username available", message);
         } else {
             policyNotAsserted(token, "No username available", message);
         }
         return null;
     }
 
-    
+
 }

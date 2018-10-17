@@ -18,10 +18,9 @@
  */
 package org.apache.cxf.systest.jaxrs.security.oauth2.common;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -46,17 +45,18 @@ import org.apache.wss4j.common.saml.SAMLCallback;
 import org.apache.wss4j.common.saml.SAMLUtil;
 import org.apache.wss4j.common.saml.SamlAssertionWrapper;
 import org.apache.wss4j.common.saml.builder.SAML1Constants;
+
 import org.junit.Assert;
 
 /**
  * Some test utils for the OAuth 2.0 tests
  */
 public final class OAuth2TestUtils {
-    
+
     private OAuth2TestUtils() {
         // complete
     }
-    
+
     public static String getAuthorizationCode(WebClient client) {
         return getAuthorizationCode(client, null);
     }
@@ -64,11 +64,11 @@ public final class OAuth2TestUtils {
     public static String getAuthorizationCode(WebClient client, String scope) {
         return getAuthorizationCode(client, scope, "consumer-id");
     }
-    
+
     public static String getAuthorizationCode(WebClient client, String scope, String consumerId) {
         return getAuthorizationCode(client, scope, consumerId, null, null);
     }
-    
+
     public static String getAuthorizationCode(WebClient client, String scope, String consumerId,
                                               String nonce, String state) {
         AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
@@ -81,8 +81,8 @@ public final class OAuth2TestUtils {
         String location = getLocation(client, parameters);
         return getSubstring(location, "code");
     }
-    
-    public static String getLocation(WebClient client, AuthorizationCodeParameters parameters) { 
+
+    public static String getLocation(WebClient client, AuthorizationCodeParameters parameters) {
         // Make initial authorization request
         client.type("application/json").accept("application/json");
         client.query("client_id", parameters.getConsumerId());
@@ -105,6 +105,10 @@ public final class OAuth2TestUtils {
         Response response = client.get();
 
         OAuthAuthorizationData authzData = response.readEntity(OAuthAuthorizationData.class);
+        return getLocation(client, authzData, parameters.getState());
+    }
+
+    public static String getLocation(WebClient client, OAuthAuthorizationData authzData, String state) {
 
         // Now call "decision" to get the authorization code grant
         client.path("decision");
@@ -126,10 +130,10 @@ public final class OAuth2TestUtils {
         form.param("response_type", authzData.getResponseType());
         form.param("oauthDecision", "allow");
 
-        response = client.post(form);
+        Response response = client.post(form);
         String location = response.getHeaderString("Location");
-        if (parameters.getState() != null) {
-            Assert.assertTrue(location.contains("state=" + parameters.getState()));
+        if (state != null) {
+            Assert.assertTrue(location.contains("state=" + state));
         }
 
         return location;
@@ -138,8 +142,8 @@ public final class OAuth2TestUtils {
     public static ClientAccessToken getAccessTokenWithAuthorizationCode(WebClient client, String code) {
         return getAccessTokenWithAuthorizationCode(client, code, "consumer-id", null);
     }
-    
-    public static ClientAccessToken getAccessTokenWithAuthorizationCode(WebClient client, 
+
+    public static ClientAccessToken getAccessTokenWithAuthorizationCode(WebClient client,
                                                                         String code,
                                                                         String consumerId,
                                                                         String audience) {
@@ -153,13 +157,14 @@ public final class OAuth2TestUtils {
         if (audience != null) {
             form.param("audience", audience);
         }
+        form.param("redirect_uri", "http://www.blah.apache.org");
         Response response = client.post(form);
 
         return response.readEntity(ClientAccessToken.class);
     }
-    
+
     public static List<Object> setupProviders() {
-        List<Object> providers = new ArrayList<Object>();
+        List<Object> providers = new ArrayList<>();
         JSONProvider<OAuthAuthorizationData> jsonP = new JSONProvider<OAuthAuthorizationData>();
         jsonP.setNamespaceMap(Collections.singletonMap("http://org.apache.cxf.rs.security.oauth",
                                                        "ns2"));
@@ -167,15 +172,15 @@ public final class OAuth2TestUtils {
         providers.add(new OAuthJSONProvider());
         providers.add(new JsonWebKeysProvider());
         providers.add(new JsonMapObjectProvider());
-        
+
         return providers;
     }
 
     public static String createToken(String audRestr) throws WSSecurityException {
         return createToken(audRestr, true, true);
     }
-    
-    public static String createToken(String audRestr, boolean saml2, boolean sign) 
+
+    public static String createToken(String audRestr, boolean saml2, boolean sign)
         throws WSSecurityException {
         SamlCallbackHandler samlCallbackHandler = new SamlCallbackHandler(sign);
         samlCallbackHandler.setAudience(audRestr);
@@ -198,11 +203,11 @@ public final class OAuth2TestUtils {
                 samlCallback.getSignatureAlgorithm()
             );
         }
-        
+
         return samlAssertion.assertionToString();
     }
-    
-    public static String createToken(String issuer, String subject, String audience, 
+
+    public static String createToken(String issuer, String subject, String audience,
                                boolean expiry, boolean sign) {
         // Create the JWT Token
         JwtClaims claims = new JwtClaims();
@@ -210,16 +215,15 @@ public final class OAuth2TestUtils {
         if (issuer != null) {
             claims.setIssuer(issuer);
         }
-        claims.setIssuedAt(new Date().getTime() / 1000L);
+        Instant now = Instant.now();
+        claims.setIssuedAt(now.getEpochSecond());
         if (expiry) {
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.SECOND, 60);
-            claims.setExpiryTime(cal.getTimeInMillis() / 1000L);
+            claims.setExpiryTime(now.plusSeconds(60L).getEpochSecond());
         }
         if (audience != null) {
             claims.setAudiences(Collections.singletonList(audience));
         }
-        
+
         if (sign) {
             // Sign the JWT Token
             Properties signingProperties = new Properties();
@@ -229,26 +233,26 @@ public final class OAuth2TestUtils {
             signingProperties.put("rs.security.keystore.file", "keys/alice.jks");
             signingProperties.put("rs.security.key.password", "password");
             signingProperties.put("rs.security.signature.algorithm", "RS256");
-            
+
             JwsHeaders jwsHeaders = new JwsHeaders(signingProperties);
             JwsJwtCompactProducer jws = new JwsJwtCompactProducer(jwsHeaders, claims);
-            
-            JwsSignatureProvider sigProvider = 
+
+            JwsSignatureProvider sigProvider =
                 JwsUtils.loadSignatureProvider(signingProperties, jwsHeaders);
-            
+
             return jws.signWith(sigProvider);
         }
-        
+
         JwsHeaders jwsHeaders = new JwsHeaders(SignatureAlgorithm.NONE);
         JwsJwtCompactProducer jws = new JwsJwtCompactProducer(jwsHeaders, claims);
         return jws.getSignedEncodedJws();
     }
-    
+
     public static String getSubstring(String parentString, String substringName) {
         if (!parentString.contains(substringName)) {
             return null;
         }
-        String foundString = 
+        String foundString =
             parentString.substring(parentString.indexOf(substringName + "=") + (substringName + "=").length());
         int ampersandIndex = foundString.indexOf('&');
         if (ampersandIndex < 1) {
@@ -256,16 +260,16 @@ public final class OAuth2TestUtils {
         }
         return foundString.substring(0, ampersandIndex);
     }
-    
+
     public static class AuthorizationCodeParameters {
         private String scope;
         private String consumerId;
         private String nonce;
         private String state;
         private String responseType;
-        private String path; 
+        private String path;
         private String request;
-        
+
         public String getScope() {
             return scope;
         }

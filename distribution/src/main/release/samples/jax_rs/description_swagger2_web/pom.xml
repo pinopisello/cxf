@@ -22,11 +22,11 @@ under the License.
     <artifactId>jax_rs_description_swagger2_web</artifactId>
     <packaging>war</packaging>
     <name>JAX-RS Swagger2 WebApp Demo</name>
-    <description>JAX-RS Basic Demo</description>
+    <description>JAX-RS Swagger2 Basic Demo using WebApp with Spring</description>
     <parent>
         <groupId>org.apache.cxf.samples</groupId>
         <artifactId>cxf-samples</artifactId>
-        <version>3.2.0-SNAPSHOT</version>
+        <version>3.3.0-SNAPSHOT</version>
         <relativePath>../..</relativePath>
     </parent>
 
@@ -39,9 +39,11 @@ under the License.
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.4.0.v20161208</version>
+                <version>9.4.6.v20170531</version>
                 <configuration>
-                    <contextPath>/</contextPath>
+                    <webApp>
+                        <contextPath>/</contextPath>
+                    </webApp>
                     <httpConnector>
                       <port>9000</port>
                     </httpConnector>
@@ -54,22 +56,22 @@ under the License.
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>swagger-ui</artifactId>
-            <version>2.2.6</version>
+            <version>3.19.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http</artifactId>
-            <version>3.2.0-SNAPSHOT</version>
+            <version>3.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-            <version>3.2.0-SNAPSHOT</version>
+            <version>3.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-rs-service-description-swagger</artifactId>
-            <version>3.2.0-SNAPSHOT</version>
+            <version>3.3.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -89,8 +91,8 @@ under the License.
             <artifactId>spring-web</artifactId>
         </dependency>
         <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
         </dependency>
     </dependencies>
 </project>

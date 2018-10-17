@@ -32,8 +32,9 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -58,20 +59,26 @@ import org.apache.mina.transport.socket.DatagramSessionConfig;
 import org.apache.mina.transport.socket.nio.NioDatagramConnector;
 
 /**
- * 
+ *
  */
 public class UDPConduit extends AbstractConduit {
+    /**
+     * For broadcast/multicast, the specific network interface to use.   This can either be
+     * a specific  java.net.NetworkInterface or a string for NetworkInterface.getByName(String name)
+     */
+    public static final String NETWORK_INTERFACE = UDPConduit.class.getName() + ".NETWORK_INTERFACE";
+
     private static final String CXF_MESSAGE_ATTR = "CXFMessage";
     private static final String MULTI_RESPONSE_TIMEOUT = "udp.multi.response.timeout";
     private static final String HOST_PORT = UDPConduit.class + ".host:port";
-    private static final Logger LOG = LogUtils.getL7dLogger(UDPDestination.class); 
+    private static final Logger LOG = LogUtils.getL7dLogger(UDPDestination.class);
 
     Bus bus;
     NioDatagramConnector connector = new NioDatagramConnector();
-    ConcurrentHashMap<String, Queue<ConnectFuture>> connections 
+    ConcurrentHashMap<String, Queue<ConnectFuture>> connections
         = new ConcurrentHashMap<String, Queue<ConnectFuture>>();
-    
-    public UDPConduit(EndpointReferenceType t, 
+
+    public UDPConduit(EndpointReferenceType t,
                       final Bus bus) {
         super(t);
         this.bus = bus;
@@ -92,15 +99,15 @@ public class UDPConduit extends AbstractConduit {
                 IoSessionInputStream ins = new IoSessionInputStream(buf);
                 inMessage.setContent(InputStream.class, ins);
                 inMessage.put(IoSessionInputStream.class, ins);
-                
+
                 message.getExchange().setInMessage(inMessage);
                 inMessage.setExchange(message.getExchange());
-                
+
                 Map<String, Object> mp = null;
                 if (multi) {
-                    mp = new HashMap<String, Object>(message.getExchange());
+                    mp = new HashMap<>(message.getExchange());
                 }
-                
+
                 if (async) {
                     WorkQueueManager queuem = bus.getExtension(WorkQueueManager.class);
                     WorkQueue queue = queuem.getNamedWorkQueue("udp-conduit");
@@ -120,7 +127,7 @@ public class UDPConduit extends AbstractConduit {
                     }
                 }
                 if (mp != null) {
-                    Collection<String> s = new ArrayList<String>(message.getExchange().keySet());
+                    Collection<String> s = new ArrayList<>(message.getExchange().keySet());
                     for (String s2 : s) {
                         message.getExchange().remove(s2);
                     }
@@ -128,28 +135,28 @@ public class UDPConduit extends AbstractConduit {
                 }
             } else {
                 IoSessionInputStream ins = message.getExchange().getInMessage().get(IoSessionInputStream.class);
-                ins.setBuffer((IoBuffer)buf);
+                ins.setBuffer(buf);
             }
         }
     }
-    
+
     public void close(Message msg) throws IOException {
         super.close(msg);
-        if (msg.getExchange().isOneWay() 
+        if (msg.getExchange().isOneWay()
             || msg.getExchange().getInMessage() == msg
             || msg.getExchange().getInFaultMessage() == msg) {
             String s = (String)msg.getExchange().get(HOST_PORT);
             ConnectFuture c = msg.getExchange().get(ConnectFuture.class);
             if (s != null && c != null) {
                 c.getSession().removeAttribute(CXF_MESSAGE_ATTR);
-    
+
                 Queue<ConnectFuture> q = connections.get(s);
                 if (q == null) {
                     connections.putIfAbsent(s, new ArrayBlockingQueue<ConnectFuture>(10));
                     q = connections.get(s);
                 }
                 if (!q.offer(c)) {
-                    c.getSession().close(false);
+                    c.getSession().closeOnFlush();
                 }
             }
         }
@@ -158,7 +165,7 @@ public class UDPConduit extends AbstractConduit {
         super.close();
         for (Queue<ConnectFuture> f : connections.values()) {
             for (ConnectFuture cf : f) {
-                cf.getSession().close(false);
+                cf.getSession().closeOnFlush();
             }
         }
         connections.clear();
@@ -188,16 +195,16 @@ public class UDPConduit extends AbstractConduit {
                 sendViaBroadcast(message, null, port);
             } else {
                 InetSocketAddress isa = null;
-                String hp = ""; 
+                String hp = "";
 
                 isa = new InetSocketAddress(uri.getHost(), uri.getPort());
                 hp = uri.getHost() + ":" + uri.getPort();
-                
+
                 if (isa.getAddress().isMulticastAddress()) {
                     sendViaBroadcast(message, isa, isa.getPort());
                     return;
                 }
-                
+
                 Queue<ConnectFuture> q = connections.get(hp);
                 ConnectFuture connFuture = null;
                 if (q != null) {
@@ -220,7 +227,7 @@ public class UDPConduit extends AbstractConduit {
     }
 
     private void sendViaBroadcast(Message message, InetSocketAddress isa, int port) {
-        message.setContent(OutputStream.class, 
+        message.setContent(OutputStream.class,
                            new UDPBroadcastOutputStream(port, isa, message));
 
     }
@@ -238,34 +245,44 @@ public class UDPConduit extends AbstractConduit {
 
         public void close() throws IOException {
             super.close();
-            
+
             try (DatagramSocket socket = multicast != null ? new MulticastSocket(null) : new DatagramSocket()) {
                 socket.setSendBufferSize(this.size());
                 socket.setReceiveBufferSize(64 * 1024);
                 socket.setBroadcast(true);
                 socket.setReuseAddress(true);
+                Object netIntFromMsg = message.getContextualProperty(NETWORK_INTERFACE);
+                NetworkInterface netInf = null;
+                if (netIntFromMsg instanceof String) {
+                    netInf = NetworkInterface.getByName((String)netIntFromMsg);
+                } else if (netIntFromMsg instanceof NetworkInterface) {
+                    netInf = (NetworkInterface)netIntFromMsg;
+                }
                 if (multicast != null) {
                     ((MulticastSocket)socket).setLoopbackMode(false);
+                    if (netInf != null) {
+                        ((MulticastSocket)socket).setNetworkInterface(netInf);
+                    }
                 }
-                
+
                 if (multicast == null) {
-                    Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-                    while (interfaces.hasMoreElements()) {
-                        NetworkInterface networkInterface = interfaces.nextElement();
+                    List<NetworkInterface> interfaces = netInf == null 
+                        ? Collections.list(NetworkInterface.getNetworkInterfaces()) : Collections.singletonList(netInf);
+                    for (NetworkInterface networkInterface : interfaces) {
                         if (!networkInterface.isUp() || networkInterface.isLoopback()) {
-                            continue;  
+                            continue;
                         }
                         for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
                             InetAddress broadcast = interfaceAddress.getBroadcast();
                             if (broadcast == null) {
                                 continue;
                             }
-                            DatagramPacket sendPacket = new DatagramPacket(this.getRawBytes(), 
+                            DatagramPacket sendPacket = new DatagramPacket(this.getRawBytes(),
                                                                            0,
                                                                            this.size(),
-                                                                           broadcast, 
+                                                                           broadcast,
                                                                            port);
-                            
+
                             try {
                                 socket.send(sendPacket);
                             } catch (Exception e) {
@@ -274,18 +291,18 @@ public class UDPConduit extends AbstractConduit {
                         }
                     }
                 } else {
-                    DatagramPacket sendPacket = new DatagramPacket(this.getRawBytes(), 
+                    DatagramPacket sendPacket = new DatagramPacket(this.getRawBytes(),
                                                                    0,
                                                                    this.size(),
                                                                    multicast);
-                    
+
                     try {
                         socket.send(sendPacket);
                     } catch (Exception e) {
                         //ignore
                     }
                 }
-                
+
                 if (!message.getExchange().isOneWay()) {
                     byte bytes[] = new byte[64 * 1024];
                     DatagramPacket p = new DatagramPacket(bytes, bytes.length);
@@ -329,7 +346,7 @@ public class UDPConduit extends AbstractConduit {
         final Message message;
         IoBuffer buffer = IoBuffer.allocate(64 * 1024 - 42); //max size
         boolean closed;
-        
+
         public UDPConduitOutputStream(NioDatagramConnector connector,
                                       ConnectFuture connFuture,
                                       Message m) {
@@ -375,7 +392,7 @@ public class UDPConduit extends AbstractConduit {
             send();
         }
     }
-    
+
     protected Logger getLogger() {
         return LOG;
     }
