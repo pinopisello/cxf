@@ -286,28 +286,23 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxws</artifactId>
-            <version>3.3.3-SNAPSHOT</version>
+            </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId> 
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-transports-http</artifactId>
-            <version>3.3.3-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-management</artifactId>
-            <version>3.3.3-SNAPSHOT</version>
+            <artifactId>cxf-rt-management</artifactId>       
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-features-metrics</artifactId>
-            <version>3.3.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf.xjc-utils</groupId>
             <artifactId>cxf-xjc-runtime</artifactId>
-            <version>${cxf.xjc-utils.version}</version>
-        </dependency>
+            </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
