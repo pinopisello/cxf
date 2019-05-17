@@ -44,9 +44,6 @@ public final class CustomerServiceTester {
         BindingProvider bp = (BindingProvider)customerService;
         Map<String, Object> rc =  bp.getRequestContext();
         rc.put( BindingProvider.SESSION_MAINTAIN_PROPERTY,Boolean.TRUE); 
-        
-        
-        
     }
 
     public void testCustomerService() throws NoSuchCustomerException {
@@ -93,7 +90,7 @@ public final class CustomerServiceTester {
         customerService.updateCustomer(customer);
         
         System.out.println("All calls were successful");
-        
+        */
     }
 
 }

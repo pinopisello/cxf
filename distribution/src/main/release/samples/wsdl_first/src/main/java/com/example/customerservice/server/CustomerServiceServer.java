@@ -30,11 +30,9 @@ public class CustomerServiceServer {
     protected CustomerServiceServer() throws Exception {
         System.out.println("Starting Server");
         CustomerService implementor = new CustomerServiceImpl();
-        EndpointImpl ep = (EndpointImpl)Endpoint.publish("http://localhost:9090/CustomerServicePort",   implementor);
-
-        // Adding logging for incoming and outgoing messages
-        ep.getServer().getEndpoint().getInInterceptors().add(new LoggingInInterceptor());
-        ep.getServer().getEndpoint().getOutInterceptors().add(new LoggingOutInterceptor());
+        Endpoint.publish("http://localhost:9090/CustomerServicePort",
+                                                         implementor,
+                                                         new LoggingFeature());
     }
 
     public static void main(String args[]) throws Exception {

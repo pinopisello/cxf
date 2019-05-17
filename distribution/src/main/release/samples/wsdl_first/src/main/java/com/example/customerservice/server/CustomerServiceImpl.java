@@ -46,12 +46,6 @@ import org.springframework.web.context.WebApplicationContext;
 @Component("CustomerServiceImplementor")
 @Scope(value = WebApplicationContext.SCOPE_REQUEST, proxyMode= ScopedProxyMode.TARGET_CLASS)
 public class CustomerServiceImpl implements CustomerService {
-<<<<<<< HEAD
-    
-     
-=======
-
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
     /**
      * The WebServiceContext can be used to retrieve special attributes like the
      * user principal. Normally it is not needed
@@ -59,7 +53,7 @@ public class CustomerServiceImpl implements CustomerService {
     //@Inject
    // WebServiceContext wsContext;
 
-     
+      
     //@Inject
     pippo pippo;
     
@@ -99,7 +93,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     
     @WebMethod(exclude=false)
-    public String  updateCustomer(Customer customer) {
+    public void  updateCustomer(Customer customer) {
         
        // MessageContext ctx = wsContext.getMessageContext();
        // QName operation = (QName) ctx.get(Message.WSDL_OPERATION);
@@ -112,8 +106,8 @@ public class CustomerServiceImpl implements CustomerService {
         } catch (InterruptedException e) {
             // Nothing to do here
         }
-        //System.out.println("Customer was updated");
-        return "fatto!";
+        System.out.println("Customer was updated");
+        
     }
 
 }

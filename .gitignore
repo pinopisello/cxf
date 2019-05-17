@@ -18,3 +18,12 @@ bin/
 node_modules/
 derby.log
 .pmdruleset.xml
+*.log
+*.lock
+*.fdt
+*.fdx
+*.fnm
+*.frq
+*.nrm
+.metadata
+

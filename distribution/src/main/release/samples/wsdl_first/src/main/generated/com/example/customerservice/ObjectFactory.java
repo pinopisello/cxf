@@ -27,7 +27,6 @@ public class ObjectFactory {
     private final static QName _GetCustomersByName_QNAME = new QName("http://customerservice.example.com/", "getCustomersByName");
     private final static QName _GetCustomersByNameResponse_QNAME = new QName("http://customerservice.example.com/", "getCustomersByNameResponse");
     private final static QName _UpdateCustomer_QNAME = new QName("http://customerservice.example.com/", "updateCustomer");
-    private final static QName _UpdateCustomerResponse_QNAME = new QName("http://customerservice.example.com/", "updateCustomerResponse");
     private final static QName _NoSuchCustomer_QNAME = new QName("http://customerservice.example.com/", "NoSuchCustomer");
 
     /**
@@ -59,14 +58,6 @@ public class ObjectFactory {
      */
     public UpdateCustomer createUpdateCustomer() {
         return new UpdateCustomer();
-    }
-
-    /**
-     * Create an instance of {@link UpdateCustomerResponse }
-     * 
-     */
-    public UpdateCustomerResponse createUpdateCustomerResponse() {
-        return new UpdateCustomerResponse();
     }
 
     /**
@@ -110,15 +101,6 @@ public class ObjectFactory {
     @XmlElementDecl(namespace = "http://customerservice.example.com/", name = "updateCustomer")
     public JAXBElement<UpdateCustomer> createUpdateCustomer(UpdateCustomer value) {
         return new JAXBElement<UpdateCustomer>(_UpdateCustomer_QNAME, UpdateCustomer.class, null, value);
-    }
-
-    /**
-     * Create an instance of {@link JAXBElement }{@code <}{@link UpdateCustomerResponse }{@code >}}
-     * 
-     */
-    @XmlElementDecl(namespace = "http://customerservice.example.com/", name = "updateCustomerResponse")
-    public JAXBElement<UpdateCustomerResponse> createUpdateCustomerResponse(UpdateCustomerResponse value) {
-        return new JAXBElement<UpdateCustomerResponse>(_UpdateCustomerResponse_QNAME, UpdateCustomerResponse.class, null, value);
     }
 
     /**

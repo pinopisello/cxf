@@ -1,6 +1,6 @@
 ============  generare code da src/main/resources/CustomerService.wsdl  in src/main/generated   =======
 
-cd /Users/glocon/Miei/local_git/nike_repo/CXF_forked/cxf/distribution/src/main/release/samples/wsdl_first
+cd   /Users/glocon/Miei/local_git/CXF_forked/cxf/distribution/src/main/release/samples/wsdl_first
 
 mvn generate-sources
 

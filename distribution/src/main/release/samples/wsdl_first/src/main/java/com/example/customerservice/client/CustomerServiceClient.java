@@ -25,16 +25,12 @@ import com.example.customerservice.CustomerService;
 import com.example.customerservice.CustomerServiceService;
 
 public class CustomerServiceClient {
-    static String TOMCAT_URL="http://127.0.0.1:8080/wsdl_first/services/CustomerServicePort?wsdl";
+    //static String TOMCAT_URL="http://127.0.0.1:8080/wsdl_first/services/CustomerServicePort?wsdl";
+    static String TOMCAT_URL="http://localhost:9090/CustomerServicePort?wsdl";
     protected CustomerServiceClient() {
     }
-<<<<<<< HEAD
-    
-    public static void main(String args[]) throws Exception {      
-=======
 
     public static void main(String args[]) throws Exception {
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         CustomerServiceService customerServiceService;
         if (args.length != 0 && args[0].length() != 0) {
             File wsdlFile = new File(args[0]);
@@ -48,8 +44,8 @@ public class CustomerServiceClient {
             customerServiceService = new CustomerServiceService(wsdlURL);
         } else {
             // Create the service client with its default wsdlurl
-            //customerServiceService = new CustomerServiceService();//per jetty
-            customerServiceService = new CustomerServiceService(new URL(TOMCAT_URL));//per tomcat
+            customerServiceService = new CustomerServiceService();//per jetty
+            //customerServiceService = new CustomerServiceService(new URL(TOMCAT_URL));//per tomcat
         }
 
         CustomerService customerService = customerServiceService.getCustomerServicePort();
