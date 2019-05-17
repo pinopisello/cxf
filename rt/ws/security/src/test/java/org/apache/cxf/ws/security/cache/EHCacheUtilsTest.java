@@ -27,10 +27,12 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.wss4j.common.cache.EHCacheManagerHolder;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class EHCacheUtilsTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+public class EHCacheUtilsTest {
     @Test
     public void testUseGlobalManager() {
         Bus bus = BusFactory.getThreadDefaultBus();
@@ -45,7 +47,7 @@ public class EHCacheUtilsTest extends Assert {
         CacheManager manager = EHCacheUtils.getCacheManager(bus,
                 EHCacheManagerHolder.class.getResource("/cxf-test-ehcache.xml"));
 
-        assertFalse(manager.getName().equals("myGlobalConfig"));
+        assertFalse("myGlobalConfig".equals(manager.getName()));
         EHCacheManagerHolder.releaseCacheManger(manager);
         assertEquals(Status.STATUS_SHUTDOWN, manager.getStatus());
 
@@ -66,7 +68,7 @@ public class EHCacheUtilsTest extends Assert {
         manager = EHCacheUtils.getCacheManager(bus,
                 EHCacheManagerHolder.class.getResource("/cxf-test-ehcache.xml"));
 
-        assertFalse(manager.getName().equals("myGlobalConfig"));
+        assertFalse("myGlobalConfig".equals(manager.getName()));
         EHCacheManagerHolder.releaseCacheManger(manager);
         assertEquals(Status.STATUS_SHUTDOWN, manager.getStatus());
     }

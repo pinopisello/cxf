@@ -41,6 +41,8 @@ import org.apache.xml.security.stax.ext.XMLSecurityConstants;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * A test for streaming WS-Security with the Crypto Coverage Checker installed
@@ -71,7 +73,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(XMLSecurityConstants.ENCRYPT);
         properties.setActions(actions);
         properties.setEncryptionUser("myalias");
@@ -121,7 +123,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(WSSConstants.USERNAMETOKEN);
         properties.setActions(actions);
         properties.setUsernameTokenPasswordType(WSSConstants.UsernameTokenPasswordType.PASSWORD_TEXT);
@@ -167,7 +169,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(WSSConstants.USERNAMETOKEN);
         actions.add(XMLSecurityConstants.ENCRYPT);
         properties.setActions(actions);
@@ -222,7 +224,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(WSSConstants.USERNAMETOKEN);
         actions.add(XMLSecurityConstants.SIGNATURE);
         properties.setActions(actions);
@@ -283,7 +285,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(XMLSecurityConstants.SIGNATURE);
         properties.setActions(actions);
         properties.setSignatureUser("myalias");
@@ -327,7 +329,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(WSSConstants.TIMESTAMP);
         properties.setActions(actions);
 
@@ -369,7 +371,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(WSSConstants.TIMESTAMP);
         actions.add(XMLSecurityConstants.SIGNATURE);
         properties.setActions(actions);
@@ -416,7 +418,7 @@ public class StaxCryptoCoverageCheckerTest extends AbstractSecurityTest {
         client.getOutInterceptors().add(new LoggingOutInterceptor());
 
         WSSSecurityProperties properties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(XMLSecurityConstants.ENCRYPT);
         actions.add(XMLSecurityConstants.SIGNATURE);
         properties.setActions(actions);

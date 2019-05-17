@@ -70,7 +70,7 @@ public class JMSConduit extends AbstractConduit implements JMSExchangeSender, Me
     private static final String CORRELATED = JMSConduit.class.getName() + ".correlated";
 
     private JMSConfiguration jmsConfig;
-    private Map<String, Exchange> correlationMap = new ConcurrentHashMap<String, Exchange>();
+    private Map<String, Exchange> correlationMap = new ConcurrentHashMap<>();
     private JMSListenerContainer jmsListener;
     private String conduitId;
     private final AtomicLong messageCount = new AtomicLong(0);
@@ -375,7 +375,7 @@ public class JMSConduit extends AbstractConduit implements JMSExchangeSender, Me
         final WeakReference<JMSConduit> ref;
         BusLifeCycleManager blcm;
         JMSBusLifeCycleListener(JMSConduit c, BusLifeCycleManager b) {
-            ref = new WeakReference<JMSConduit>(c);
+            ref = new WeakReference<>(c);
             blcm = b;
             blcm.registerLifeCycleListener(this);
         }

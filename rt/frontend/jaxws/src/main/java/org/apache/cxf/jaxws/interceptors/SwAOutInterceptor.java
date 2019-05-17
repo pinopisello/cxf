@@ -79,7 +79,7 @@ public class SwAOutInterceptor extends AbstractSoapInterceptor {
     private static final Logger LOG = LogUtils.getL7dLogger(SwAOutInterceptor.class);
 
     private static final Map<String, Method> SWA_REF_METHOD
-        = new ConcurrentHashMap<String, Method>(4, 0.75f, 2);
+        = new ConcurrentHashMap<>(4, 0.75f, 2);
     private static final Set<String> SWA_REF_NO_METHOD
         = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>(4, 0.75f, 2));
 
@@ -165,7 +165,7 @@ public class SwAOutInterceptor extends AbstractSoapInterceptor {
             String ct = (String) mpi.getProperty(Message.CONTENT_TYPE);
 
             String id = new StringBuilder().append(partName)
-                .append("=")
+                .append('=')
                 .append(UUID.randomUUID())
                 .append("@apache.org").toString();
 

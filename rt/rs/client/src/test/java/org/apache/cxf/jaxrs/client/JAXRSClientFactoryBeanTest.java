@@ -45,10 +45,14 @@ import org.apache.cxf.phase.Phase;
 import org.apache.cxf.transport.Conduit;
 import org.apache.cxf.transport.http.HTTPConduit;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class JAXRSClientFactoryBeanTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+public class JAXRSClientFactoryBeanTest {
 
     @Test
     public void testCreateClient() throws Exception {
@@ -196,7 +200,7 @@ public class JAXRSClientFactoryBeanTest extends Assert {
         IProductResource productResourceElement = parts.elementAt("1");
         assertNotNull(productResourceElement);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testInvokePathNull() throws Exception {
         JAXRSClientFactoryBean bean = new JAXRSClientFactoryBean();
@@ -214,7 +218,7 @@ public class JAXRSClientFactoryBeanTest extends Assert {
         BookInterface store = bean.create(BookInterface.class);
         store.getBook("");
     }
-    
+
     @Test
     public void testInvokePathEmptyAllowed() throws Exception {
         Bus bus = BusFactory.newInstance().createBus();
@@ -246,10 +250,6 @@ public class JAXRSClientFactoryBeanTest extends Assert {
         private boolean isInitialized;
 
         TestInterceptor() {
-            this(Phase.PRE_STREAM);
-        }
-
-        TestInterceptor(String s) {
             super(Phase.PRE_STREAM);
             isInitialized = true;
         }

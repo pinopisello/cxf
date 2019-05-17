@@ -21,7 +21,7 @@
     <parent>
         <artifactId>cxf-parent</artifactId>
         <groupId>org.apache.cxf</groupId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -33,7 +33,7 @@
     <url>http://cxf.apache.org</url>
     <properties>
         <cxf.geronimo.config.version>1.0</cxf.geronimo.config.version>
-        <cxf.microprofile.rest.client.version>1.1</cxf.microprofile.rest.client.version>
+        <cxf.microprofile.rest.client.version>1.2.1</cxf.microprofile.rest.client.version>
         <cxf.wiremock.params>--port=8765</cxf.wiremock.params>
         <cxf.weld.se.version>2.4.5.Final</cxf.weld.se.version>
         <cxf.arquillian.weld.container.version>2.0.0.Final</cxf.arquillian.weld.container.version>
@@ -42,7 +42,6 @@
         <cxf.arquillian.version>1.1.14.Final</cxf.arquillian.version>
         <cxf.slf4j.version>1.7.25</cxf.slf4j.version>
         <cxf.commons.logging.version>1.2</cxf.commons.logging.version>
-        <cxf.javax.ws.rs.version>2.1</cxf.javax.ws.rs.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -65,8 +64,8 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
                 <version>${cxf.javax.ws.rs.version}</version>
             </dependency>
             <dependency>
@@ -133,6 +132,8 @@
     </dependencyManagement>
     <modules>
         <module>client/async</module>
+        <module>client/jaxrs</module>
+        <module>client/tracing</module>
         <module>client/weld</module>
     </modules>
 </project>

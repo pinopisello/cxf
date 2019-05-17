@@ -49,6 +49,7 @@ import org.apache.cxf.ws.policy.AssertionInfo;
 import org.apache.cxf.ws.policy.AssertionInfoMap;
 import org.apache.cxf.ws.security.SecurityConstants;
 import org.apache.cxf.ws.security.policy.PolicyUtils;
+import org.apache.wss4j.common.ConfigurationConstants;
 import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.bsp.BSPEnforcer;
 import org.apache.wss4j.common.cache.ReplayCache;
@@ -99,6 +100,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                 && WSS4JConstants.WSSE_NS.equals(child.getNamespaceURI())) {
                 try {
                     boolean bspCompliant = isWsiBSPCompliant(message);
+                    boolean allowNSPasswdTypes = allowNamespaceQualifiedPWDTypes(message);
                     Principal principal = null;
                     Subject subject = null;
                     Object transformedToken = null;
@@ -109,10 +111,10 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                         transformedToken = result.get(WSSecurityEngineResult.TAG_TRANSFORMED_TOKEN);
                         principal = (Principal)result.get(WSSecurityEngineResult.TAG_PRINCIPAL);
                         if (principal == null) {
-                            principal = parseTokenAndCreatePrincipal(child, bspCompliant);
+                            principal = parseTokenAndCreatePrincipal(child, bspCompliant, allowNSPasswdTypes);
                         }
                     } else {
-                        principal = parseTokenAndCreatePrincipal(child, bspCompliant);
+                        principal = parseTokenAndCreatePrincipal(child, bspCompliant, allowNSPasswdTypes);
                         WSS4JTokenConverter.convertToken(message, principal);
                     }
 
@@ -141,9 +143,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                     if (principal instanceof UsernameTokenPrincipal) {
                         storeResults((UsernameTokenPrincipal)principal, subject, message);
                     }
-                } catch (WSSecurityException ex) {
-                    throw new Fault(ex);
-                } catch (Base64DecodingException ex) {
+                } catch (WSSecurityException | Base64DecodingException ex) {
                     throw new Fault(ex);
                 }
             }
@@ -237,11 +237,13 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         }
     }
 
-    protected UsernameTokenPrincipal parseTokenAndCreatePrincipal(Element tokenElement, boolean bspCompliant)
+    protected UsernameTokenPrincipal parseTokenAndCreatePrincipal(Element tokenElement, boolean bspCompliant,
+                                                                  boolean allowNamespaceQualifiedPWDTypes)
         throws WSSecurityException, Base64DecodingException {
         BSPEnforcer bspEnforcer = new org.apache.wss4j.common.bsp.BSPEnforcer(!bspCompliant);
         org.apache.wss4j.dom.message.token.UsernameToken ut =
-            new org.apache.wss4j.dom.message.token.UsernameToken(tokenElement, false, bspEnforcer);
+            new org.apache.wss4j.dom.message.token.UsernameToken(tokenElement, allowNamespaceQualifiedPWDTypes,
+                                                                 bspEnforcer);
 
         WSUsernameTokenPrincipalImpl principal = new WSUsernameTokenPrincipalImpl(ut.getName(), ut.isHashed());
         if (ut.getNonce() != null) {
@@ -259,7 +261,11 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
         // Default to WSI-BSP compliance enabled
         return !("false".equals(bspc) || "0".equals(bspc));
     }
-
+    private boolean allowNamespaceQualifiedPWDTypes(final SoapMessage message) {
+        String allow = (String)message
+            .getContextualProperty(ConfigurationConstants.ALLOW_NAMESPACE_QUALIFIED_PASSWORD_TYPES);
+        return "true".equals(allow) || "1".equals(allow);
+    }
     private boolean isAllowNoPassword(AssertionInfoMap aim) throws WSSecurityException {
         Collection<AssertionInfo> ais =
             PolicyUtils.getAllAssertionsByLocalname(aim, SPConstants.USERNAME_TOKEN);
@@ -339,7 +345,7 @@ public class UsernameTokenInterceptor extends AbstractTokenInterceptor {
                 PolicyUtils.assertPolicy(aim, SPConstants.NO_PASSWORD);
             }
 
-            if (tok.isCreated() && princ.getCreatedTime() == null) {
+            if (tok.isCreated() && (princ == null || princ.getCreatedTime() == null)) {
                 ai.setNotAsserted("No Created Time");
             } else {
                 PolicyUtils.assertPolicy(aim, SP13Constants.CREATED);

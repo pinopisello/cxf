@@ -288,7 +288,7 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
         if (requestedPerms != null && !requestedPerms.isEmpty()) {
             StringBuilder builder = new StringBuilder();
             for (OAuthPermission perm : requestedPerms) {
-                builder.append(perm.getPermission() + " ");
+                builder.append(perm.getPermission()).append(' ');
             }
             secData.setProposedScope(builder.toString().trim());
         }
@@ -389,10 +389,10 @@ public abstract class RedirectionBasedGrantService extends AbstractOAuthService 
 
         // Check if the end user may have had a chance to down-scope the requested scopes
         List<String> requestedScope = OAuthUtils.parseScope(state.getProposedScope());
-        List<String> approvedScope = new LinkedList<String>();
+        List<String> approvedScope = new LinkedList<>();
         for (String rScope : requestedScope) {
             String param = params.getFirst(rScope + "_status");
-            if (param != null && OAuthConstants.AUTHORIZATION_DECISION_ALLOW.equals(param)) {
+            if (OAuthConstants.AUTHORIZATION_DECISION_ALLOW.equals(param)) {
                 approvedScope.add(rScope);
             }
         }

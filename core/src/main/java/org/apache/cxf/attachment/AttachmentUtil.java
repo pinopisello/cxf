@@ -34,6 +34,7 @@ import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -133,13 +134,12 @@ public final class AttachmentUtil {
             String[] mimeTypes = super.getMimeTypes();
             String[] defMimeTypes = DEFAULT_COMMAND_MAP.getMimeTypes();
             Set<String> mimeTypeSet = new HashSet<>();
-            mimeTypeSet.addAll(Arrays.asList(mimeTypes));
-            mimeTypeSet.addAll(Arrays.asList(defMimeTypes));
+            Collections.addAll(mimeTypeSet, mimeTypes);
+            Collections.addAll(mimeTypeSet, defMimeTypes);
             String[] mimeArray = new String[0];
             return mimeTypeSet.toArray(mimeArray);
         }
     }
-
 
 
     private AttachmentUtil() {
@@ -219,8 +219,8 @@ public final class AttachmentUtil {
         //we don't need the cryptographically secure random uuid that
         //UUID.randomUUID() will produce.  Thus, use a faster
         //pseudo-random thing
-        long leastSigBits = 0;
-        long mostSigBits = 0;
+        long leastSigBits;
+        long mostSigBits;
         synchronized (BOUND_RANDOM) {
             mostSigBits = BOUND_RANDOM.nextLong();
             leastSigBits = BOUND_RANDOM.nextLong();
@@ -382,7 +382,7 @@ public final class AttachmentUtil {
 
         for (Map.Entry<String, List<String>> e : headers.entrySet()) {
             String name = e.getKey();
-            if (name.equalsIgnoreCase("Content-Transfer-Encoding")) {
+            if ("Content-Transfer-Encoding".equalsIgnoreCase(name)) {
                 encoding = getHeader(headers, name);
                 if ("binary".equalsIgnoreCase(encoding)) {
                     att.setXOP(true);

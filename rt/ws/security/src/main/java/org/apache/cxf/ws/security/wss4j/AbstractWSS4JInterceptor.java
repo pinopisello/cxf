@@ -99,6 +99,10 @@ public abstract class AbstractWSS4JInterceptor extends WSHandler implements Soap
     }
 
     public Object getProperty(Object msgContext, String key) {
+        if (msgContext == null) {
+            return null;
+        }
+
         Object obj = SecurityUtils.getSecurityPropertyValue(key, (Message)msgContext);
         if (obj == null) {
             obj = getOption(key);
@@ -177,6 +181,12 @@ public abstract class AbstractWSS4JInterceptor extends WSHandler implements Soap
             (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SUBJECT_CERT_CONSTRAINTS, msg);
         if (certConstraints != null) {
             msg.put(ConfigurationConstants.SIG_SUBJECT_CERT_CONSTRAINTS, certConstraints);
+        }
+
+        String certConstraintsSeparator =
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.CERT_CONSTRAINTS_SEPARATOR, msg);
+        if (certConstraintsSeparator != null && !certConstraintsSeparator.isEmpty()) {
+            msg.put(ConfigurationConstants.SIG_CERT_CONSTRAINTS_SEPARATOR, certConstraintsSeparator);
         }
 
         // Now set SAML SenderVouches + Holder Of Key requirements

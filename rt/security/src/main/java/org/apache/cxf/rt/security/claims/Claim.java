@@ -99,7 +99,7 @@ public class Claim implements Serializable, Cloneable {
             localname = "ClaimValue";
         }
         writer.writeStartElement(prefix, localname, namespace);
-        writer.writeAttribute(null, "Uri", claimType.toString());
+        writer.writeAttribute(null, "Uri", claimType);
         if (optional) {
             writer.writeAttribute(null, "Optional", "true");
         }
@@ -119,7 +119,7 @@ public class Claim implements Serializable, Cloneable {
     }
 
     @Override
-    public Claim clone() {
+    public Claim clone() { //NOPMD
         try {
             super.clone(); // Checkstyle requires this call
         } catch (CloneNotSupportedException e) {
@@ -175,14 +175,14 @@ public class Claim implements Serializable, Cloneable {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
+        StringBuilder builder = new StringBuilder(64);
         builder.append("Claim [values=");
         builder.append(values);
         builder.append(", claimType=");
         builder.append(claimType);
         builder.append(", optional=");
         builder.append(optional);
-        builder.append("]");
+        builder.append(']');
         return builder.toString();
     }
 }

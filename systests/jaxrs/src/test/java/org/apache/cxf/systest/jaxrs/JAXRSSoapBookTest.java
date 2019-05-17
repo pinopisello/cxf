@@ -90,6 +90,15 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
     public static final String PORT = BookServerRestSoap.PORT;
 
@@ -239,7 +248,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
         JAXRSClientFactoryBean bean = new JAXRSClientFactoryBean();
         bean.setAddress("http://localhost:" + PORT + "/test/services/rest3/bookstore/fastinfoset2");
         bean.getInInterceptors().add(new FIStaxInInterceptor());
-        JAXBElementProvider<?> p = new JAXBElementProvider<Object>();
+        JAXBElementProvider<?> p = new JAXBElementProvider<>();
         p.setConsumeMediaTypes(Collections.singletonList("application/fastinfoset"));
         bean.setProvider(p);
 
@@ -260,7 +269,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
         bean.setAddress("http://localhost:" + PORT + "/test/services/rest3/bookstore/fastinfoset");
         bean.getOutInterceptors().add(new FIStaxOutInterceptor());
         bean.getInInterceptors().add(new FIStaxInInterceptor());
-        JAXBElementProvider<?> p = new JAXBElementProvider<Object>();
+        JAXBElementProvider<?> p = new JAXBElementProvider<>();
         p.setConsumeMediaTypes(Collections.singletonList("application/fastinfoset"));
         p.setProduceMediaTypes(Collections.singletonList("application/fastinfoset"));
         bean.setProvider(p);
@@ -280,7 +289,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
     @Test
     public void testPostGetBookFastinfosetProxy() throws Exception {
 
-        JAXBElementProvider<Object> p = new JAXBElementProvider<Object>();
+        JAXBElementProvider<Object> p = new JAXBElementProvider<>();
         p.setConsumeMediaTypes(Collections.singletonList("application/fastinfoset"));
         p.setProduceMediaTypes(Collections.singletonList("application/fastinfoset"));
 
@@ -302,7 +311,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
     @Test
     public void testPostGetBookFastinfosetProxyInterceptors() throws Exception {
 
-        JAXBElementProvider<Object> p = new JAXBElementProvider<Object>();
+        JAXBElementProvider<Object> p = new JAXBElementProvider<>();
         p.setConsumeMediaTypes(Collections.singletonList("application/fastinfoset"));
         p.setProduceMediaTypes(Collections.singletonList("application/fastinfoset"));
 
@@ -676,7 +685,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
         String baseAddress = "http://localhost:" + PORT
             + "/test/services/rest/bookstore/books/679/subresource3";
         WebClient wc = WebClient.create(baseAddress);
-        MultivaluedMap<String, Object> map = new MetadataMap<String, Object>();
+        MultivaluedMap<String, Object> map = new MetadataMap<>();
         map.putSingle("id", "679");
         map.add("name", "CXF in Action - ");
         map.add("name", "679");
@@ -900,7 +909,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
             fail("Method should have thrown an exception");
         } catch (Exception e) {
             assertTrue("Out Interceptor not invoked", testFeature.handleMessageOnOutInterceptorCalled());
-            assertTrue("In Interceptor not invoked", !testFeature.handleMessageOnInInterceptorCalled());
+            assertFalse("In Interceptor not invoked", testFeature.handleMessageOnInInterceptorCalled());
             assertTrue("Wrong exception caught",
                        "fault from bad interceptor".equals(e.getCause().getMessage()));
             assertTrue("Client In Fault In Interceptor was invoked",
@@ -929,7 +938,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
                 //In interceptors not called when checked exception thrown from server
                 assertTrue("In Interceptor not invoked", testFeature.handleMessageOnInInterceptorCalled());
             } else {
-                assertTrue("In Interceptor not invoked", !testFeature.handleMessageOnInInterceptorCalled());
+                assertFalse("In Interceptor not invoked", testFeature.handleMessageOnInInterceptorCalled());
             }
             assertTrue("Client In Fault In Interceptor not invoked",
                     testFeature.faultInInterceptorCalled());
@@ -1004,12 +1013,12 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
             try {
                 // input stream will be closed by readBytesFromStream()
                 payload = IOUtils.readBytesFromStream(is);
-                assertTrue("payload was null", payload != null);
+                assertNotNull("payload was null", payload);
                 assertTrue("payload was EMPTY", payload.length > 0);
                 message.setContent(InputStream.class, new ByteArrayInputStream(payload));
             } catch (Exception e) {
                 String error = "Failed to read the stream properly due to " + e.getMessage();
-                assertFalse(error, e != null);
+                assertNotNull(error, e);
             }
         }
 
@@ -1059,12 +1068,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
         private boolean handleMessageCalled;
 
         public TestInInterceptor() {
-            this(Phase.PRE_STREAM);
-        }
-
-        public TestInInterceptor(String s) {
             super(Phase.PRE_STREAM);
-
         }
 
         public void handleMessage(Message message) throws Fault {
@@ -1084,13 +1088,8 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
 
 
         public TestOutInterceptor(boolean isBadOutInterceptor) {
-            this(Phase.PRE_MARSHAL);
-            this.isBadOutInterceptor = isBadOutInterceptor;
-        }
-
-        public TestOutInterceptor(String s) {
             super(Phase.PRE_MARSHAL);
-
+            this.isBadOutInterceptor = isBadOutInterceptor;
         }
 
         public void handleMessage(Message message) throws Fault {
@@ -1110,12 +1109,7 @@ public class JAXRSSoapBookTest extends AbstractBusClientServerTestBase {
     public class TestFaultInInterceptor extends AbstractPhaseInterceptor<Message> {
         private boolean handleMessageCalled;
         public TestFaultInInterceptor() {
-            this(Phase.PRE_STREAM);
-        }
-
-        public TestFaultInInterceptor(String s) {
             super(Phase.PRE_STREAM);
-
         }
 
         public void handleMessage(Message message) throws Fault {

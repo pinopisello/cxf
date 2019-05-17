@@ -87,10 +87,16 @@ import org.apache.wss4j.common.saml.builder.SAML1Constants;
 import org.apache.wss4j.common.saml.builder.SAML2Constants;
 import org.apache.wss4j.common.util.DOM2Writer;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+
 /**
  * Some unit tests for the issue operation to issue SAML tokens with Claims information.
  */
-public class IssueSamlClaimsUnitTest extends org.junit.Assert {
+public class IssueSamlClaimsUnitTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -340,7 +346,7 @@ public class IssueSamlClaimsUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
         return securityTokenResponse;
     }
 
@@ -928,7 +934,7 @@ public class IssueSamlClaimsUnitTest extends org.junit.Assert {
         providerParameters.setRequestedSecondaryClaims(requestedClaims);
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return (Element)providerResponse.getToken();

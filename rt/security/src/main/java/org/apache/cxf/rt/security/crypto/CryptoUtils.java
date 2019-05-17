@@ -56,6 +56,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.apache.cxf.common.classloader.ClassLoaderUtils;
 import org.apache.cxf.common.util.Base64UrlUtility;
@@ -485,9 +486,18 @@ public final class CryptoUtils {
                                        String keyAlgo,
                                        Key wrapperKey,
                                        KeyProperties wrapperKeyProps)  throws SecurityException {
-        return wrapSecretKey(new SecretKeySpec(keyBytes, convertJCECipherToSecretKeyName(keyAlgo)),
+        SecretKeySpec secretKey = new SecretKeySpec(keyBytes, convertJCECipherToSecretKeyName(keyAlgo));
+        byte[] encryptedKey = wrapSecretKey(secretKey,
                              wrapperKey,
                              wrapperKeyProps);
+
+        // Here we're finished with the SecretKey we created, so we can destroy it
+        try {
+            secretKey.destroy();
+        } catch (DestroyFailedException e) {
+            // ignore
+        }
+        return encryptedKey;
     }
 
     public static byte[] wrapSecretKey(Key secretKey,

@@ -139,7 +139,7 @@ public class UriInfoImpl implements UriInfo {
     }
 
     public MultivaluedMap<String, String> getPathParameters(boolean decode) {
-        MetadataMap<String, String> values = new MetadataMap<String, String>();
+        MetadataMap<String, String> values = new MetadataMap<>();
         if (templateParams == null) {
             return values;
         }
@@ -155,7 +155,7 @@ public class UriInfoImpl implements UriInfo {
 
     public List<Object> getMatchedResources() {
         if (stack != null) {
-            List<Object> resources = new LinkedList<Object>();
+            List<Object> resources = new ArrayList<>(stack.size());
             for (MethodInvocationInfo invocation : stack) {
                 resources.add(0, invocation.getRealClass());
             }
@@ -172,7 +172,7 @@ public class UriInfoImpl implements UriInfo {
     public List<String> getMatchedURIs(boolean decode) {
         if (stack != null) {
             List<String> objects = new ArrayList<>();
-            List<String> uris = new LinkedList<String>();
+            List<String> uris = new LinkedList<>();
             StringBuilder sumPath = new StringBuilder("");
             for (MethodInvocationInfo invocation : stack) {
                 List<String> templateObjects = invocation.getTemplateValues();
@@ -192,7 +192,7 @@ public class UriInfoImpl implements UriInfo {
                 if (paths[1] != null && paths[1].getValue().length() > 1) {
                     for (URITemplate t : paths) {
                         if (t != null) {
-                            sumPath.append("/").append(t.getValue());
+                            sumPath.append('/').append(t.getValue());
                         }
                     }
                     objects.addAll(templateObjects);

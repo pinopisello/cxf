@@ -185,7 +185,7 @@ public class ParameterProcessor extends AbstractProcessor {
         if (StringUtils.isEmpty(value)) {
             return false;
         }
-        return Boolean.valueOf(value).booleanValue();
+        return Boolean.parseBoolean(value);
     }
 
     private int countOutOfBandHeader(MessageInfo message) {
@@ -563,7 +563,7 @@ public class ParameterProcessor extends AbstractProcessor {
         fullJavaName = this.dataBinding.getWrappedElementType(part.getElementQName(), element);
         simpleJavaName = fullJavaName;
 
-        int index = fullJavaName.lastIndexOf(".");
+        int index = fullJavaName.lastIndexOf('.');
 
         if (index > -1) {
             simpleJavaName = fullJavaName.substring(index);
@@ -675,7 +675,7 @@ public class ParameterProcessor extends AbstractProcessor {
             outputPartsMap = outputMessage.getMessagePartsMap();
             outputParts = outputPartsMap.values();
         } else {
-            outputPartsMap = new LinkedHashMap<QName, MessagePartInfo>();
+            outputPartsMap = new LinkedHashMap<>();
             outputParts = new ArrayList<>();
         }
 
@@ -701,7 +701,7 @@ public class ParameterProcessor extends AbstractProcessor {
 
             if (outputUnlistedParts.size() == 1) {
                 processReturn(method, outputUnlistedParts.get(0));
-                outputPartsMap.remove((Object)outputUnlistedParts.get(0));
+                outputPartsMap.remove(outputUnlistedParts.get(0));
                 outputUnlistedParts.clear();
             } else {
                 processReturn(method, null);

@@ -163,13 +163,13 @@ public class SimpleBatchSTSClient implements Configurable, InterceptorProvider {
     protected Map<String, Object> ctx = new HashMap<>();
 
     protected List<Interceptor<? extends Message>> in
-        = new ModCountCopyOnWriteArrayList<Interceptor<? extends Message>>();
+        = new ModCountCopyOnWriteArrayList<>();
     protected List<Interceptor<? extends Message>> out
-        = new ModCountCopyOnWriteArrayList<Interceptor<? extends Message>>();
+        = new ModCountCopyOnWriteArrayList<>();
     protected List<Interceptor<? extends Message>> outFault
-        = new ModCountCopyOnWriteArrayList<Interceptor<? extends Message>>();
+        = new ModCountCopyOnWriteArrayList<>();
     protected List<Interceptor<? extends Message>> inFault
-        = new ModCountCopyOnWriteArrayList<Interceptor<? extends Message>>();
+        = new ModCountCopyOnWriteArrayList<>();
     protected List<AbstractFeature> features;
 
     public SimpleBatchSTSClient(Bus b) {
@@ -451,7 +451,7 @@ public class SimpleBatchSTSClient implements Configurable, InterceptorProvider {
     protected String findMEXLocation(Element ref) {
         Element el = DOMUtils.getFirstElement(ref);
         while (el != null) {
-            if (el.getLocalName().equals("Address")
+            if ("Address".equals(el.getLocalName())
                 && VersionTransformer.isSupported(el.getNamespaceURI())
                 && "MetadataReference".equals(ref.getLocalName())) {
                 return DOMUtils.getContent(el);
@@ -559,7 +559,7 @@ public class SimpleBatchSTSClient implements Configurable, InterceptorProvider {
         }
         writer.writeEndElement();
 
-        Object obj[] = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
+        Object[] obj = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
 
         Element responseCollection = getDocumentElement((DOMSource)obj[0]);
         Node child = responseCollection.getFirstChild();
@@ -609,7 +609,7 @@ public class SimpleBatchSTSClient implements Configurable, InterceptorProvider {
         }
         writer.writeEndElement();
 
-        Object obj[] = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
+        Object[] obj = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
 
         Element responseCollection = getDocumentElement((DOMSource)obj[0]);
         Node child = responseCollection.getFirstChild();
@@ -788,7 +788,7 @@ public class SimpleBatchSTSClient implements Configurable, InterceptorProvider {
         CryptoType cryptoType = new CryptoType(CryptoType.TYPE.ALIAS);
         cryptoType.setAlias(alias);
 
-        X509Certificate certs[] = crypto.getX509Certificates(cryptoType);
+        X509Certificate[] certs = crypto.getX509Certificates(cryptoType);
         if (certs == null || certs.length == 0) {
             throw new Fault("Could not get X509Certificate for alias " + alias, LOG);
         }

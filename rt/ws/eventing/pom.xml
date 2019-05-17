@@ -9,7 +9,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
@@ -17,7 +17,8 @@
         <cxf.osgi.import>
             javax.xml.soap;version="${cxf.osgi.saaj.version}",
             javax.xml.ws*;version="${cxf.osgi.javax.xml.ws.version}",
-            javax.xml.bind*;version="${cxf.osgi.javax.bind.version}"
+            javax.xml.bind*;version="${cxf.osgi.javax.bind.version}",
+            javax.annotation*;version="${cxf.osgi.javax.annotation.version}"
         </cxf.osgi.import>
     </properties>
     <dependencies>

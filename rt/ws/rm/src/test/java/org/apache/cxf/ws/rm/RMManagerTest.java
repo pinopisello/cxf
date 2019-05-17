@@ -67,11 +67,18 @@ import org.apache.cxf.ws.rm.v200702.Identifier;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class RMManagerTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class RMManagerTest {
 
     private static final String MULTIPART_TYPE = "multipart/related; type=\"text/xml\";"
         + " boundary=\"uuid:74b6a245-2e17-40eb-a86c-308664e18460\"; start=\"<root."
@@ -316,7 +323,7 @@ public class RMManagerTest extends Assert {
         Message message = control.createMock(Message.class);
         Exchange exchange = control.createMock(Exchange.class);
         EasyMock.expect(message.getExchange()).andReturn(exchange).anyTimes();
-        
+
         RMConfiguration config = new RMConfiguration();
         config.setRMNamespace(RM10Constants.NAMESPACE_URI);
         config.setRM10AddressingNamespace(RM10Constants.NAMESPACE_URI);
@@ -428,7 +435,7 @@ public class RMManagerTest extends Assert {
                              EasyMock.eq(false),
                              EasyMock.isA(ProtocolVariation.class),
                              EasyMock.isA(Exchange.class),
-                             CastUtils.cast(EasyMock.isA(HashMap.class), String.class, Object.class));
+                             CastUtils.cast(EasyMock.isA(HashMap.class), String.class, Object.class)); //NOPMD
         EasyMock.expectLastCall().andReturn(createResponse);
         Servant servant = control.createMock(Servant.class);
         EasyMock.expect(rme.getServant()).andReturn(servant);
@@ -769,7 +776,7 @@ public class RMManagerTest extends Assert {
         assertNotNull(id1.getValue());
         Identifier id2 = generator.generateSequenceIdentifier();
         assertTrue(id1 != id2);
-        assertTrue(!id1.getValue().equals(id2.getValue()));
+        assertFalse(id1.getValue().equals(id2.getValue()));
         control.replay();
     }
 

@@ -33,16 +33,17 @@ import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
 
 import org.easymock.EasyMock;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.fail;
 
-public class AnnotationProcessorTest extends Assert {
+
+public class AnnotationProcessorTest {
 
     AnnotatedGreeterImpl greeterImpl = new AnnotatedGreeterImpl();
     AnnotationProcessor processor = new AnnotationProcessor(greeterImpl);
-    List<Class<? extends Annotation>> expectedAnnotations = new ArrayList<Class<? extends Annotation>>();
+    List<Class<? extends Annotation>> expectedAnnotations = new ArrayList<>();
 
     AnnotationVisitor visitor = EasyMock.createMock(AnnotationVisitor.class);
 
@@ -145,4 +146,3 @@ public class AnnotationProcessorTest extends Assert {
         EasyMock.verify(v);
     }
 }
-

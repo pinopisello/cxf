@@ -27,12 +27,16 @@
   <parent>
     <groupId>org.apache.cxf</groupId>
     <artifactId>cxf-parent</artifactId>
-    <version>3.3.0-SNAPSHOT</version>
+    <version>3.3.3-SNAPSHOT</version>
     <relativePath>../../../../../parent/pom.xml</relativePath>
   </parent>
   <properties>
     <compilerArguments>-Aopenjpa.source=7 -Aopenjpa.metamodel=true</compilerArguments>
     <cxf.module.name>org.apache.cxf.rs.security.sso.oidc</cxf.module.name>
+    <cxf.osgi.import>
+        javax.annotation*;version="${cxf.osgi.javax.annotation.version}",
+        *
+    </cxf.osgi.import>
   </properties>
   <dependencies>
     <dependency>
@@ -80,10 +84,16 @@
       <artifactId>hibernate-entitymanager</artifactId>
       <version>${cxf.hibernate.em.version}</version>
       <scope>test</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+            </exclusion>
+        </exclusions> 
     </dependency>
     <dependency>
       <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-ehcache</artifactId>
+      <artifactId>hibernate-jcache</artifactId>
       <version>${cxf.hibernate.em.version}</version>
       <scope>test</scope>
     </dependency>
@@ -143,13 +153,18 @@
       <version>1.0.2.Final</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.ehcache</groupId>
+      <artifactId>ehcache</artifactId>
+      <version>${cxf.ehcache3.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
       <plugin>
         <groupId>org.bsc.maven</groupId>
         <artifactId>maven-processor-plugin</artifactId>
-        <version>3.2.0</version>
         <executions>
           <execution>
             <id>process</id>

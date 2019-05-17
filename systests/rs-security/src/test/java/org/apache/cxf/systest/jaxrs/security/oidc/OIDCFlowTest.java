@@ -59,26 +59,27 @@ import org.apache.cxf.testutil.common.TestUtil;
 import org.apache.xml.security.utils.ClassLoaderUtils;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Some unit tests to test the various flows in OpenID Connect. The tests are run multiple times
  * with different OAuthDataProvider implementations:
- * a) PORT - EhCache
- * b) JWT_PORT - EhCache with useJwtFormatForAccessTokens enabled
- * c) JCACHE_PORT - JCache
- * d) JWT_JCACHE_PORT - JCache with useJwtFormatForAccessTokens enabled
- * e) JPA_PORT - JPA provider
- * f) JWT_NON_PERSIST_JCACHE_PORT-  JCache with useJwtFormatForAccessTokens + !persistJwtEncoding
+ * a) JCACHE_PORT - JCache
+ * b) JWT_JCACHE_PORT - JCache with useJwtFormatForAccessTokens enabled
+ * c) JPA_PORT - JPA provider
+ * d) JWT_NON_PERSIST_JCACHE_PORT-  JCache with useJwtFormatForAccessTokens + !persistJwtEncoding
  */
 @RunWith(value = org.junit.runners.Parameterized.class)
 public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
-    static final String PORT = TestUtil.getPortNumber("jaxrs-oidc");
-    static final String JWT_PORT = TestUtil.getPortNumber("jaxrs-oidc-jwt");
     static final String JCACHE_PORT = TestUtil.getPortNumber("jaxrs-oidc-jcache");
     static final String JWT_JCACHE_PORT = TestUtil.getPortNumber("jaxrs-oidc-jcache-jwt");
     static final String JPA_PORT = TestUtil.getPortNumber("jaxrs-oidc-jpa");
@@ -93,18 +94,6 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
     @BeforeClass
     public static void startServers() throws Exception {
-        assertTrue(
-                "Server failed to launch",
-                // run the server in the same process
-                // set this to false to fork
-                launchServer(OIDCServer.class, true)
-        );
-        assertTrue(
-                   "Server failed to launch",
-                   // run the server in the same process
-                   // set this to false to fork
-                   launchServer(OIDCServerJWT.class, true)
-        );
         assertTrue(
                    "Server failed to launch",
                    // run the server in the same process
@@ -139,7 +128,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
     @Parameters(name = "{0}")
     public static Collection<String> data() {
 
-        return Arrays.asList(PORT, JWT_PORT, JCACHE_PORT, JWT_JCACHE_PORT, JPA_PORT, JWT_NON_PERSIST_JCACHE_PORT);
+        return Arrays.asList(JCACHE_PORT, JWT_JCACHE_PORT, JPA_PORT, JWT_NON_PERSIST_JCACHE_PORT);
     }
 
     @org.junit.Test
@@ -519,8 +508,8 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
         OidcUtils.validateAccessTokenHash(accessToken, jwt, true);
 
         if (isAccessTokenInJWTFormat()) {
@@ -588,8 +577,8 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
         OidcUtils.validateAccessTokenHash(accessToken, jwt, true);
 
         if (isAccessTokenInJWTFormat()) {
@@ -652,8 +641,8 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
+        assertNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.NONCE_CLAIM));
     }
 
     @org.junit.Test
@@ -690,7 +679,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         // check the code hash is returned from the implicit authorization endpoint
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
 
         // Now get the access token
         client = WebClient.create(address, OAuth2TestUtils.setupProviders(),
@@ -711,7 +700,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         // check the code hash is returned from the token endpoint
         jwtConsumer = new JwsJwtCompactConsumer(idToken);
         jwt = jwtConsumer.getJwtToken();
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
 
         if (isAccessTokenInJWTFormat()) {
             validateAccessToken(accessToken.getTokenKey());
@@ -774,7 +763,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         // check the code hash is returned from the token endpoint
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
         // returning c_hash in the id_token returned after exchanging the code is optional
-        Assert.assertNull(jwtConsumer.getJwtClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
+        assertNull(jwtConsumer.getJwtClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
 
         if (isAccessTokenInJWTFormat()) {
             validateAccessToken(accessToken.getTokenKey());
@@ -815,7 +804,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         // check the code hash is returned from the implicit authorization endpoint
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(idToken);
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
 
         // Check Access Token
         String accessToken = OAuth2TestUtils.getSubstring(location, "access_token");
@@ -823,9 +812,9 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
         jwtConsumer = new JwsJwtCompactConsumer(idToken);
         jwt = jwtConsumer.getJwtToken();
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM));
         OidcUtils.validateAccessTokenHash(accessToken, jwt, true);
-        Assert.assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
+        assertNotNull(jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM));
 
         if (isAccessTokenInJWTFormat()) {
             validateAccessToken(accessToken);
@@ -966,7 +955,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         Response response = client.get();
         JsonWebKeys jsonWebKeys = response.readEntity(JsonWebKeys.class);
 
-        Assert.assertTrue(jwtConsumer.verifySignatureWith(jsonWebKeys.getKeys().get(0),
+        assertTrue(jwtConsumer.verifySignatureWith(jsonWebKeys.getKeys().get(0),
                                                           SignatureAlgorithm.RS256));
     }
 
@@ -976,22 +965,22 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         JwtToken jwt = jwtConsumer.getJwtToken();
 
         // Validate claims
-        Assert.assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
-        Assert.assertEquals("OIDC IdP", jwt.getClaim(JwtConstants.CLAIM_ISSUER));
-        Assert.assertEquals("consumer-id", jwt.getClaim(JwtConstants.CLAIM_AUDIENCE));
-        Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_EXPIRY));
-        Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_ISSUED_AT));
+        assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
+        assertEquals("OIDC IdP", jwt.getClaim(JwtConstants.CLAIM_ISSUER));
+        assertEquals("consumer-id", jwt.getClaim(JwtConstants.CLAIM_AUDIENCE));
+        assertNotNull(jwt.getClaim(JwtConstants.CLAIM_EXPIRY));
+        assertNotNull(jwt.getClaim(JwtConstants.CLAIM_ISSUED_AT));
         if (nonce != null) {
-            Assert.assertEquals(nonce, jwt.getClaim(IdToken.NONCE_CLAIM));
+            assertEquals(nonce, jwt.getClaim(IdToken.NONCE_CLAIM));
         }
 
         KeyStore keystore = KeyStore.getInstance("JKS");
         keystore.load(ClassLoaderUtils.getResourceAsStream("keys/alice.jks", this.getClass()),
                       "password".toCharArray());
         Certificate cert = keystore.getCertificate("alice");
-        Assert.assertNotNull(cert);
+        assertNotNull(cert);
 
-        Assert.assertTrue(jwtConsumer.verifySignatureWith((X509Certificate)cert,
+        assertTrue(jwtConsumer.verifySignatureWith((X509Certificate)cert,
                                                           SignatureAlgorithm.RS256));
     }
 
@@ -1001,69 +990,31 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
         JwtToken jwt = jwtConsumer.getJwtToken();
 
         // Validate claims
-        Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
-        Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_EXPIRY));
-        Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_ISSUED_AT));
+        assertNotNull(jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
+        assertNotNull(jwt.getClaim(JwtConstants.CLAIM_EXPIRY));
+        assertNotNull(jwt.getClaim(JwtConstants.CLAIM_ISSUED_AT));
 
         KeyStore keystore = KeyStore.getInstance("JKS");
         keystore.load(ClassLoaderUtils.getResourceAsStream("keys/alice.jks", this.getClass()),
                       "password".toCharArray());
         Certificate cert = keystore.getCertificate("alice");
-        Assert.assertNotNull(cert);
+        assertNotNull(cert);
 
-        Assert.assertTrue(jwtConsumer.verifySignatureWith((X509Certificate)cert,
+        assertTrue(jwtConsumer.verifySignatureWith((X509Certificate)cert,
                                                           SignatureAlgorithm.RS256));
     }
 
     private boolean isAccessTokenInJWTFormat() {
-        return JWT_PORT.equals(port) || JWT_JCACHE_PORT.equals(port) || JWT_NON_PERSIST_JCACHE_PORT.equals(port);
+        return JWT_JCACHE_PORT.equals(port) || JWT_NON_PERSIST_JCACHE_PORT.equals(port);
     }
 
     //
     // Server implementations
     //
 
-    public static class OIDCServer extends AbstractBusTestServerBase {
-        private static final URL SERVER_CONFIG_FILE =
-            OIDCServer.class.getResource("oidc-server.xml");
-
-        protected void run() {
-            SpringBusFactory bf = new SpringBusFactory();
-            Bus springBus = bf.createBus(SERVER_CONFIG_FILE);
-            BusFactory.setDefaultBus(springBus);
-            setBus(springBus);
-
-            try {
-                new OIDCServer();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
-    public static class OIDCServerJWT extends AbstractBusTestServerBase {
-        private static final URL SERVER_CONFIG_FILE =
-            OIDCServerJWT.class.getResource("oidc-server-jwt.xml");
-
-        protected void run() {
-            SpringBusFactory bf = new SpringBusFactory();
-            Bus springBus = bf.createBus(SERVER_CONFIG_FILE);
-            BusFactory.setDefaultBus(springBus);
-            setBus(springBus);
-
-            try {
-                new OIDCServerJWT();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
     public static class OIDCServerJCache extends AbstractBusTestServerBase {
         private static final URL SERVER_CONFIG_FILE =
-            OIDCServer.class.getResource("oidc-server-jcache.xml");
+            OIDCServerJCache.class.getResource("oidc-server-jcache.xml");
 
         protected void run() {
             SpringBusFactory bf = new SpringBusFactory();
@@ -1082,7 +1033,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
     public static class OIDCServerJCacheJWT extends AbstractBusTestServerBase {
         private static final URL SERVER_CONFIG_FILE =
-            OIDCServerJWT.class.getResource("oidc-server-jcache-jwt.xml");
+            OIDCServerJCacheJWT.class.getResource("oidc-server-jcache-jwt.xml");
 
         protected void run() {
             SpringBusFactory bf = new SpringBusFactory();
@@ -1101,7 +1052,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
     public static class OIDCServerJPA extends AbstractBusTestServerBase {
         private static final URL SERVER_CONFIG_FILE =
-            OIDCServer.class.getResource("oidc-server-jpa.xml");
+            OIDCServerJPA.class.getResource("oidc-server-jpa.xml");
 
         protected void run() {
             SpringBusFactory bf = new SpringBusFactory();
@@ -1120,7 +1071,7 @@ public class OIDCFlowTest extends AbstractBusClientServerTestBase {
 
     public static class OIDCServerJCacheJWTNonPersist extends AbstractBusTestServerBase {
         private static final URL SERVER_CONFIG_FILE =
-            OIDCServerJWT.class.getResource("oidc-server-jcache-jwt-non-persist.xml");
+            OIDCServerJCacheJWTNonPersist.class.getResource("oidc-server-jcache-jwt-non-persist.xml");
 
         protected void run() {
             SpringBusFactory bf = new SpringBusFactory();

@@ -71,10 +71,13 @@ import org.apache.wss4j.common.util.DateUtil;
 
 import org.junit.BeforeClass;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Some unit tests for the renew operation to renew SAML tokens.
  */
-public class RenewSamlUnitTest extends org.junit.Assert {
+public class RenewSamlUnitTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -502,7 +505,7 @@ public class RenewSamlUnitTest extends org.junit.Assert {
 
         if (ttlMs != 0) {
             Lifetime lifetime = new Lifetime();
-            
+
             Instant creationTime = Instant.now();
             Instant expirationTime = creationTime.plusNanos(ttlMs * 1000000L);
 
@@ -513,7 +516,7 @@ public class RenewSamlUnitTest extends org.junit.Assert {
         }
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return (Element)providerResponse.getToken();

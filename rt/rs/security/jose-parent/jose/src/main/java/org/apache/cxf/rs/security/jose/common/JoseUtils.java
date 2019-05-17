@@ -24,6 +24,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -32,7 +33,6 @@ import org.apache.cxf.Bus;
 import org.apache.cxf.common.classloader.ClassLoaderUtils;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.PropertyUtils;
-import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.jaxrs.json.basic.JsonMapObjectReaderWriter;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
@@ -53,7 +53,7 @@ public final class JoseUtils {
         if (compactContent.startsWith("\"") && compactContent.endsWith("\"")) {
             compactContent = compactContent.substring(1, compactContent.length() - 1);
         }
-        return StringUtils.split(compactContent, "\\.");
+        return compactContent.split("\\.");
     }
     public static void setJoseContextProperty(JoseHeaders headers) {
         Message message = PhaseInterceptorChain.getCurrentMessage();
@@ -78,12 +78,7 @@ public final class JoseUtils {
         Message message = PhaseInterceptorChain.getCurrentMessage();
         Object requestContext = message.get(JoseConstants.JOSE_CONTEXT_PROPERTY);
         Object headerContext = headers.getHeader(JoseConstants.JOSE_CONTEXT_PROPERTY);
-        if (requestContext == null && headerContext == null) {
-            return;
-        }
-        if (requestContext == null && headerContext != null
-            || requestContext != null && headerContext == null
-            || !requestContext.equals(headerContext)) {
+        if (!Objects.equals(requestContext, headerContext)) {
             LOG.warning("Invalid JOSE context property");
             throw new JoseException();
         }
@@ -145,6 +140,18 @@ public final class JoseUtils {
             LOG.info(thePrefix + " Headers: \r\n" + writer.toJson(headers));
         }
     }
+
+    public static boolean checkBooleanProperty(JoseHeaders headers, Properties props, Message m,
+                                               String propertyName) {
+        if (headers == null) {
+            return false;
+        }
+        if (props.containsKey(propertyName)) {
+            return PropertyUtils.isTrue(props.get(propertyName));
+        }
+        return MessageUtils.getContextualBoolean(m, propertyName, false);
+    }
+
     //
     // <Start> Copied from JAX-RS RT FRONTEND ResourceUtils
     //
@@ -205,17 +212,6 @@ public final class JoseUtils {
         return props;
     }
 
-    public static boolean checkBooleanProperty(JoseHeaders headers, Properties props, Message m,
-                                                String propertyName) {
-        if (headers == null) {
-            return false;
-        }
-        if (props.containsKey(propertyName)) {
-            return PropertyUtils.isTrue(props.get(propertyName));
-        }
-        return MessageUtils.getContextualBoolean(m, propertyName, false);
-    }
-    
     //
     // <End> Copied from JAX-RS RT FRONTEND ResourceUtils
     //

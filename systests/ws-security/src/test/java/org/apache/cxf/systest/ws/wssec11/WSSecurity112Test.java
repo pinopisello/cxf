@@ -29,12 +29,14 @@ import org.apache.cxf.systest.ws.wssec11.server.Server12;
 import org.apache.cxf.systest.ws.wssec11.server.Server12Restricted;
 import org.apache.cxf.systest.ws.wssec11.server.StaxServer12;
 import org.apache.cxf.systest.ws.wssec11.server.StaxServer12Restricted;
+import org.apache.cxf.test.TestUtilities;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class runs the second half of the tests, as having all in
@@ -45,7 +47,7 @@ public class WSSecurity112Test extends WSSecurity11Common {
     private static boolean unrestrictedPoliciesInstalled;
 
     static {
-        unrestrictedPoliciesInstalled = SecurityTestUtil.checkUnrestrictedPoliciesInstalled();
+        unrestrictedPoliciesInstalled = TestUtilities.checkUnrestrictedPoliciesInstalled();
     };
 
     final TestParam test;
@@ -85,11 +87,6 @@ public class WSSecurity112Test extends WSSecurity11Common {
                        launchServer(StaxServer12.class, true)
             );
         } else {
-            if (WSSecurity11Common.isIBMJDK16()) {
-                System.out.println("Not running as there is a problem with 1.6 jdk and restricted jars");
-                return;
-            }
-
             assertTrue(
                     "Server failed to launch",
                     // run the server in the same process
@@ -151,8 +148,7 @@ public class WSSecurity112Test extends WSSecurity11Common {
 
     @Test
     public void testClientServer() throws IOException {
-        if ((!unrestrictedPoliciesInstalled)
-                && (WSSecurity11Common.isIBMJDK16())) {
+        if (!unrestrictedPoliciesInstalled) {
             System.out.println("Not running as there is a problem with 1.6 jdk and restricted jars");
             return;
         }

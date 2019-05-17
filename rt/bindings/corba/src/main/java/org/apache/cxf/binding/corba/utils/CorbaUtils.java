@@ -89,7 +89,7 @@ public final class CorbaUtils {
         }
     }
     private static final ThreadLocal<LastExport> LAST_EXPORT_CACHE =
-        new ThreadLocal<LastExport>();
+        new ThreadLocal<>();
 
     private CorbaUtils() {
         //utility class
@@ -101,7 +101,7 @@ public final class CorbaUtils {
     }
 
     public static TypeCode getTypeCode(ORB orb, QName type, CorbaTypeMap typeMap) {
-        Stack<QName> seenTypes = new Stack<QName>();
+        Stack<QName> seenTypes = new Stack<>();
         return getTypeCode(orb, type, null, typeMap, seenTypes);
     }
 
@@ -116,7 +116,7 @@ public final class CorbaUtils {
                                        QName type,
                                        CorbaType obj,
                                        CorbaTypeMap typeMap) {
-        Stack<QName> seenTypes = new Stack<QName>();
+        Stack<QName> seenTypes = new Stack<>();
         return getTypeCode(orb, type, obj, typeMap, seenTypes);
     }
 
@@ -230,7 +230,7 @@ public final class CorbaUtils {
             } else if (obj instanceof org.apache.cxf.binding.corba.wsdl.Object) {
                 org.apache.cxf.binding.corba.wsdl.Object objType =
                     (org.apache.cxf.binding.corba.wsdl.Object)obj;
-                if (objType.getName().equals("CORBA.Object")) {
+                if ("CORBA.Object".equals(objType.getName())) {
                     tc = orb.create_interface_tc(objType.getRepositoryID(), "Object");
                 } else {
                     tc = orb.create_interface_tc(objType.getRepositoryID(),
@@ -305,7 +305,7 @@ public final class CorbaUtils {
         seenTypes.push(new QName(unionType.getName()));
 
         TypeCode discTC = getTypeCode(orb, unionType.getDiscriminator(), typeMap, seenTypes);
-        Map<String, UnionMember> members = new LinkedHashMap<String, UnionMember>();
+        Map<String, UnionMember> members = new LinkedHashMap<>();
         List<Unionbranch> branches = unionType.getUnionbranch();
         for (Iterator<Unionbranch> branchIter = branches.iterator(); branchIter.hasNext();) {
             Unionbranch branch = branchIter.next();
@@ -383,7 +383,7 @@ public final class CorbaUtils {
     }
 
     public static String getTypeCodeName(String name) {
-        int pos = name.lastIndexOf(".");
+        int pos = name.lastIndexOf('.');
         if (pos != -1) {
             name = name.substring(pos + 1);
         }
@@ -436,7 +436,7 @@ public final class CorbaUtils {
                 // There can be some instances where a prefix is added to the name by the tool
                 // (e.g. Object Reference Names).  Since the name is read as a string, this
                 // prefix is added to the types name.  Remove this as it is not needed.
-                int pos = name.lastIndexOf(":");
+                int pos = name.lastIndexOf(':');
                 if (pos != -1) {
                     name = name.substring(pos + 1);
                     corbaType.setName(name);
@@ -621,7 +621,7 @@ public final class CorbaUtils {
     public static QName processQName(QName qname, ServiceInfo serviceInfo) {
         QName result = qname;
         if ((qname.getNamespaceURI() != null)
-            && (!qname.getNamespaceURI().equals(""))
+            && (!qname.getNamespaceURI().isEmpty())
             && (!isElementFormQualified(serviceInfo, qname.getNamespaceURI()))) {
             result = new QName("", qname.getLocalPart());
         }

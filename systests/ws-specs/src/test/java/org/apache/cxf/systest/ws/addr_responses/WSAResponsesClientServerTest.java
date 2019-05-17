@@ -30,6 +30,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class WSAResponsesClientServerTest extends AbstractWSATestBase {
     static final String PORT = allocatePort(Server.class);
     @Before
@@ -52,15 +55,10 @@ public class WSAResponsesClientServerTest extends AbstractWSATestBase {
         try {
             service.getHelloPort().sayHi("helloWorld");
             fail("Expect exception");
-        } catch (Exception e) {
+        } catch (SOAPFaultException e) {
             String expectedDetail = "A header representing a Message Addressing Property is not valid";
-            if (e instanceof SOAPFaultException) {
-                assertTrue("Expect fault deail : " + expectedDetail,
-                           e.getMessage().indexOf(expectedDetail) > -1);
-            } else {
-                throw e;
-            }
-
+            assertTrue("Expect fault detail : " + expectedDetail,
+                       e.getMessage().indexOf(expectedDetail) > -1);
         }
     }
 

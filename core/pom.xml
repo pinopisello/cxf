@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <properties>
@@ -105,14 +105,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-            <scope>provided</scope>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>log4j</groupId>
@@ -187,9 +181,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
+            <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-xjc</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
@@ -225,6 +218,10 @@
             <artifactId>spring-osgi-core</artifactId>
             <optional>true</optional>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
     </dependencies>
     <build>

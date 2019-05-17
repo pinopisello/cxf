@@ -108,7 +108,7 @@ public class JaxrsServletContainerInitializer implements ServletContainerInitial
                 app = new Application() {
                     @Override
                     public Set<Class<?>> getClasses() {
-                        Set<Class<?>> set = new HashSet<Class<?>>();
+                        Set<Class<?>> set = new HashSet<>();
                         set.addAll(providersAndResources.get(Path.class));
                         set.addAll(providersAndResources.get(Provider.class));
                         return set;
@@ -164,7 +164,7 @@ public class JaxrsServletContainerInitializer implements ServletContainerInitial
         final Set< Class< ? > > classes) {
 
         final Map< Class< ? extends Annotation >, Collection< Class< ? > > > grouped =
-            new HashMap< Class< ? extends Annotation >, Collection< Class< ? > > >();
+            new HashMap<>();
 
         grouped.put(Provider.class, new ArrayList< Class< ? > >());
         grouped.put(Path.class, new ArrayList< Class< ? > >());

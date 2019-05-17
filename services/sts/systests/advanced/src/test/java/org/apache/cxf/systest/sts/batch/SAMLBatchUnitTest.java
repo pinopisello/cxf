@@ -41,6 +41,9 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * In this test case, a CXF client requests a number of SAML Tokens from an STS using batch processing.
  * It uses a simple STSClient implementation to request both a SAML 1.1 and 2.0 token at the same time.
@@ -122,10 +125,10 @@ public class SAMLBatchUnitTest extends AbstractBusClientServerTestBase {
             requestSecurityTokens(bus, wsdlLocation, requestList, action, requestType, port);
         assertTrue(tokens != null && tokens.size() == 2);
 
-        assertTrue(tokens.get(0).getToken().getLocalName().equals("Assertion"));
-        assertTrue(tokens.get(0).getToken().getNamespaceURI().equals(SAMLConstants.SAML1_NS));
-        assertTrue(tokens.get(1).getToken().getLocalName().equals("Assertion"));
-        assertTrue(tokens.get(1).getToken().getNamespaceURI().equals(SAMLConstants.SAML20_NS));
+        assertEquals("Assertion", tokens.get(0).getToken().getLocalName());
+        assertEquals(tokens.get(0).getToken().getNamespaceURI(), SAMLConstants.SAML1_NS);
+        assertEquals("Assertion", tokens.get(1).getToken().getLocalName());
+        assertEquals(tokens.get(1).getToken().getNamespaceURI(), SAMLConstants.SAML20_NS);
 
         // Now validate the tokens
         requestList.get(0).setValidateTarget(tokens.get(0).getToken());

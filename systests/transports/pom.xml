@@ -21,7 +21,7 @@
     <parent>
         <artifactId>cxf-parent</artifactId>
         <groupId>org.apache.cxf</groupId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -273,6 +273,7 @@
         <dependency>
             <groupId>org.littleshoot</groupId>
             <artifactId>littleproxy</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>

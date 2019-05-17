@@ -32,12 +32,17 @@ import org.apache.cxf.management.jmx.InstrumentationManagerImpl;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-public class InstrumentationManagerTest extends Assert {
+
+public class InstrumentationManagerTest {
     InstrumentationManager im;
     Bus bus;
 
@@ -59,7 +64,7 @@ public class InstrumentationManagerTest extends Assert {
         SpringBusFactory factory = new SpringBusFactory();
         bus = factory.createBus();
         im = bus.getExtension(InstrumentationManager.class);
-        assertTrue("Instrumentation Manager should not be null", im != null);
+        assertNotNull("Instrumentation Manager should not be null", im);
         MBeanServer mbs = im.getMBeanServer();
         assertNull("MBeanServer should not be available.", mbs);
     }
@@ -69,7 +74,7 @@ public class InstrumentationManagerTest extends Assert {
         SpringBusFactory factory = new SpringBusFactory();
         bus = factory.createBus("managed-spring3.xml", true);
         im = bus.getExtension(InstrumentationManager.class);
-        assertTrue("Instrumentation Manager should not be null", im != null);
+        assertNotNull("Instrumentation Manager should not be null", im);
         MBeanServer mbs = im.getMBeanServer();
         assertNotNull("MBeanServer should be available.", mbs);
     }
@@ -80,7 +85,7 @@ public class InstrumentationManagerTest extends Assert {
         SpringBusFactory factory = new SpringBusFactory();
         bus = factory.createBus("managed-spring.xml", true);
         im = bus.getExtension(InstrumentationManager.class);
-        assertTrue("Instrumentation Manager should not be null", im != null);
+        assertNotNull("Instrumentation Manager should not be null", im);
         WorkQueueManagerImpl wqm = new WorkQueueManagerImpl();
         wqm.setBus(bus);
         wqm.getAutomaticWorkQueue();

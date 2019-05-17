@@ -43,8 +43,10 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.nullValue;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JsrJsonpProviderTest extends AbstractBusClientServerTestBase {
     public static final String PORT = allocatePort(JsrJsonpProviderTest.class);

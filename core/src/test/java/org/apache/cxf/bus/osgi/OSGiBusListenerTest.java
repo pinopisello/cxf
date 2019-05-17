@@ -36,16 +36,17 @@ import org.osgi.framework.ServiceReference;
 
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 
 
 /**
  *
  */
-public class OSGiBusListenerTest extends Assert {
+public class OSGiBusListenerTest {
     private static final String[] SERVICE_BUNDLE_NAMES = new String[]{"me.temp.foo.test", "me.temp.bar.sample"};
     private static final String EXCLUDES = "me\\.temp\\.bar\\..*";
     private static final String RESTRICTED = "me\\.my\\.app\\..*";
@@ -186,7 +187,6 @@ public class OSGiBusListenerTest extends Assert {
 
     // Creates a test service reference with the specified symbolic name and the restricted extension property.
     private ServiceReference<Object> createTestServiceReference(String name, String rst) {
-        @SuppressWarnings("unchecked")
         ServiceReference<Object> ref = control.createMock(ServiceReference.class);
         Bundle b = control.createMock(Bundle.class);
         EasyMock.expect(b.getSymbolicName()).andReturn(name).anyTimes();

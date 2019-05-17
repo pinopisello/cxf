@@ -56,6 +56,13 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class CodeGenBugTest extends AbstractCodeGenTest {
 
     @Test
@@ -135,11 +142,11 @@ public class CodeGenBugTest extends AbstractCodeGenTest {
 
         WebService webServiceAnn = AnnotationUtil.getPrivClassAnnotation(clz, WebService.class);
         assertTrue("Impl class should note generate name property value in webService annotation",
-                   webServiceAnn.name().equals(""));
+                   webServiceAnn.name().isEmpty());
         assertFalse("Impl class should generate portName property value in webService annotation",
-                    webServiceAnn.portName().equals(""));
+                    webServiceAnn.portName().isEmpty());
         assertFalse("Impl class should generate serviceName property value in webService annotation",
-                    webServiceAnn.serviceName().equals(""));
+                    webServiceAnn.serviceName().isEmpty());
 
     }
 
@@ -805,19 +812,14 @@ public class CodeGenBugTest extends AbstractCodeGenTest {
 
     @Test
     public void testParameterOrderDifferentNS() throws Exception {
-        try {
-            env.put(ToolConstants.CFG_WSDLURL, getLocation("/wsdl2java_wsdl/bug978/bug.wsdl"));
-            processor.setContext(env);
-            processor.execute();
+        env.put(ToolConstants.CFG_WSDLURL, getLocation("/wsdl2java_wsdl/bug978/bug.wsdl"));
+        processor.setContext(env);
+        processor.execute();
 
-            String results = FileUtils.getStringFromFile(new File(output.getCanonicalPath(),
-                                                                  "org/tempuri/GreeterRPCLit.java"));
-            assertTrue(results.indexOf("@WebParam(partName  =  \"inInt\",  name  =  \"inInt\")") != -1);
-            assertTrue(results.indexOf("Style.RPC") != -1);
-
-        } catch (Exception e) {
-            fail("The cxf978.wsdl is a valid wsdl, should pass the test, caused by: " + e.getMessage());
-        }
+        String results = FileUtils.getStringFromFile(new File(output,
+                                                              "org/tempuri/GreeterRPCLit.java"));
+        assertTrue(results.indexOf("@WebParam(partName  =  \"inInt\",  name  =  \"inInt\")") != -1);
+        assertTrue(results.indexOf("Style.RPC") != -1);
     }
 
     @Test
@@ -929,7 +931,7 @@ public class CodeGenBugTest extends AbstractCodeGenTest {
 
         boolean existSayHiAsyn = false;
         for (Method m : methods) {
-            if (m.getName().equals("sayHiAsyn")) {
+            if ("sayHiAsyn".equals(m.getName())) {
                 existSayHiAsyn = true;
             }
         }

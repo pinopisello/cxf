@@ -138,7 +138,7 @@ public class JettyHTTPServerEngine implements ServerEngine {
      */
     private boolean configFinalized;
 
-    private List<String> registedPaths = new CopyOnWriteArrayList<String>();
+    private List<String> registedPaths = new CopyOnWriteArrayList<>();
 
     /**
      * This constructor is called by the JettyHTTPServerEngineFactory.
@@ -725,7 +725,7 @@ public class JettyHTTPServerEngine implements ServerEngine {
             ? SSLContext.getInstance(proto)
                 : SSLContext.getInstance(proto, tlsServerParameters.getJsseProvider());
 
-        KeyManager keyManagers[] = tlsServerParameters.getKeyManagers();
+        KeyManager[] keyManagers = tlsServerParameters.getKeyManagers();
         KeyManager[] configuredKeyManagers = org.apache.cxf.transport.https.SSLUtils.configureKeyManagersWithCertAlias(
             tlsServerParameters, keyManagers);
 
@@ -780,6 +780,8 @@ public class JettyHTTPServerEngine implements ServerEngine {
         setClientAuthentication(con,
                                 tlsServerParameters.getClientAuthentication());
         con.setCertAlias(tlsServerParameters.getCertAlias());
+        // TODO Once we switch to use SslContextFactory.Server instead, we can get rid of this line
+        con.setEndpointIdentificationAlgorithm(null);
     }
 
 
@@ -1036,7 +1038,7 @@ public class JettyHTTPServerEngine implements ServerEngine {
                     }
                 }
             } finally {
-                if (contexts != null) {
+                if (contexts != null && contexts.getHandlers() != null) {
                     for (Handler h : contexts.getHandlers()) {
                         h.stop();
                     }

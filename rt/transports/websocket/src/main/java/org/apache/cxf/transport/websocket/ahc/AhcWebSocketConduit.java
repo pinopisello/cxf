@@ -33,15 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.Realm.AuthScheme;
-import com.ning.http.client.Realm.RealmBuilder;
-import com.ning.http.client.ws.WebSocket;
-import com.ning.http.client.ws.WebSocketByteListener;
-import com.ning.http.client.ws.WebSocketTextListener;
-import com.ning.http.client.ws.WebSocketUpgradeHandler;
-
 import org.apache.cxf.Bus;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.StringUtils;
@@ -56,6 +47,16 @@ import org.apache.cxf.transport.websocket.WebSocketConstants;
 import org.apache.cxf.transport.websocket.WebSocketUtils;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.apache.cxf.ws.addressing.EndpointReferenceType;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.AsyncHttpClientConfig;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.Realm;
+import org.asynchttpclient.Realm.AuthScheme;
+import org.asynchttpclient.ws.WebSocket;
+import org.asynchttpclient.ws.WebSocketByteListener;
+import org.asynchttpclient.ws.WebSocketTextListener;
+import org.asynchttpclient.ws.WebSocketUpgradeHandler;
 
 /**
  *
@@ -70,7 +71,7 @@ public class AhcWebSocketConduit extends URLConnectionHTTPConduit {
     private String requestIdKey = WebSocketConstants.DEFAULT_REQUEST_ID_KEY;
     private String responseIdKey = WebSocketConstants.DEFAULT_RESPONSE_ID_KEY;
 
-    private Map<String, RequestResponse> uncorrelatedRequests = new ConcurrentHashMap<String, RequestResponse>();
+    private Map<String, RequestResponse> uncorrelatedRequests = new ConcurrentHashMap<>();
 
     public AhcWebSocketConduit(Bus b, EndpointInfo ei, EndpointReferenceType t) throws IOException {
         super(b, ei, t);
@@ -101,28 +102,26 @@ public class AhcWebSocketConduit extends URLConnectionHTTPConduit {
 
 
     }
-    
+
     private synchronized AsyncHttpClient getAsyncHttpClient(Message message) {
         if (ahcclient == null) {
-            AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
+            DefaultAsyncHttpClientConfig.Builder builder = new DefaultAsyncHttpClientConfig.Builder();
             AuthorizationPolicy ap = getEffectiveAuthPolicy(message);
-            if (ap != null 
+            if (ap != null
                 && (!StringUtils.isEmpty(ap.getAuthorizationType())
                     || !StringUtils.isEmpty(ap.getUserName()))) {
-                RealmBuilder rb = new RealmBuilder();
+                Realm.Builder rb = new Realm.Builder(ap.getUserName(), ap.getPassword());
                 if (ap.getAuthorizationType() == null) {
                     rb.setScheme(AuthScheme.BASIC);
                 } else {
                     rb.setScheme(AuthScheme.valueOf(ap.getAuthorizationType().toUpperCase()));
                 }
                 rb.setUsePreemptiveAuth(true);
-                rb.setPassword(ap.getPassword())
-                    .setPrincipal(ap.getUserName());
                 builder.setRealm(rb.build());
             }
-            
+
             AsyncHttpClientConfig config = builder.build();
-            ahcclient = new AsyncHttpClient(config);
+            ahcclient = new DefaultAsyncHttpClient(config);
         }
         return ahcclient;
     }
@@ -131,7 +130,7 @@ public class AhcWebSocketConduit extends URLConnectionHTTPConduit {
     protected OutputStream createOutputStream(Message message, boolean needToCacheRequest,
                                               boolean isChunking, int chunkThreshold) throws IOException {
 
-        
+
         AhcWebSocketConduitRequest entity = message.get(AhcWebSocketConduitRequest.class);
         return new AhcWebSocketWrappedOutputStream(message, needToCacheRequest, isChunking, chunkThreshold,
                                                    getConduitName(), entity.getUri());
@@ -170,7 +169,7 @@ public class AhcWebSocketConduit extends URLConnectionHTTPConduit {
             wrappedStream = new OutputStream() {
 
                 @Override
-                public void write(byte b[], int off, int len) throws IOException {
+                public void write(byte[] b, int off, int len) throws IOException {
                     //REVISIT support multiple writes and flush() to write the entire block data?
                     // or provides the fragment mode?
                     Map<String, String> headers = new HashMap<>();
@@ -214,7 +213,7 @@ public class AhcWebSocketConduit extends URLConnectionHTTPConduit {
             Headers h = new Headers(outMessage);
             entity.setContentType(h.determineContentType());
             //REVISIT may provide an option to add other headers
-//          boolean addHeaders = MessageUtils.isTrue(outMessage.getContextualProperty(Headers.ADD_HEADERS_PROPERTY));
+//          boolean addHeaders = PropertyUtils.isTrue(outMessage.getContextualProperty(Headers.ADD_HEADERS_PROPERTY));
         }
 
         @Override

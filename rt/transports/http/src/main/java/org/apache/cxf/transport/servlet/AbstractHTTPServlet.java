@@ -107,7 +107,7 @@ public abstract class AbstractHTTPServlet extends HttpServlet implements Filter 
     private String dispatcherServletName;
     private Map<String, String> redirectAttributes;
     private Map<String, String> staticContentTypes =
-        new HashMap<String, String>(DEFAULT_STATIC_CONTENT_TYPES);
+        new HashMap<>(DEFAULT_STATIC_CONTENT_TYPES);
     private boolean redirectQueryCheck;
     private boolean useXForwardedHeaders;
 
@@ -180,8 +180,8 @@ public abstract class AbstractHTTPServlet extends HttpServlet implements Filter 
 
     protected static List<Pattern> parseListSequence(String values) {
         if (values != null) {
-            List<Pattern> list = new LinkedList<Pattern>();
-            String[] pathValues = StringUtils.split(values, " ");
+            List<Pattern> list = new LinkedList<>();
+            String[] pathValues = values.split(" ");
             for (String value : pathValues) {
                 String theValue = value.trim();
                 if (theValue.length() > 0) {
@@ -197,13 +197,13 @@ public abstract class AbstractHTTPServlet extends HttpServlet implements Filter 
         if (sequence != null) {
             sequence = sequence.trim();
             Map<String, String> map = new HashMap<>();
-            String[] pairs = StringUtils.split(sequence, " ");
+            String[] pairs = sequence.split(" ");
             for (String pair : pairs) {
                 String thePair = pair.trim();
                 if (thePair.length() == 0) {
                     continue;
                 }
-                String[] value = StringUtils.split(thePair, "=");
+                String[] value = thePair.split("=");
                 if (value.length == 2) {
                     map.put(value[0].trim(), value[1].trim());
                 } else {
@@ -291,7 +291,7 @@ public abstract class AbstractHTTPServlet extends HttpServlet implements Filter 
         boolean staticResourcesMatch = staticResourcesList != null
             && matchPath(staticResourcesList, request);
         boolean staticWelcomeFileMatch = staticWelcomeFile != null
-            && (StringUtils.isEmpty(request.getPathInfo()) || request.getPathInfo().equals("/"));
+            && (StringUtils.isEmpty(request.getPathInfo()) || "/".equals(request.getPathInfo()));
         if (staticResourcesMatch || staticWelcomeFileMatch) {
             serveStaticContent(request, response,
                                staticWelcomeFileMatch ? staticWelcomeFile : request.getPathInfo());
@@ -352,7 +352,7 @@ public abstract class AbstractHTTPServlet extends HttpServlet implements Filter 
             throw new ServletException("Static resource " + pathInfo + " is not available");
         }
         try {
-            int ind = pathInfo.lastIndexOf(".");
+            int ind = pathInfo.lastIndexOf('.');
             if (ind != -1 && ind < pathInfo.length()) {
                 String type = getStaticResourceContentType(pathInfo.substring(ind + 1));
                 if (type != null) {
@@ -480,7 +480,7 @@ public abstract class AbstractHTTPServlet extends HttpServlet implements Filter 
                                            String originalPort) {
             super(request);
             this.newProtocol = originalProto;
-            if (newRemoteAddr != null) {
+            if (originalRemoteAddr != null) {
                 newRemoteAddr = (originalRemoteAddr.split(",")[0]).trim();
             }
             newRequestUri = calculateNewRequestUri(request, originalPrefix);

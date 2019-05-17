@@ -45,7 +45,7 @@ public class ProviderFactory {
 
     private String epAddress;
     private boolean isBaseAddr;
-    private List<AbstractDOMProvider> providers = new CopyOnWriteArrayList<AbstractDOMProvider>();
+    private List<AbstractDOMProvider> providers = new CopyOnWriteArrayList<>();
 
     static {
         ContextFactory.initGlobal(new RhinoContextFactory());
@@ -81,7 +81,7 @@ public class ProviderFactory {
                 if (line == null) {
                     break;
                 }
-                sb.append(line).append("\n");
+                sb.append(line).append('\n');
             }
         }
 
@@ -160,7 +160,7 @@ public class ProviderFactory {
             String base = isBase ? "base " : "";
             StringBuilder msg = new StringBuilder("creating a ");
             msg.append(modestr)
-                .append(" ")
+                .append(' ')
                 .append(type)
                 .append(" provider for ")
                 .append(base)

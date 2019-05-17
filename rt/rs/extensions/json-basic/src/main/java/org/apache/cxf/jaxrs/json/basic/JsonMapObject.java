@@ -30,7 +30,7 @@ import org.apache.cxf.helpers.CastUtils;
 public class JsonMapObject implements Serializable {
     private static final long serialVersionUID = 2620765136328623790L;
     Map<String, Integer> updateCount;
-    Map<String, Object> values = new LinkedHashMap<String, Object>();
+    Map<String, Object> values = new LinkedHashMap<>();
     public JsonMapObject() {
 
     }
@@ -42,10 +42,9 @@ public class JsonMapObject implements Serializable {
     public void setProperty(String name, Object value) {
         if (values.containsKey(name)) {
             if (updateCount == null) {
-                updateCount = new LinkedHashMap<String, Integer>();
+                updateCount = new LinkedHashMap<>();
             }
-            Integer count = updateCount.get(name);
-            count = count == null ? 2 : count++;
+            final Integer count = updateCount.getOrDefault(name, 1) + 1;
             updateCount.put(name, count);
         }
         if (value instanceof JsonMapObject) {

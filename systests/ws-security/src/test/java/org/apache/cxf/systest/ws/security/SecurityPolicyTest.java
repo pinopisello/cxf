@@ -70,6 +70,10 @@ import org.example.schema.doubleit.DoubleIt;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class SecurityPolicyTest extends AbstractBusClientServerTestBase  {
     public static final String PORT = allocatePort(SecurityPolicyTest.class);
     public static final String SSL_PORT = allocatePort(SecurityPolicyTest.class, 1);
@@ -101,7 +105,7 @@ public class SecurityPolicyTest extends AbstractBusClientServerTestBase  {
                 UnsupportedCallbackException {
             WSPasswordCallback pc = (WSPasswordCallback) callbacks[0];
 
-            if (pc.getIdentifier().equals("bob")) {
+            if ("bob".equals(pc.getIdentifier())) {
                 // set the password on the callback. This will be compared to the
                 // password which was sent from the client.
                 pc.setPassword("pwd");
@@ -259,11 +263,11 @@ public class SecurityPolicyTest extends AbstractBusClientServerTestBase  {
                                                       "bob.properties");
 
         // DOM
-        pt.doubleIt(5);
+        assertEquals(10, pt.doubleIt(5));
 
         // TODO See WSS-464
         // SecurityTestUtil.enableStreaming(pt);
-        // pt.doubleIt(5);
+        // assertEquals(10, pt.doubleIt(5));
 
         ((java.io.Closeable)pt).close();
 
@@ -277,11 +281,11 @@ public class SecurityPolicyTest extends AbstractBusClientServerTestBase  {
         ((BindingProvider)pt).getRequestContext().put(SecurityConstants.ENCRYPT_PROPERTIES,
                                                       "bob.properties");
         // DOM
-        pt.doubleIt(5);
+        assertEquals(10, pt.doubleIt(5));
 
         // Streaming
         SecurityTestUtil.enableStreaming(pt);
-        pt.doubleIt(5);
+        assertEquals(10, pt.doubleIt(5));
 
         ((java.io.Closeable)pt).close();
 
@@ -296,11 +300,11 @@ public class SecurityPolicyTest extends AbstractBusClientServerTestBase  {
                                                       "bob.properties");
 
         // DOM
-        pt.doubleIt(5);
+        assertEquals(10, pt.doubleIt(5));
 
         // Streaming
         SecurityTestUtil.enableStreaming(pt);
-        pt.doubleIt(5);
+        assertEquals(10, pt.doubleIt(5));
 
         ((java.io.Closeable)pt).close();
 
@@ -320,11 +324,11 @@ public class SecurityPolicyTest extends AbstractBusClientServerTestBase  {
         ((BindingProvider)pt).getRequestContext().put(SecurityConstants.PASSWORD, "pwd");
 
         // DOM
-        pt.doubleIt(25);
+        assertEquals(50, pt.doubleIt(25));
 
         // Streaming
         SecurityTestUtil.enableStreaming(pt);
-        pt.doubleIt(25);
+        assertEquals(50, pt.doubleIt(25));
 
         ((java.io.Closeable)pt).close();
 

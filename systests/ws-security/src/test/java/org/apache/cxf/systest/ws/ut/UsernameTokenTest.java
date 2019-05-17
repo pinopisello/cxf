@@ -55,6 +55,10 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * A set of tests for Username Tokens over the Transport Binding.
  */
@@ -209,6 +213,33 @@ public class UsernameTokenTest extends AbstractBusClientServerTestBase {
         BusFactory.setThreadDefaultBus(bus);
 
         URL wsdl = UsernameTokenTest.class.getResource("DoubleItUt.wsdl");
+        Service service = Service.create(wsdl, SERVICE_QNAME);
+        QName portQName = new QName(NAMESPACE, "DoubleItPlaintextPort");
+        DoubleItPortType utPort =
+                service.getPort(portQName, DoubleItPortType.class);
+        updateAddressPort(utPort, test.getPort());
+
+        if (test.isStreaming()) {
+            SecurityTestUtil.enableStreaming(utPort);
+        }
+
+        assertEquals(50, utPort.doubleIt(25));
+
+        ((java.io.Closeable)utPort).close();
+        bus.shutdown(true);
+    }
+
+    @org.junit.Test
+    public void testPlaintextWSDLOverHTTPS() throws Exception {
+
+        SpringBusFactory bf = new SpringBusFactory();
+        URL busFile = UsernameTokenTest.class.getResource("client-remote-wsdl.xml");
+
+        Bus bus = bf.createBus(busFile.toString());
+        BusFactory.setDefaultBus(bus);
+        BusFactory.setThreadDefaultBus(bus);
+
+        URL wsdl = new URL("https://localhost:" + PORT + "/DoubleItUTPlaintext?wsdl");
         Service service = Service.create(wsdl, SERVICE_QNAME);
         QName portQName = new QName(NAMESPACE, "DoubleItPlaintextPort");
         DoubleItPortType utPort =
@@ -545,7 +576,7 @@ public class UsernameTokenTest extends AbstractBusClientServerTestBase {
                 utPort.doubleIt(25);
                 fail("Failure expected on a replayed UsernameToken");
             } catch (javax.xml.ws.soap.SOAPFaultException ex) {
-                assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+                assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
             }
         }
 

@@ -304,7 +304,7 @@ public abstract class AbstractBeanDefinitionParser
     private synchronized JAXBContext getContext(Class<?> cls) {
         if (context == null || classes == null || !classes.contains(cls)) {
             try {
-                Set<Class<?>> tmp = new HashSet<Class<?>>();
+                Set<Class<?>> tmp = new HashSet<>();
                 if (classes != null) {
                     tmp.addAll(classes);
                 }
@@ -480,7 +480,6 @@ public abstract class AbstractBeanDefinitionParser
     }
 
     protected QName parseQName(Element element, String t) {
-        String ns = null;
         String pre = null;
         String local = null;
 
@@ -490,10 +489,10 @@ public abstract class AbstractBeanDefinitionParser
                 throw new RuntimeException("Namespace bracket '{' must having a closing bracket '}'.");
             }
 
-            ns = t.substring(1, i);
             t = t.substring(i + 1);
         }
 
+        final String ns;
         int colIdx = t.indexOf(':');
         if (colIdx == -1) {
             local = t;

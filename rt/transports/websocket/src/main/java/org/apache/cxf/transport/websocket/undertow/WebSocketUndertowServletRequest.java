@@ -62,6 +62,8 @@ import io.undertow.websockets.core.BufferedBinaryMessage;
 import io.undertow.websockets.core.BufferedTextMessage;
 import io.undertow.websockets.core.WebSocketChannel;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  *
  */
@@ -89,7 +91,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         if (!path.startsWith(origin)) {
             throw new InvalidPathException();
         }*/
-        this.attributes = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        this.attributes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         Object v = channel.getAttribute("org.apache.cxf.transport.endpoint.address");
         if (v != null) {
             attributes.put("org.apache.cxf.transport.endpoint.address", v);
@@ -175,7 +177,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getUrl()).getHost();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getLocalAddr error", e);
             return null;
         }
     }
@@ -186,7 +188,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getUrl()).getHost();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getLocalName error", e);
             return null;
         }
     }
@@ -197,7 +199,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getUrl()).getPort();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getLocalPort error", e);
             return 0;
         }
     }
@@ -248,7 +250,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getUrl()).getProtocol();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getProtocol error", e);
             return null;
         }
     }
@@ -256,7 +258,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
     @Override
     public BufferedReader getReader() throws IOException {
         LOG.log(Level.FINE, "getReader");
-        return new BufferedReader(new InputStreamReader(in, "utf-8"));
+        return new BufferedReader(new InputStreamReader(in, UTF_8));
     }
 
     @Override
@@ -271,7 +273,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getPeerAddress().toString()).getHost();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getRemoteAddr error", e);
             return null;
         }
     }
@@ -282,7 +284,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getPeerAddress().toString()).getHost();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getRemoteHost error", e);
             return null;
         }
     }
@@ -293,7 +295,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getPeerAddress().toString()).getPort();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getRemotePort error", e);
             return 0;
         }
     }
@@ -310,7 +312,7 @@ public class WebSocketUndertowServletRequest implements HttpServletRequest {
         try {
             return new URL(channel.getUrl()).getProtocol();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            LOG.log(Level.FINE, "getScheme error", e);
             return null;
         }
     }

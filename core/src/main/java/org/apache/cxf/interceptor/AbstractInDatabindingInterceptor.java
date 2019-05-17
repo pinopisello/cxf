@@ -69,7 +69,7 @@ public abstract class AbstractInDatabindingInterceptor extends AbstractPhaseInte
 
     protected boolean supportsDataReader(Message message, Class<?> input) {
         Service service = ServiceModelUtil.getService(message.getExchange());
-        Class<?> cls[] = service.getDataBinding().getSupportedReaderFormats();
+        Class<?>[] cls = service.getDataBinding().getSupportedReaderFormats();
         for (Class<?> c : cls) {
             if (c.equals(input)) {
                 return true;
@@ -184,7 +184,7 @@ public abstract class AbstractInDatabindingInterceptor extends AbstractPhaseInte
             }
 
             MessagePartInfo p = msgInfo.getMessageParts().get(index);
-            if (name.getNamespaceURI() == null || name.getNamespaceURI().length() == 0) {
+            if (name.getNamespaceURI() == null || name.getNamespaceURI().isEmpty()) {
                 // message part has same namespace with the message
                 name = new QName(p.getMessageInfo().getName().getNamespaceURI(), name.getLocalPart());
             }

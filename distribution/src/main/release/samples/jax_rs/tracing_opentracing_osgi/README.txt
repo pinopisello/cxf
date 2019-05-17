@@ -52,6 +52,7 @@ for this demo bundle.
   feature:install cxf-jaxrs
   feature:install cxf-jsr-json
   feature:install cxf-tracing-opentracing
+  feature:install aries-blueprint
   
 Install the distributed tracer compatible with OpenTracing API, as in this example 
 we are using Uber Jaeger:
@@ -59,9 +60,9 @@ we are using Uber Jaeger:
   install -s wrap:mvn:com.squareup.okio/okio/1.13.0
   install -s wrap:mvn:com.squareup.okhttp3/okhttp/3.9.0
   install -s wrap:mvn:org.apache.thrift/libthrift/0.11.0
+  install -s wrap:mvn:io.jaegertracing/jaeger-core/0.30.3 
   install -s wrap:mvn:io.jaegertracing/jaeger-thrift/0.30.3
-  install -s wrap:mvn:io.jaegertracing/jaeger-core/0.30.3  
-
+  
 Install this demo bundle (using the appropriate bundle version number)
   
   install -s mvn:org.apache.cxf.samples/jax_rs_tracing_opentracing_osgi/3.n.m
@@ -85,7 +86,7 @@ You can verify if the CXF JAX-RS OpenTracing Blueprint Demo is installed and sta
 To collect the traces, please run Jaeger distributed tracer components, the
 simplest way would be using Docker:
 
-  docker run --rm -it --network=host jaegertracing/all-in-one
+  docker run --rm -it --network=host -p 16686:16686 -p 14268:14268 jaegertracing/all-in-one
 
 Now, you will be able to access this CXF JAXRS demo service on your Karaf instance at
 

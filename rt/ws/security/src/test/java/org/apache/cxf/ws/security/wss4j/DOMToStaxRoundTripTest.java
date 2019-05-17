@@ -43,6 +43,9 @@ import org.apache.xml.security.stax.ext.XMLSecurityConstants;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * In these test-cases, the client is using DOM and the service is using StaX.
@@ -520,7 +523,7 @@ public class DOMToStaxRoundTripTest extends AbstractSecurityTest {
         service.getInInterceptors().add(inhandler);
 
         WSSSecurityProperties outProperties = new WSSSecurityProperties();
-        List<WSSConstants.Action> actions = new ArrayList<WSSConstants.Action>();
+        List<WSSConstants.Action> actions = new ArrayList<>();
         actions.add(XMLSecurityConstants.SIGNATURE);
         actions.add(WSSConstants.SIGNATURE_CONFIRMATION);
         outProperties.setActions(actions);

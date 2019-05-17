@@ -82,10 +82,13 @@ import org.apache.wss4j.common.util.DOM2Writer;
 
 import org.junit.Assert;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * This tests validating a JWT Token + transforming into a SAML token, and vice versa.
  */
-public class ValidateJWTTransformationTest extends org.junit.Assert {
+public class ValidateJWTTransformationTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -361,7 +364,7 @@ public class ValidateJWTTransformationTest extends org.junit.Assert {
 
         assertTrue(tokenProvider.canHandleToken(JWTTokenProvider.JWT_TOKEN_TYPE));
         TokenProviderResponse providerResponse = tokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return providerResponse;
@@ -497,7 +500,7 @@ public class ValidateJWTTransformationTest extends org.junit.Assert {
         providerParameters.setRequestedSecondaryClaims(requestedClaims);
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return (Element)providerResponse.getToken();

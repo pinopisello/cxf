@@ -52,7 +52,7 @@ public class ClassResourceInfo extends BeanResourceInfo {
     private MethodDispatcher methodDispatcher;
     private ResourceProvider resourceProvider;
     private ConcurrentHashMap<SubresourceKey, ClassResourceInfo> subResources
-        = new ConcurrentHashMap<SubresourceKey, ClassResourceInfo>();
+        = new ConcurrentHashMap<>();
 
     private boolean enableStatic;
     private boolean createdFromModel;
@@ -97,11 +97,11 @@ public class ClassResourceInfo extends BeanResourceInfo {
         this.createdFromModel = createdFromModel;
     }
     //CHECKSTYLE:OFF
-    public ClassResourceInfo(Class<?> theResourceClass, Class<?> c,
+    public ClassResourceInfo(Class<?> theResourceClass, Class<?> theServiceClass,
                              boolean theRoot, boolean enableStatic, boolean createdFromModel,
                              String consumesTypes, String producesTypes, Bus bus) {
     //CHECKSTYLE:ON
-        this(theResourceClass, theResourceClass, theRoot, enableStatic, createdFromModel, bus);
+        this(theResourceClass, theServiceClass, theRoot, enableStatic, createdFromModel, bus);
         this.consumesTypes = consumesTypes;
         this.producesTypes = producesTypes;
     }

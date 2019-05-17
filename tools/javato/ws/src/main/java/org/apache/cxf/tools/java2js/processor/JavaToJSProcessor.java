@@ -21,11 +21,9 @@ package org.apache.cxf.tools.java2js.processor;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,10 +55,11 @@ import org.apache.cxf.tools.java2wsdl.processor.internal.ServiceBuilderFactory;
 import org.apache.cxf.tools.util.AnnotationUtil;
 import org.apache.cxf.wsdl.WSDLConstants;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class JavaToJSProcessor implements Processor {
     private static final Logger LOG = LogUtils.getL7dLogger(JavaToJSProcessor.class);
     private static final String JAVA_CLASS_PATH = "java.class.path";
-    private static final Charset UTF8 = Charset.forName("utf-8");
     private ToolContext context;
 
     public void process() throws ToolException {
@@ -90,7 +89,7 @@ public class JavaToJSProcessor implements Processor {
                 JavascriptGetInterceptor.writeUtilsToResponseStream(JavaToJSProcessor.class, outputStream);
             }
 
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, UTF8);
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, UTF_8);
             writer = new BufferedWriter(outputStreamWriter);
 
             for (SchemaInfo schema : schemata) {
@@ -105,8 +104,6 @@ public class JavaToJSProcessor implements Processor {
             serviceBuilder.walk();
             String serviceJavascript = serviceBuilder.getCode();
             writer.append(serviceJavascript);
-        } catch (FileNotFoundException e) {
-            throw new ToolException(e);
         } catch (IOException e) {
             throw new ToolException(e);
         } finally {
@@ -134,7 +131,7 @@ public class JavaToJSProcessor implements Processor {
                 // is there a better way to avoid the warning?
                 beanDefinitions.addAll((List<String>)beanFilesParameter);
             } else {
-                String list[] = (String[])beanFilesParameter;
+                String[] list = (String[])beanFilesParameter;
                 for (String b : list) {
                     beanDefinitions.add(b);
                 }

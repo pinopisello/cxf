@@ -59,6 +59,11 @@ import org.example.contract.doubleit.DoubleItPortType;
 
 import org.junit.BeforeClass;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * This test sends a custom parameter indicating the "realm" of the user, which is interpreted by the
  * STS's CustomUTValidator.
@@ -355,7 +360,7 @@ public class CustomParameterTest extends AbstractBusClientServerTestBase {
         assertTrue(results != null && results.size() == 1);
         SamlAssertionWrapper assertion =
             (SamlAssertionWrapper)results.get(0).get(WSSecurityEngineResult.TAG_SAML_ASSERTION);
-        assertTrue(assertion != null);
+        assertNotNull(assertion);
         if (saml2) {
             assertTrue(assertion.getSaml2() != null && assertion.getSaml1() == null);
         } else {

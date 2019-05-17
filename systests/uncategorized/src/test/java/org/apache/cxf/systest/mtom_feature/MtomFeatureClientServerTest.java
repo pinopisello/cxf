@@ -41,6 +41,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase {
     public static final String PORT = Server.PORT;
     private final QName serviceName = new QName("http://apache.org/cxf/systest/mtom_feature",
@@ -59,8 +63,8 @@ public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase
 
     @Test
     public void testDetail() throws Exception {
-        Holder<byte[]> photo = new Holder<byte[]>("CXF".getBytes());
-        Holder<Image> image = new Holder<Image>(getImage("/java.jpg"));
+        Holder<byte[]> photo = new Holder<>("CXF".getBytes());
+        Holder<Image> image = new Holder<>(getImage("/java.jpg"));
         port.detail(photo, image);
         assertEquals("CXF", new String(photo.value));
         assertNotNull(image.value);
@@ -69,7 +73,7 @@ public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase
     @Test
     public void testEcho() throws Exception {
         byte[] bytes = ImageHelper.getImageBytes(getImage("/java.jpg"), "image/jpeg");
-        Holder<byte[]> image = new Holder<byte[]>(bytes);
+        Holder<byte[]> image = new Holder<>(bytes);
         port.echoData(image);
         assertNotNull(image);
     }
@@ -97,8 +101,8 @@ public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase
 
         ((BindingProvider)port).getRequestContext()
             .put(LocalConduit.DIRECT_DISPATCH, Boolean.TRUE);
-        Holder<byte[]> photo = new Holder<byte[]>("CXF".getBytes());
-        Holder<Image> image = new Holder<Image>(getImage("/java.jpg"));
+        Holder<byte[]> photo = new Holder<>("CXF".getBytes());
+        Holder<Image> image = new Holder<>(getImage("/java.jpg"));
         port.detail(photo, image);
         assertEquals("CXF", new String(photo.value));
         assertNotNull(image.value);
@@ -106,8 +110,8 @@ public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase
 
         ((BindingProvider)port).getRequestContext()
             .put(LocalConduit.DIRECT_DISPATCH, Boolean.FALSE);
-        photo = new Holder<byte[]>("CXF".getBytes());
-        image = new Holder<Image>(getImage("/java.jpg"));
+        photo = new Holder<>("CXF".getBytes());
+        image = new Holder<>(getImage("/java.jpg"));
         port.detail(photo, image);
         assertEquals("CXF", new String(photo.value));
         assertNotNull(image.value);
@@ -117,7 +121,7 @@ public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase
     public void testEchoWithLowThreshold() throws Exception {
         ByteArrayOutputStream bout = this.setupOutLogging();
         byte[] bytes = ImageHelper.getImageBytes(getImage("/java.jpg"), "image/jpeg");
-        Holder<byte[]> image = new Holder<byte[]>(bytes);
+        Holder<byte[]> image = new Holder<>(bytes);
         Hello hello = this.getPort(500);
         hello.echoData(image);
         assertTrue("MTOM should be enabled", bout.toString().indexOf("<xop:Include") > -1);
@@ -127,7 +131,7 @@ public class MtomFeatureClientServerTest extends AbstractBusClientServerTestBase
     public void testEchoWithHighThreshold() throws Exception {
         ByteArrayOutputStream bout = this.setupOutLogging();
         byte[] bytes = ImageHelper.getImageBytes(getImage("/java.jpg"), "image/jpeg");
-        Holder<byte[]> image = new Holder<byte[]>(bytes);
+        Holder<byte[]> image = new Holder<>(bytes);
         Hello hello = this.getPort(2000);
         hello.echoData(image);
         assertTrue("MTOM should not be enabled", bout.toString().indexOf("<xop:Include") == -1);

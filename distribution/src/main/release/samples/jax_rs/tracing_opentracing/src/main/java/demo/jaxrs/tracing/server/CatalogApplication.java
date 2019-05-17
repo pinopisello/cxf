@@ -28,7 +28,7 @@ import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
 import org.apache.cxf.jaxrs.provider.jsrjsonp.JsrJsonpProvider;
-import org.apache.cxf.tracing.opentracing.OpenTracingFeature;
+import org.apache.cxf.tracing.opentracing.jaxrs.OpenTracingFeature;
 
 @ApplicationPath("/")
 public class CatalogApplication extends Application {

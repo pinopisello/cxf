@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.cxf.samples</groupId>
         <artifactId>cxf-samples</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <properties>
@@ -61,23 +61,23 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http</artifactId>
-            <version>3.3.0-SNAPSHOT</version>
+            <version>3.3.3-SNAPSHOT</version>
         </dependency>
         <!-- This dependency is needed if you're using the Jetty container -->
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http-jetty</artifactId>
-            <version>3.3.0-SNAPSHOT</version>
+            <version>3.3.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxws</artifactId>
-            <version>3.3.0-SNAPSHOT</version>
+            <version>3.3.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-integration-tracing-brave</artifactId>
-            <version>3.3.0-SNAPSHOT</version>
+            <version>3.3.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.aries.blueprint</groupId>
@@ -85,8 +85,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -109,6 +109,7 @@
                             javax.ws.rs.container,
                             org.apache.cxf.tracing.brave,
                             org.osgi.service.blueprint,
+                            javax.xml.ws;version="[2,3)",
                             brave,
                             *
                         </Import-Package>

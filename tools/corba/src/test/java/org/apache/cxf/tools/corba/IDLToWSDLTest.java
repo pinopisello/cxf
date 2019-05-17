@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -50,6 +49,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class IDLToWSDLTest extends ToolTestBase {
 
     private static StringBuffer usageBuf;
@@ -65,7 +69,7 @@ public class IDLToWSDLTest extends ToolTestBase {
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         super.setUp();
         try {
             TestUtils utils = new TestUtils(IDLToWSDL.TOOL_NAME, IDLToWSDL.class
@@ -88,15 +92,12 @@ public class IDLToWSDLTest extends ToolTestBase {
         }
     }
 
-    private void deleteDir(File dir) throws IOException {
-        FileUtils.removeDir(dir);
-    }
-
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
+        // super.tearDown();
         try {
-            deleteDir(output);
-        } catch (IOException ex) {
+            FileUtils.removeDir(output);
+        } catch (Exception e) {
             //ignore
         }
         output = null;
@@ -112,29 +113,27 @@ public class IDLToWSDLTest extends ToolTestBase {
         return noError;
     }
 
-    private void checkStrings(byte orig[], byte generated[]) throws Exception {
-        BufferedReader origReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(orig)));
-        BufferedReader genReader =
-            new BufferedReader(new InputStreamReader(
-                       new ByteArrayInputStream(generated)));
+    private void checkStrings(byte[] orig, byte[] generated) throws Exception {
+        try (BufferedReader origReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(orig)));
+                BufferedReader genReader = new BufferedReader(
+                        new InputStreamReader(new ByteArrayInputStream(generated)))) {
 
-        String sorig = origReader.readLine();
-        String sgen = genReader.readLine();
-
-        while (sorig != null && sgen != null) {
-            if (!sorig.equals(sgen)) {
-                //assertEquals(sorig, sgen);
-                //sorig = origReader.readLine();
-                sgen = genReader.readLine();
-            } else {
-                assertEquals(sorig, sgen);
-                sorig = null;
-                sgen = null;
-                break;
+            String sorig = origReader.readLine();
+            String sgen = genReader.readLine();
+    
+            while (sorig != null && sgen != null) {
+                if (!sorig.equals(sgen)) {
+                    //assertEquals(sorig, sgen);
+                    //sorig = origReader.readLine();
+                    sgen = genReader.readLine();
+                } else {
+                    assertEquals(sorig, sgen);
+                    sorig = null;
+                    sgen = null;
+                    break;
+                }
             }
         }
-        origReader.close();
-        genReader.close();
     }
 
     @Test
@@ -142,7 +141,7 @@ public class IDLToWSDLTest extends ToolTestBase {
         String[] cmdArgs = {};
         int exc = execute(cmdArgs);
         assertEquals("IDLToWSDL Failed", error, exc);
-        StringBuilder strBuf = new StringBuilder();
+        StringBuilder strBuf = new StringBuilder(64);
         strBuf.append("Missing argument: idl\n\n");
         strBuf.append(usageBuf.toString());
         checkStrings(strBuf.toString().getBytes(), bout.toByteArray());
@@ -243,17 +242,17 @@ public class IDLToWSDLTest extends ToolTestBase {
 
         // create temporary file containing ior
         File addressFile = new File(output, "HelloWorld.idl");
-        FileWriter addressFileWriter = new FileWriter(addressFile);
-        addressFileWriter.write(
-            "IOR:010000001400000049444c3a48656c6c6f576f726c64493a312e300002"
-            + "0000000000000080000000010101001e0000006d766573636f76692e6475"
-            + "626c696e2e656d65612e696f6e612e636f6d0022064d0000003a5c6d7665"
-            + "73636f76692e6475626c696e2e656d65612e696f6e612e636f6d3a48656c"
-            + "6c6f576f726c642f48656c6c6f576f726c643a6d61726b65723a3a49523a"
-            + "48656c6c6f576f726c644900000000000000000100000018000000010000"
-            + "0001000000000000000800000001000000305f5449"
-        );
-        addressFileWriter.close();
+        try (FileWriter addressFileWriter = new FileWriter(addressFile)) {
+            addressFileWriter.write(
+                "IOR:010000001400000049444c3a48656c6c6f576f726c64493a312e300002"
+                + "0000000000000080000000010101001e0000006d766573636f76692e6475"
+                + "626c696e2e656d65612e696f6e612e636f6d0022064d0000003a5c6d7665"
+                + "73636f76692e6475626c696e2e656d65612e696f6e612e636f6d3a48656c"
+                + "6c6f576f726c642f48656c6c6f576f726c643a6d61726b65723a3a49523a"
+                + "48656c6c6f576f726c644900000000000000000100000018000000010000"
+                + "0001000000000000000800000001000000305f5449"
+            );
+        }
         addressFile.deleteOnExit();
 
         String[] args = new String[] {"-f", addressFile.toString(),

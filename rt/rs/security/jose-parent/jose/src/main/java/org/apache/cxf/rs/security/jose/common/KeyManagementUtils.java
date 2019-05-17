@@ -55,6 +55,7 @@ import org.apache.cxf.rs.security.jose.jwk.JwkException;
 import org.apache.cxf.rs.security.jose.jwk.KeyOperation;
 import org.apache.cxf.rt.security.crypto.CryptoUtils;
 import org.apache.cxf.rt.security.crypto.MessageDigestUtils;
+import org.apache.cxf.rt.security.rs.PrivateKeyPasswordProvider;
 
 /**
  * Encryption helpers
@@ -77,10 +78,7 @@ public final class KeyManagementUtils {
                 byte[] digest =
                     MessageDigestUtils.createDigest(certs[0].getEncoded(), digestAlgo);
                 return Base64UrlUtility.encode(digest);
-            } catch (NoSuchAlgorithmException ex) {
-                LOG.log(Level.FINE, "Error creating digest", ex);
-                throw new JoseException(ex);
-            } catch (CertificateEncodingException ex) {
+            } catch (NoSuchAlgorithmException | CertificateEncodingException ex) {
                 LOG.log(Level.FINE, "Error creating digest", ex);
                 throw new JoseException(ex);
             }
@@ -493,16 +491,7 @@ public final class KeyManagementUtils {
                     }
                 }
             }
-        } catch (KeyStoreException e) {
-            LOG.log(Level.WARNING, "X509Certificate can not be loaded: ", e);
-            throw new JoseException(e);
-        } catch (CertificateEncodingException e) {
-            LOG.log(Level.WARNING, "X509Certificate can not be loaded: ", e);
-            throw new JoseException(e);
-        } catch (NoSuchAlgorithmException e) {
-            LOG.log(Level.WARNING, "X509Certificate can not be loaded: ", e);
-            throw new JoseException(e);
-        } catch (Base64Exception e) {
+        } catch (KeyStoreException | CertificateEncodingException | NoSuchAlgorithmException | Base64Exception e) {
             LOG.log(Level.WARNING, "X509Certificate can not be loaded: ", e);
             throw new JoseException(e);
         }

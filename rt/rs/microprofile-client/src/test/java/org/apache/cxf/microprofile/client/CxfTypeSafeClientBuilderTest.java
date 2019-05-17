@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.microprofile.client;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 
@@ -25,6 +26,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import org.apache.cxf.jaxrs.client.WebClientUtil;
 import org.apache.cxf.microprofile.client.mock.EchoClientReqFilter;
 import org.apache.cxf.microprofile.client.mock.ExceptionMappingClient;
 import org.apache.cxf.microprofile.client.mock.HighPriorityClientReqFilter;
@@ -48,7 +50,10 @@ import org.eclipse.microprofile.rest.client.tck.providers.TestWriterInterceptor;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class CxfTypeSafeClientBuilderTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class CxfTypeSafeClientBuilderTest {
 
     @Test
     public void testConfigMethods() {
@@ -151,8 +156,38 @@ public class CxfTypeSafeClientBuilderTest extends Assert {
         assertEquals(String.class.getName(), response.getHeaderString("Parm2"));
     }
 
+    @Test
+    public void testClientPropertiesAreSet() throws Exception {
+        InterfaceWithoutProvidersDefined client = RestClientBuilder.newBuilder()
+            .register(InvokedMethodClientRequestFilter.class)
+            .property("hello", "world")
+            .baseUri(new URI("http://localhost:8080/neverUsed"))
+            .build(InterfaceWithoutProvidersDefined.class);
+        assertEquals("world",
+            WebClientUtil.getClientConfigFromProxy(client).getRequestContext().get("hello"));
+    }
+
+    @Test
+    public void testCanInvokeDefaultInterfaceMethods() throws Exception {
+        MyClient client = RestClientBuilder.newBuilder()
+            .register(InvokedMethodClientRequestFilter.class)
+            .baseUri(new URI("http://localhost:8080/neverUsed"))
+            .build(MyClient.class);
+        assertEquals("defaultValue", client.myDefaultMethod(false));
+    }
+
+    @Test(expected = IOException.class)
+    public void testCanInvokeDefaultInterfaceMethodsWithException() throws Exception {
+        MyClient client = RestClientBuilder.newBuilder()
+            .register(InvokedMethodClientRequestFilter.class)
+            .baseUri(new URI("http://localhost:8080/neverUsed"))
+            .build(MyClient.class);
+        client.myDefaultMethod(true);
+        Assert.fail("Should have thrown IOException");
+    }
     private void fail(Response r, String failureMessage) {
         System.out.println(r.getStatus());
-        fail(failureMessage);
+        Assert.fail(failureMessage);
     }
+
 }

@@ -121,7 +121,7 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
 
         HttpServletRequest req = getMessageContext().getHttpServletRequest();
         for (OAuthPermission perm : permissions) {
-            boolean uriOK = checkRequestURI(req, perm.getUris());
+            boolean uriOK = checkRequestURI(req, perm.getUris(), m);
             boolean verbOK = checkHttpVerb(req, perm.getHttpVerbs());
             boolean scopeOk = checkScopeProperty(perm.getPermission());
             if (uriOK && verbOK && scopeOk) {
@@ -197,12 +197,16 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
         return true;
     }
 
-    protected boolean checkRequestURI(HttpServletRequest request, List<String> uris) {
+        
+    protected boolean checkRequestURI(HttpServletRequest request, List<String> uris, Message m) {
 
         if (uris.isEmpty()) {
             return true;
         }
         String servletPath = request.getPathInfo();
+        if (servletPath == null) {
+            servletPath = (String)m.get(Message.PATH_INFO);
+        }
         boolean foundValidScope = false;
         for (String uri : uris) {
             if (OAuthUtils.checkRequestURI(servletPath, uri)) {
@@ -301,7 +305,7 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
         if (type != null && MediaType.APPLICATION_FORM_URLENCODED.startsWith(type)
             && method != null && (method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT))) {
             try {
-                FormEncodingProvider<Form> provider = new FormEncodingProvider<Form>(true);
+                FormEncodingProvider<Form> provider = new FormEncodingProvider<>(true);
                 Form form = FormUtils.readForm(provider, message);
                 MultivaluedMap<String, String> formData = form.asMap();
                 String token = formData.getFirst(OAuthConstants.ACCESS_TOKEN);

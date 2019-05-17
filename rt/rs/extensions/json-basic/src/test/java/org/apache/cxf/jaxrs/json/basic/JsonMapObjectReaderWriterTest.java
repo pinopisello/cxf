@@ -26,14 +26,16 @@ import java.util.Map;
 
 import org.apache.cxf.helpers.CastUtils;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class JsonMapObjectReaderWriterTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+public class JsonMapObjectReaderWriterTest {
 
     @Test
     public void testWriteMap() throws Exception {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<>();
         map.put("a", "aValue");
         map.put("b", 123);
         map.put("c", Collections.singletonList("cValue"));

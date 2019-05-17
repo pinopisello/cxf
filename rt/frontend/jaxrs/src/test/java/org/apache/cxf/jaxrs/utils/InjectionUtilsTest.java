@@ -54,10 +54,14 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageImpl;
 
 import org.easymock.EasyMock;
-import org.junit.Assert;
 import org.junit.Test;
 
-public class InjectionUtilsTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+public class InjectionUtilsTest {
 
 
     @Test
@@ -66,7 +70,7 @@ public class InjectionUtilsTest extends Assert {
         String value = "1.1";
 
         // Act
-        Object id = InjectionUtils.handleParameter(value,
+        Id id = InjectionUtils.handleParameter(value,
                                                    true,
                                                    Id.class,
                                                    Id.class,
@@ -75,8 +79,7 @@ public class InjectionUtilsTest extends Assert {
                                                    createMessage());
 
         // Assert
-        assertTrue(id instanceof Id);
-        assertEquals(value, ((Id)id).getId());
+        assertEquals(value, id.getId());
     }
 
     @Test
@@ -86,10 +89,10 @@ public class InjectionUtilsTest extends Assert {
 
     @Test
     public void testCollectionType() {
-        assertEquals(ArrayList.class, InjectionUtils.getCollectionType(Collection.class));
-        assertEquals(ArrayList.class, InjectionUtils.getCollectionType(List.class));
-        assertEquals(HashSet.class, InjectionUtils.getCollectionType(Set.class));
-        assertEquals(TreeSet.class, InjectionUtils.getCollectionType(SortedSet.class));
+        assertEquals(ArrayList.class, InjectionUtils.getCollectionType(Collection.class)); //NOPMD
+        assertEquals(ArrayList.class, InjectionUtils.getCollectionType(List.class)); //NOPMD
+        assertEquals(HashSet.class, InjectionUtils.getCollectionType(Set.class)); //NOPMD
+        assertEquals(TreeSet.class, InjectionUtils.getCollectionType(SortedSet.class)); //NOPMD
     }
 
     @Test
@@ -181,7 +184,7 @@ public class InjectionUtilsTest extends Assert {
         assertEquals(String.class, str);
         ParameterizedType list = (ParameterizedType) InjectionUtils.getGenericResponseType(
             GenericInterface.class.getMethod("list"), TestService.class,
-            new ArrayList<>(), ArrayList.class, new ExchangeImpl());
+            new ArrayList<>(), ArrayList.class, new ExchangeImpl()); //NOPMD
         assertEquals(String.class, list.getActualTypeArguments()[0]);
     }
 
@@ -268,24 +271,19 @@ public class InjectionUtilsTest extends Assert {
         }
     }
 
-    private Message createMessage() {
+    private static Message createMessage() {
         ProviderFactory factory = ServerProviderFactory.getInstance();
         Message m = new MessageImpl();
         m.put("org.apache.cxf.http.case_insensitive_queries", false);
         Exchange e = new ExchangeImpl();
         m.setExchange(e);
         e.setInMessage(m);
-        Endpoint endpoint = EasyMock.createMock(Endpoint.class);
-        endpoint.getEndpointInfo();
-        EasyMock.expectLastCall().andReturn(null).anyTimes();
-        endpoint.get(Application.class.getName());
-        EasyMock.expectLastCall().andReturn(null);
-        endpoint.size();
-        EasyMock.expectLastCall().andReturn(0).anyTimes();
-        endpoint.isEmpty();
-        EasyMock.expectLastCall().andReturn(true).anyTimes();
-        endpoint.get(ServerProviderFactory.class.getName());
-        EasyMock.expectLastCall().andReturn(factory).anyTimes();
+        Endpoint endpoint = EasyMock.mock(Endpoint.class);
+        EasyMock.expect(endpoint.getEndpointInfo()).andReturn(null).anyTimes();
+        EasyMock.expect(endpoint.get(Application.class.getName())).andReturn(null);
+        EasyMock.expect(endpoint.size()).andReturn(0).anyTimes();
+        EasyMock.expect(endpoint.isEmpty()).andReturn(true).anyTimes();
+        EasyMock.expect(endpoint.get(ServerProviderFactory.class.getName())).andReturn(factory).anyTimes();
         EasyMock.replay(endpoint);
         e.put(Endpoint.class, endpoint);
         return m;

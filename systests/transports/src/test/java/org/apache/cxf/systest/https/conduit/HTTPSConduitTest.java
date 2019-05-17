@@ -66,6 +66,11 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * This class tests several issues and Conduit policies based
  * on a set up of redirecting servers.
@@ -96,7 +101,7 @@ public class HTTPSConduitTest extends AbstractBusClientServerTestBase {
     private static TLSClientParameters tlsClientParameters = new TLSClientParameters();
     private static List<String> servers = new ArrayList<>();
 
-    private static Map<String, String> addrMap = new TreeMap<String, String>();
+    private static Map<String, String> addrMap = new TreeMap<>();
 
     static {
         try (InputStream key = ClassLoaderUtils.getResourceAsStream("keys/Morpit.jks", HTTPSConduitTest.class);
@@ -319,8 +324,8 @@ public class HTTPSConduitTest extends AbstractBusClientServerTestBase {
             (HTTPConduit) client.getConduit();
 
         HTTPClientPolicy httpClientPolicy = http.getClient();
-        assertEquals("the httpClientPolicy's autoRedirect should be true",
-                     true, httpClientPolicy.isAutoRedirect());
+        assertTrue("the httpClientPolicy's autoRedirect should be true",
+                     httpClientPolicy.isAutoRedirect());
         TLSClientParameters tlsParameters = http.getTlsClientParameters();
         assertNotNull("the http conduit's tlsParameters should not be null", tlsParameters);
 
@@ -476,7 +481,7 @@ public class HTTPSConduitTest extends AbstractBusClientServerTestBase {
             for (int i = 0; i < trustName.length; i++) {
                 sb.append("\"OU=");
                 sb.append(trustName[i]);
-                sb.append("\"");
+                sb.append('"');
                 if (i < trustName.length - 1) {
                     sb.append(", ");
                 }

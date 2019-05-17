@@ -37,11 +37,11 @@ import org.apache.cxf.message.Message;
 
 public final class ClientProviderFactory extends ProviderFactory {
     private List<ProviderInfo<ClientRequestFilter>> clientRequestFilters =
-        new ArrayList<ProviderInfo<ClientRequestFilter>>(1);
+        new ArrayList<>(1);
     private List<ProviderInfo<ClientResponseFilter>> clientResponseFilters =
-        new ArrayList<ProviderInfo<ClientResponseFilter>>(1);
+        new ArrayList<>(1);
     private List<ProviderInfo<ResponseExceptionMapper<?>>> responseExceptionMappers =
-        new ArrayList<ProviderInfo<ResponseExceptionMapper<?>>>(1);
+        new ArrayList<>(1);
     private RxInvokerProvider<?> rxInvokerProvider;
     private ClientProviderFactory(Bus bus) {
         super(bus);
@@ -58,8 +58,7 @@ public final class ClientProviderFactory extends ProviderFactory {
     }
 
     public static ClientProviderFactory getInstance(Message m) {
-        Endpoint e = m.getExchange().getEndpoint();
-        return (ClientProviderFactory)e.get(CLIENT_FACTORY_NAME);
+        return getInstance(m.getExchange().getEndpoint());
     }
 
     public static ClientProviderFactory getInstance(Endpoint e) {

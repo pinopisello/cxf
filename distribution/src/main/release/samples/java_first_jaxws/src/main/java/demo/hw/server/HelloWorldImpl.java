@@ -28,7 +28,7 @@ import javax.jws.WebService;
 @WebService(endpointInterface = "demo.hw.server.HelloWorld",
             serviceName = "HelloWorldServiceName",portName="HelloWorldServicePortName")
 public class HelloWorldImpl implements HelloWorld {
-    Map<Integer, User> users = new LinkedHashMap<Integer, User>();
+    Map<Integer, User> users = new LinkedHashMap<>();
 
     @WebMethod(exclude=false)
     public String sayHi(String text) {

@@ -178,7 +178,7 @@ public class JaxWsClientProxy extends org.apache.cxf.frontend.ClientProxy implem
                 return ex;
             }
         }
-        
+
         if (ex instanceof Fault && ex.getCause() instanceof IOException) {
             return new WebServiceException(ex.getMessage(), ex.getCause());
         }
@@ -205,7 +205,7 @@ public class JaxWsClientProxy extends org.apache.cxf.frontend.ClientProxy implem
         }
         return new WebServiceException(ex);
     }
-    
+
     boolean isAsync(Method m) {
         return m.getName().endsWith("Async")
             && (Future.class.equals(m.getReturnType())
@@ -281,7 +281,7 @@ public class JaxWsClientProxy extends org.apache.cxf.frontend.ClientProxy implem
 
     private static Locale stringToLocale(String locale) {
         // use the IETF BCP 47 delimiter but accept the toString delimiter for cxf 2.7.x
-        String parts[] = locale.split("-", 0);
+        String[] parts = locale.split("-", 0);
         if (parts.length == 1) {
             return new Locale(parts[0]);
         } else if (parts.length == 2) {
@@ -306,9 +306,7 @@ public class JaxWsClientProxy extends org.apache.cxf.frontend.ClientProxy implem
         if (params.length > 0 && params[params.length - 1] instanceof AsyncHandler) {
             handler = (AsyncHandler<Object>)params[params.length - 1];
             Object[] newParams = new Object[params.length - 1];
-            for (int i = 0; i < newParams.length; i++) {
-                newParams[i] = params[i];
-            }
+            System.arraycopy(params, 0, newParams, 0, newParams.length);
             params = newParams;
         } else {
             handler = null;
@@ -323,7 +321,7 @@ public class JaxWsClientProxy extends org.apache.cxf.frontend.ClientProxy implem
             }
         };
 
-        Response<Object> ret = new JaxwsResponseCallback<Object>(callback);
+        Response<Object> ret = new JaxwsResponseCallback<>(callback);
         client.invoke(callback, oi, params);
         return ret;
     }

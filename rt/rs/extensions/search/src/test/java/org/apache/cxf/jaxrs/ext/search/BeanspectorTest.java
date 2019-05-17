@@ -21,15 +21,17 @@ package org.apache.cxf.jaxrs.ext.search;
 import java.util.Date;
 import java.util.Set;
 
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class BeanspectorTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class BeanspectorTest {
 
     @Test
     public void testSimpleBean() throws SearchParseException {
-        Beanspector<SimpleBean> bean = new Beanspector<SimpleBean>(new SimpleBean());
+        Beanspector<SimpleBean> bean = new Beanspector<>(new SimpleBean());
         Set<String> getters = bean.getGettersNames();
         assertEquals(3, getters.size());
         assertTrue(getters.contains("class"));

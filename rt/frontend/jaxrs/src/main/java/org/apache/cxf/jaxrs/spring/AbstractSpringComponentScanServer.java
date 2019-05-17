@@ -68,9 +68,9 @@ public abstract class AbstractSpringComponentScanServer extends AbstractSpringCo
     @Value("${cxf.jaxrs.component-scan-beans:}")
     private String componentScanBeans;
 
-    private List<ResourceProvider> resourceProviders = new LinkedList<ResourceProvider>();
-    private List<Object> jaxrsProviders = new LinkedList<Object>();
-    private List<Feature> cxfFeatures = new LinkedList<Feature>();
+    private List<ResourceProvider> resourceProviders = new LinkedList<>();
+    private List<Object> jaxrsProviders = new LinkedList<>();
+    private List<Feature> cxfFeatures = new LinkedList<>();
     private Class<? extends Annotation> serviceAnnotation;
 
     protected AbstractSpringComponentScanServer() {
@@ -113,7 +113,7 @@ public abstract class AbstractSpringComponentScanServer extends AbstractSpringCo
                 List<Application> apps = CastUtils.cast(JAXRSServerFactoryBeanDefinitionParser
                     .createBeansFromDiscoveredClasses(super.applicationContext, 
                                                       appClasses.get(ApplicationPath.class), null));
-                if (apps.size() > 0) {
+                if (!apps.isEmpty()) {
                     factoryBean = createFactoryBeanFromApplication(apps.get(0));
                     final Map< Class< ? extends Annotation >, Collection< Class< ? > > > cxfClasses =
                         ClasspathScanner.findClasses(classesScanPackages, org.apache.cxf.annotations.Provider.class);

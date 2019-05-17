@@ -85,7 +85,7 @@ public class Server {
                          new ThrottlingFeature(manager));  //cxf-rt-features-throttling
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         new Server();
         System.out.println("Server ready...");
 

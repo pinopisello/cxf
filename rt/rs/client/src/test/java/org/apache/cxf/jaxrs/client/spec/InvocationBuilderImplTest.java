@@ -29,10 +29,13 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class InvocationBuilderImplTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class InvocationBuilderImplTest {
 
     public static class TestFilter implements ClientRequestFilter {
 
@@ -42,7 +45,7 @@ public class InvocationBuilderImplTest extends Assert {
             MultivaluedMap<String, Object> headers = context.getHeaders();
             StringBuilder entity = new StringBuilder();
             for (String key : headers.keySet()) {
-                entity.append(key).append("=").append(headers.getFirst(key)).append(";");
+                entity.append(key).append('=').append(headers.getFirst(key)).append(';');
             }
             context.abortWith(Response.ok(entity.toString()).build());
         }

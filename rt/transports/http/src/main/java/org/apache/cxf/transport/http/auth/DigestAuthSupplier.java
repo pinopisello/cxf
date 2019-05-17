@@ -39,7 +39,7 @@ public class DigestAuthSupplier implements HttpAuthSupplier {
     };
 
     final MessageDigest md5Helper;
-    Map<URI, DigestInfo> authInfo = new ConcurrentHashMap<URI, DigestInfo>();
+    Map<URI, DigestInfo> authInfo = new ConcurrentHashMap<>();
 
     public DigestAuthSupplier() {
         MessageDigest md = null;
@@ -145,7 +145,7 @@ public class DigestAuthSupplier implements HttpAuthSupplier {
                 String cnonce = createCnonce();
 
                 String digAlg = algorithm;
-                if (digAlg.equalsIgnoreCase("MD5-sess")) {
+                if ("MD5-sess".equalsIgnoreCase(digAlg)) {
                     digAlg = "MD5";
                 }
                 MessageDigest digester = MessageDigest.getInstance(digAlg);

@@ -21,15 +21,14 @@ package org.apache.cxf.helpers;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -105,7 +104,7 @@ public final class FileUtils {
     public static synchronized void maybeDeleteDefaultTempDir() {
         if (defaultTempDir != null) {
             Runtime.getRuntime().gc(); // attempt a garbage collect to close any files
-            String files[] = defaultTempDir.list();
+            String[] files = defaultTempDir.list();
             if (files != null && files.length > 0) {
                 //there are files in there, we need to attempt some more cleanup
 
@@ -253,9 +252,6 @@ public final class FileUtils {
     }
     public static void delete(File f, boolean inShutdown) {
         if (!f.delete()) {
-            if (isWindows()) {
-                System.gc();
-            }
             try {
                 Thread.sleep(RETRY_SLEEP_MILLIS);
             } catch (InterruptedException ex) {
@@ -265,11 +261,6 @@ public final class FileUtils {
                 f.deleteOnExit();
             }
         }
-    }
-
-    private static boolean isWindows() {
-        String osName = SystemPropertyAction.getProperty("os.name").toLowerCase(Locale.US);
-        return osName.indexOf("windows") > -1;
     }
 
     public static File createTempFile(String prefix, String suffix) throws IOException {
@@ -336,7 +327,7 @@ public final class FileUtils {
 
                 for (int x = 0; x < tok.length; x++) {
                     String token = tok[x];
-                    result.append("  " + token);
+                    result.append("  ").append(token);
                 }
                 line = in.readLine();
             }
@@ -363,34 +354,24 @@ public final class FileUtils {
         return rtn;
     }
 
-    public static List<File> getFiles(File dir, final String pattern) {
-        return getFiles(dir, pattern, null);
-    }
-    public static List<File> getFilesRecurse(File dir, final String pattern) {
-        return getFilesRecurse(dir, pattern, null);
+    public static List<File> getFilesUsingSuffix(File dir, final String suffix) {
+        return getFilesRecurseUsingSuffix(dir, suffix, false, new ArrayList<>());
     }
 
-    public static List<File> getFiles(File dir, final String pattern, File exclude) {
-        return getFilesRecurse(dir, Pattern.compile(pattern), exclude, false, new ArrayList<>());
+    public static List<File> getFilesRecurseUsingSuffix(File dir, final String suffix) {
+        return getFilesRecurseUsingSuffix(dir, suffix, true, new ArrayList<>());
     }
-    public static List<File> getFilesRecurse(File dir, final String pattern, File exclude) {
-        return getFilesRecurse(dir, Pattern.compile(pattern), exclude, true, new ArrayList<>());
-    }
-    private static List<File> getFilesRecurse(File dir,
-                                              Pattern pattern,
-                                              File exclude, boolean rec,
-                                              List<File> fileList) {
+
+    private static List<File> getFilesRecurseUsingSuffix(File dir, final String suffix,
+                                                        boolean rec, List<File> fileList) {
         File[] files = dir.listFiles();
         if (files != null) {
-            for (File file : dir.listFiles()) {
-                if (file.equals(exclude)) {
-                    continue;
-                }
+            int suffixLength = suffix.length();
+            for (File file : files) {
                 if (file.isDirectory() && rec) {
-                    getFilesRecurse(file, pattern, exclude, rec, fileList);
+                    getFilesRecurseUsingSuffix(file, suffix, rec, fileList);
                 } else {
-                    Matcher m = pattern.matcher(file.getName());
-                    if (m.matches()) {
+                    if (file.getName().endsWith(suffix) && file.getName().length() > suffixLength) {
                         fileList.add(file);
                     }
                 }
@@ -399,18 +380,25 @@ public final class FileUtils {
         return fileList;
     }
 
-    public static List<String> readLines(File file) throws Exception {
-        if (!file.exists()) {
-            return new ArrayList<>();
-        }
-        List<String> results = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line = reader.readLine();
-            while (line != null) {
-                results.add(line);
-                line = reader.readLine();
+    public static List<File> getFiles(File dir, final String pattern) {
+        List<File> fileList = new ArrayList<>();
+        File[] files = dir.listFiles();
+        if (files != null) {
+            Pattern p = Pattern.compile(pattern);
+            for (File file : files) {
+                Matcher m = p.matcher(file.getName());
+                if (m.matches()) {
+                    fileList.add(file);
+                }
             }
         }
-        return results;
+        return fileList;
+    }
+
+    public static List<String> readLines(File file) throws Exception {
+        if (!file.exists()) {
+            return Collections.emptyList();
+        }
+        return Files.readAllLines(file.toPath());
     }
 }

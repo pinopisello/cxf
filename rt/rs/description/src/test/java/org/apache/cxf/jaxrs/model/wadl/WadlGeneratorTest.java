@@ -61,11 +61,16 @@ import org.apache.ws.commons.schema.constants.Constants;
 
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class WadlGeneratorTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+public class WadlGeneratorTest {
 
     private IMocksControl control;
 
@@ -86,7 +91,7 @@ public class WadlGeneratorTest extends Assert {
     @Test
     public void testWhiteList() throws Exception {
         WadlGenerator wg = new WadlGenerator();
-        List<String> whiteList = new ArrayList<String>();
+        List<String> whiteList = new ArrayList<>();
         whiteList.add("123.123.123.123");
         wg.setWhiteList(whiteList);
         wg.setExternalLinks(Collections.singletonList("http://books.xsd"));
@@ -413,7 +418,7 @@ public class WadlGeneratorTest extends Assert {
     }
 
     private void checkGrammarsWithLinks(Element appElement, List<String> links) {
-        assertTrue(!links.isEmpty());
+        assertFalse(links.isEmpty());
         List<Element> grammarEls = DOMUtils.getChildrenWithName(appElement, WadlGenerator.WADL_NS,
                                                                 "grammars");
         assertEquals(1, grammarEls.size());
@@ -1019,7 +1024,7 @@ public class WadlGeneratorTest extends Assert {
         List<Element> importEls = DOMUtils.getChildrenWithName(schemasEls.get(0),
                                                                Constants.URI_2001_SCHEMA_XSD,
                                                                "import");
-        int schemaElementsIndex = importEls.size() > 0 ? 0 : 1;
+        int schemaElementsIndex = !importEls.isEmpty() ? 0 : 1;
         int schemaTypesIndex = schemaElementsIndex == 0 ? 1 : 0;
         
         checkGenericImplSchemaWithTypes(schemasEls.get(schemaTypesIndex));

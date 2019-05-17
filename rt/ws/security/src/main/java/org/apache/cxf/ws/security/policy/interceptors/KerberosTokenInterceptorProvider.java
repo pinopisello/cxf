@@ -78,13 +78,17 @@ public class KerberosTokenInterceptorProvider extends AbstractPolicyInterceptorP
     public KerberosTokenInterceptorProvider() {
         super(Arrays.asList(SP11Constants.KERBEROS_TOKEN, SP12Constants.KERBEROS_TOKEN));
 
-        this.getOutInterceptors().add(new KerberosTokenOutInterceptor());
-        this.getOutFaultInterceptors().add(new KerberosTokenOutInterceptor());
-        this.getInInterceptors().add(new KerberosTokenDOMInInterceptor());
-        this.getInFaultInterceptors().add(new KerberosTokenDOMInInterceptor());
+        KerberosTokenOutInterceptor outInterceptor = new KerberosTokenOutInterceptor();
+        this.getOutInterceptors().add(outInterceptor);
+        this.getOutFaultInterceptors().add(outInterceptor);
 
-        this.getInInterceptors().add(new KerberosTokenStaxInInterceptor());
-        this.getInFaultInterceptors().add(new KerberosTokenStaxInInterceptor());
+        KerberosTokenDOMInInterceptor domInInterceptor = new KerberosTokenDOMInInterceptor();
+        this.getInInterceptors().add(domInInterceptor);
+        this.getInFaultInterceptors().add(domInInterceptor);
+
+        KerberosTokenStaxInInterceptor staxInInterceptor = new KerberosTokenStaxInInterceptor();
+        this.getInInterceptors().add(staxInInterceptor);
+        this.getInFaultInterceptors().add(staxInInterceptor);
 
         this.getOutInterceptors().add(new KerberosTokenInterceptor());
         this.getInInterceptors().add(new KerberosTokenInterceptor());
@@ -174,7 +178,7 @@ public class KerberosTokenInterceptorProvider extends AbstractPolicyInterceptorP
                     List<WSHandlerResult> results =
                         CastUtils.cast((List<?>)message.get(WSHandlerConstants.RECV_RESULTS));
                     if (results != null && !results.isEmpty()) {
-                        parseHandlerResults(results.get(0), message, aim, ais);
+                        parseHandlerResults(results.get(0), message, ais);
                     }
                 } else {
                     //client side should be checked on the way out
@@ -191,7 +195,6 @@ public class KerberosTokenInterceptorProvider extends AbstractPolicyInterceptorP
         private void parseHandlerResults(
             WSHandlerResult rResult,
             Message message,
-            AssertionInfoMap aim,
             Collection<AssertionInfo> ais
         ) {
 
@@ -297,9 +300,9 @@ public class KerberosTokenInterceptorProvider extends AbstractPolicyInterceptorP
                 Map<String, Key> secretKeys = kerberosToken.getSecretKey();
                 if (secretKeys != null) {
                     SecretKey foundKey = null;
-                    for (String key : kerberosToken.getSecretKey().keySet()) {
-                        if (secretKeys.get(key) instanceof SecretKey) {
-                            SecretKey secretKey = (SecretKey)secretKeys.get(key);
+                    for (Entry<String, Key> entry : kerberosToken.getSecretKey().entrySet()) {
+                        if (entry.getValue() instanceof SecretKey) {
+                            SecretKey secretKey = (SecretKey)entry.getValue();
                             if (foundKey == null
                                 || secretKey.getEncoded().length > foundKey.getEncoded().length) {
                                 foundKey = secretKey;

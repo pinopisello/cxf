@@ -98,7 +98,7 @@ public final class SearchUtils {
     }
 
     public static <T> String toSQL(SearchCondition<T> sc, String table, String... columns) {
-        SQLPrinterVisitor<T> visitor = new SQLPrinterVisitor<T>(table, columns);
+        SQLPrinterVisitor<T> visitor = new SQLPrinterVisitor<>(table, columns);
         sc.accept(visitor);
         return visitor.getQuery();
     }
@@ -148,15 +148,15 @@ public final class SearchUtils {
             for (int i = 0; i < columns.size(); i++) {
                 sb.append(columns.get(i));
                 if (i + 1 < columns.size()) {
-                    sb.append(",");
+                    sb.append(',');
                 }
             }
         } else {
-            sb.append("*");
+            sb.append('*');
         }
         sb.append(" FROM ").append(table);
         if (tableAlias != null) {
-            sb.append(" " + tableAlias);
+            sb.append(' ').append(tableAlias);
         }
     }
 

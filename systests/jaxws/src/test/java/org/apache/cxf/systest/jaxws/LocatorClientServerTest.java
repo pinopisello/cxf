@@ -36,6 +36,10 @@ import org.apache.locator.LocatorService_Service;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class LocatorClientServerTest extends AbstractBusClientServerTestBase {
     static final String PORT = allocatePort(MyServer.class);
 
@@ -106,7 +110,7 @@ public class LocatorClientServerTest extends AbstractBusClientServerTestBase {
             builder.build();
             fail("Address in an EPR cannot be null, when serviceName or portName is null");
         } catch (IllegalStateException ie) {
-            assertTrue(true);
+            // expected
         } catch (Exception e) {
             fail("Unexpected Exception " + e.getClass() + " raised: " + e.getMessage());
         }

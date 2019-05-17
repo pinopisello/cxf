@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.cxf.rs.security.jose.jwa.SignatureAlgorithm;
-import org.apache.cxf.rs.security.jose.jws.JwsHeaders;
 import org.apache.cxf.rs.security.jose.jws.JwsJwtCompactConsumer;
 import org.apache.cxf.rs.security.jose.jws.JwsSignatureProvider;
 import org.apache.cxf.rs.security.jose.jws.PrivateKeyJwsSignatureProvider;
@@ -41,10 +40,15 @@ import org.apache.cxf.rs.security.oauth2.tokens.refresh.RefreshToken;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
 
-abstract class AbstractOAuthDataProviderTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+abstract class AbstractOAuthDataProviderTest {
     private static KeyPair keyPair;
     private AbstractOAuthDataProvider provider;
 
@@ -65,12 +69,8 @@ abstract class AbstractOAuthDataProviderTest extends Assert {
             final JwsSignatureProvider signatureProvider =
                 new PrivateKeyJwsSignatureProvider(keyPair.getPrivate(), SignatureAlgorithm.RS256);
 
-            OAuthJoseJwtProducer jwtAccessTokenProducer = new OAuthJoseJwtProducer() {
-                @Override
-                protected JwsSignatureProvider getInitializedSignatureProvider(JwsHeaders jwsHeaders) {
-                    return signatureProvider;
-                }
-            };
+            OAuthJoseJwtProducer jwtAccessTokenProducer = new OAuthJoseJwtProducer();
+            jwtAccessTokenProducer.setSignatureProvider(signatureProvider);
             dataProvider.setJwtAccessTokenProducer(jwtAccessTokenProducer);
         }
     }
@@ -108,9 +108,9 @@ abstract class AbstractOAuthDataProviderTest extends Assert {
         List<Client> aliceClients = getProvider().getClients(new UserSubject("alice"));
         assertNotNull(aliceClients);
         assertEquals(2, aliceClients.size());
-        compareClients(c, aliceClients.get(0).getClientId().equals("12345")
+        compareClients(c, "12345".equals(aliceClients.get(0).getClientId())
                        ? aliceClients.get(0) : aliceClients.get(1));
-        compareClients(c2, aliceClients.get(0).getClientId().equals("56789")
+        compareClients(c2, "56789".equals(aliceClients.get(0).getClientId())
                        ? aliceClients.get(0) : aliceClients.get(1));
 
         List<Client> bobClients = getProvider().getClients(new UserSubject("bob"));
@@ -337,19 +337,9 @@ abstract class AbstractOAuthDataProviderTest extends Assert {
 
     @After
     public void tearDown() throws Exception {
-        try {
-            tearDownClients();
-            if (getProvider() != null) {
-                getProvider().close();
-            }
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-        } finally {
-            try {
-                //connection.createStatement().execute("SHUTDOWN");
-            } catch (Throwable ex) {
-                ex.printStackTrace();
-            }
+        tearDownClients();
+        if (getProvider() != null) {
+            getProvider().close();
         }
     }
 
@@ -359,10 +349,10 @@ abstract class AbstractOAuthDataProviderTest extends Assert {
             JwtToken jwt = jwtConsumer.getJwtToken();
 
             // Validate claims
-            Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_EXPIRY));
-            Assert.assertNotNull(jwt.getClaim(JwtConstants.CLAIM_ISSUED_AT));
+            assertNotNull(jwt.getClaim(JwtConstants.CLAIM_EXPIRY));
+            assertNotNull(jwt.getClaim(JwtConstants.CLAIM_ISSUED_AT));
 
-            Assert.assertTrue(jwtConsumer.verifySignatureWith(keyPair.getPublic(), SignatureAlgorithm.RS256));
+            assertTrue(jwtConsumer.verifySignatureWith(keyPair.getPublic(), SignatureAlgorithm.RS256));
         }
     }
 

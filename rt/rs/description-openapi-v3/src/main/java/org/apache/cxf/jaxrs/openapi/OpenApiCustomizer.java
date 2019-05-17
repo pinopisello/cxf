@@ -156,10 +156,10 @@ public class OpenApiCustomizer {
     protected String getNormalizedPath(String classResourcePath, String operationResourcePath) {
         StringBuilder normalizedPath = new StringBuilder();
 
-        String[] segments = StringUtils.split(classResourcePath + operationResourcePath, "/");
+        String[] segments = (classResourcePath + operationResourcePath).split("/");
         for (String segment : segments) {
             if (!StringUtils.isEmpty(segment)) {
-                normalizedPath.append("/").append(segment);
+                normalizedPath.append('/').append(segment);
             }
         }
         // Adapt to Swagger's path expression
@@ -244,7 +244,7 @@ public class OpenApiCustomizer {
                 }
 
                 if (applicationPath.endsWith("/")) {
-                    applicationPath = applicationPath.substring(0, applicationPath.lastIndexOf("/"));
+                    applicationPath = applicationPath.substring(0, applicationPath.lastIndexOf('/'));
                 }
             }
         }

@@ -30,6 +30,9 @@ import java.util.Map;
 import javax.wsdl.Definition;
 import javax.wsdl.Port;
 import javax.wsdl.Service;
+import javax.wsdl.WSDLException;
+import javax.wsdl.factory.WSDLFactory;
+import javax.wsdl.xml.WSDLReader;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.namespace.QName;
@@ -59,16 +62,21 @@ import org.apache.cxf.tools.wsdlto.core.FrontEndProfile;
 import org.apache.cxf.tools.wsdlto.core.PluginLoader;
 import org.apache.cxf.tools.wsdlto.frontend.jaxws.JAXWSContainer;
 import org.apache.cxf.wsdl.WSDLConstants;
-import org.apache.cxf.wsdl.WSDLHelper;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class JavaToProcessorTest extends ProcessorTestBase {
     JavaToWSDLProcessor processor = new JavaToWSDLProcessor();
     String classPath = "";
-    private WSDLHelper wsdlHelper = new WSDLHelper();
     @Before
     public void startUp() throws Exception {
         env = new ToolContext();
@@ -76,10 +84,6 @@ public class JavaToProcessorTest extends ProcessorTestBase {
 
         classPath = System.getProperty("java.class.path");
         System.setProperty("java.class.path", getClassPath());
-        if (JavaUtils.isJava9Compatible()) {
-            System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
-        }
-
     }
     @After
     public void tearDown() {
@@ -112,7 +116,8 @@ public class JavaToProcessorTest extends ProcessorTestBase {
         assertTrue("Fail to generate wsdl file: " + wsdlFile.toString(), wsdlFile.exists());
 
         String tns = "http://simple.fortest.tools.cxf.apache.org/";
-        Definition def = wsdlHelper.getDefinition(wsdlFile);
+
+        Definition def = getDefinition(wsdlFile.getPath());
         assertNotNull(def);
         Service wsdlService = def.getService(new QName(tns, "Hello"));
         assertNotNull("Generate WSDL Service Error", wsdlService);
@@ -163,11 +168,12 @@ public class JavaToProcessorTest extends ProcessorTestBase {
         File classFile = new java.io.File(output.getCanonicalPath() + "/classes");
         classFile.mkdir();
 
-        String java9PlusFolder = output.getParent() + "/java9";
-        System.setProperty("java.class.path", getClassPath() + classFile.getCanonicalPath()
-            + File.separatorChar + ":" + java9PlusFolder + "/jaxb-api-2.3.0.jar"
-            + ":" + java9PlusFolder + "/jaxws-api-2.3.0.jar"
-            + ":" + java9PlusFolder + "/geronimo-ws-metadata_2.0_spec-1.1.3.jar");
+        if (JavaUtils.isJava9Compatible()) {
+            System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
+            String java9PlusFolder = output.getParent() + java.io.File.separator + "java9";
+            System.setProperty("java.class.path", System.getProperty("java.class.path")
+                               + java.io.File.pathSeparator + java9PlusFolder + java.io.File.separator + "*");
+        }
 
         env.put(ToolConstants.CFG_COMPILE, ToolConstants.CFG_COMPILE);
         env.put(ToolConstants.CFG_CLASSDIR, output.getCanonicalPath() + "/classes");
@@ -207,7 +213,7 @@ public class JavaToProcessorTest extends ProcessorTestBase {
         JavaToWS.main(args);
         File wsdlFile = new File(output, "java2wsdl.wsdl");
         assertTrue("Generate Wsdl Fail", wsdlFile.exists());
-        Definition def = wsdlHelper.getDefinition(wsdlFile);
+        Definition def = getDefinition(wsdlFile.getPath());
         Service wsdlService = def.getService(new QName(tns, serviceName));
         assertNotNull("Generate WSDL Service Error", wsdlService);
 
@@ -1033,6 +1039,14 @@ public class JavaToProcessorTest extends ProcessorTestBase {
         writer.flush();
         writer.close();
         assertEquals(-1, sw.getBuffer().indexOf("Exception Message"));
+    }
+
+    private Definition getDefinition(String wsdl) throws WSDLException {
+        WSDLFactory wsdlFactory = WSDLFactory.newInstance();
+        WSDLReader wsdlReader = wsdlFactory.newWSDLReader();
+        wsdlReader.setFeature("javax.wsdl.verbose", false);
+        return wsdlReader.readWSDL(wsdl);
+
     }
 
 }

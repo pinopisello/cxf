@@ -112,11 +112,6 @@ public class W3CDOMStreamReader extends AbstractDOMStreamReader<Node, Node> {
 
         NamedNodeMap nodes = element.getAttributes();
 
-        String ePrefix = element.getPrefix();
-        if (ePrefix == null) {
-            ePrefix = "";
-        }
-
         if (nodes != null) {
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
@@ -229,7 +224,7 @@ public class W3CDOMStreamReader extends AbstractDOMStreamReader<Node, Node> {
 
     public String getAttributeValue(String ns, String local) {
         Attr at;
-        if (ns == null || ns.equals("")) {
+        if (ns == null || ns.isEmpty()) {
             at = getCurrentElement().getAttributeNode(local);
         } else {
             at = getCurrentElement().getAttributeNodeNS(ns, local);
@@ -364,8 +359,8 @@ public class W3CDOMStreamReader extends AbstractDOMStreamReader<Node, Node> {
         String ln = getCurrentNode().getLocalName();
         if (ln == null) {
             ln = getCurrentNode().getNodeName();
-            if (ln.indexOf(":") != -1) {
-                ln = ln.substring(ln.indexOf(":") + 1);
+            if (ln.indexOf(':') != -1) {
+                ln = ln.substring(ln.indexOf(':') + 1);
             }
         }
         return ln;
@@ -375,10 +370,10 @@ public class W3CDOMStreamReader extends AbstractDOMStreamReader<Node, Node> {
         String ln = getCurrentNode().getLocalName();
         if (ln == null) {
             ln = getCurrentNode().getNodeName();
-            if (ln.indexOf(":") == -1) {
+            if (ln.indexOf(':') == -1) {
                 ln = getNamespaceURI("");
             } else {
-                ln = getNamespaceURI(ln.substring(0, ln.indexOf(":")));
+                ln = getNamespaceURI(ln.substring(0, ln.indexOf(':')));
             }
             return ln;
         }
@@ -389,8 +384,8 @@ public class W3CDOMStreamReader extends AbstractDOMStreamReader<Node, Node> {
         String prefix = getCurrentNode().getPrefix();
         if (prefix == null) {
             String nodeName = getCurrentNode().getNodeName();
-            if (nodeName.indexOf(":") != -1) {
-                prefix = nodeName.substring(0, nodeName.indexOf(":"));
+            if (nodeName.indexOf(':') != -1) {
+                prefix = nodeName.substring(0, nodeName.indexOf(':'));
             }  else {
                 prefix = "";
             }

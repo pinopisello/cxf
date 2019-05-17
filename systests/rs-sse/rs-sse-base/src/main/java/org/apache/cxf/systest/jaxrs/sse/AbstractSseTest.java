@@ -40,7 +40,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractSseTest extends AbstractSseBaseTest {
     @Test
@@ -48,7 +52,7 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
         final WebTarget target = createWebTarget("/rest/api/bookstore/sse/" + UUID.randomUUID())
             .property(HttpHeaders.LAST_EVENT_ID_HEADER, 150);
         final Collection<Book> books = new ArrayList<>();
-        
+
         try (SseEventSource eventSource = SseEventSource.target(target).build()) {
             eventSource.register(collect(books), System.out::println);
             eventSource.open();
@@ -57,11 +61,11 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
         }
 
         // Easing the test verification here, it does not work well for Atm + Jetty
-        assertThat(books, 
+        assertThat(books,
             hasItems(
-                new Book("New Book #151", 151), 
-                new Book("New Book #152", 152), 
-                new Book("New Book #153", 153), 
+                new Book("New Book #151", 151),
+                new Book("New Book #152", 152),
+                new Book("New Book #153", 153),
                 new Book("New Book #154", 154)
             )
         );
@@ -71,7 +75,7 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
     public void testBooksStreamIsReturnedFromInboundSseEvents() throws InterruptedException {
         final WebTarget target = createWebTarget("/rest/api/bookstore/sse/0");
         final Collection<Book> books = new ArrayList<>();
-        
+
         try (SseEventSource eventSource = SseEventSource.target(target).build()) {
             eventSource.register(collect(books), System.out::println);
             eventSource.open();
@@ -79,11 +83,11 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
             awaitEvents(5000, books, 4);
         }
         // Easing the test verification here, it does not work well for Atm + Jetty
-        assertThat(books, 
+        assertThat(books,
             hasItems(
-                new Book("New Book #1", 1), 
-                new Book("New Book #2", 2), 
-                new Book("New Book #3", 3), 
+                new Book("New Book #1", 1),
+                new Book("New Book #2", 2),
+                new Book("New Book #3", 3),
                 new Book("New Book #4", 4)
             )
         );
@@ -93,7 +97,7 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
     public void testNoDataIsReturnedFromInboundSseEvents() throws InterruptedException {
         final WebTarget target = createWebTarget("/rest/api/bookstore/nodata");
         final Collection<Book> books = new ArrayList<>();
-        
+
         try (SseEventSource eventSource = SseEventSource.target(target).build()) {
             eventSource.register(collect(books), System.out::println);
             eventSource.open();
@@ -108,7 +112,7 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
     public void testBooksStreamIsReconnectedFromInboundSseEvents() throws InterruptedException {
         final WebTarget target = createWebTarget("/rest/api/bookstore/sse/0");
         final Collection<Book> books = new ArrayList<>();
-        
+
         final Builder builder = SseEventSource.target(target).reconnectingEvery(1, TimeUnit.SECONDS);
         try (SseEventSource eventSource = builder.build()) {
             eventSource.register(collect(books), System.out::println);
@@ -117,24 +121,24 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
             awaitEvents(5000, books, 12);
         }
 
-        assertThat(books, 
+        assertThat(books,
             hasItems(
-                new Book("New Book #1", 1), 
-                new Book("New Book #2", 2), 
-                new Book("New Book #3", 3), 
+                new Book("New Book #1", 1),
+                new Book("New Book #2", 2),
+                new Book("New Book #3", 3),
                 new Book("New Book #4", 4),
-                new Book("New Book #5", 5), 
-                new Book("New Book #6", 6), 
-                new Book("New Book #7", 7), 
+                new Book("New Book #5", 5),
+                new Book("New Book #6", 6),
+                new Book("New Book #7", 7),
                 new Book("New Book #8", 8),
-                new Book("New Book #9", 9), 
-                new Book("New Book #10", 10), 
-                new Book("New Book #11", 11), 
+                new Book("New Book #9", 9),
+                new Book("New Book #10", 10),
+                new Book("New Book #11", 11),
                 new Book("New Book #12", 12)
             )
         );
     }
-    
+
     @Test
     public void testBooksStreamIsBroadcasted() throws Exception {
         final Collection<Future<Response>> results = new ArrayList<>();
@@ -181,7 +185,7 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
     public void testBooksStreamIsReturnedFromInboundSseEventsNoDelay() throws InterruptedException {
         final WebTarget target = createWebTarget("/rest/api/bookstore/nodelay/sse/0");
         final Collection<Book> books = new ArrayList<>();
-        
+
         try (SseEventSource eventSource = SseEventSource.target(target).build()) {
             eventSource.register(collect(books), System.out::println);
             eventSource.open();
@@ -189,15 +193,80 @@ public abstract class AbstractSseTest extends AbstractSseBaseTest {
             awaitEvents(5000, books, 5);
         }
         // Easing the test verification here, it does not work well for Atm + Jetty
-        assertThat(books, 
+        assertThat(books,
             hasItems(
-                new Book("New Book #1", 1), 
-                new Book("New Book #2", 2), 
-                new Book("New Book #3", 3), 
+                new Book("New Book #1", 1),
+                new Book("New Book #2", 2),
+                new Book("New Book #3", 3),
                 new Book("New Book #4", 4),
                 new Book("New Book #5", 5)
             )
         );
+    }
+
+    @Test
+    public void testClientClosesEventSource() throws InterruptedException {
+        final WebTarget target = createWebTarget("/rest/api/bookstore/client-closes-connection/sse/0");
+        final Collection<Book> books = new ArrayList<>();
+
+        try (SseEventSource eventSource = SseEventSource.target(target).build()) {
+            eventSource.register(collect(books), System.out::println);
+            eventSource.open();
+
+            // wait for single event, close before server sends other 3
+            awaitEvents(200, books, 1);
+
+            // Only two out of 4 messages should be delivered, others should be discarded
+            final Response r =
+                createWebClient("/rest/api/bookstore/client-closes-connection/received", MediaType.APPLICATION_JSON)
+                    .put(null);
+            assertThat(r.getStatus(), equalTo(204));
+
+            assertThat(eventSource.close(1, TimeUnit.SECONDS), equalTo(true));
+        }
+
+        // Easing the test verification here, it does not work well for Atm + Jetty
+        assertThat(books,
+            hasItems(
+                new Book("New Book #1", 1)
+            )
+        );
+
+        // Only two out of 4 messages should be delivered, others should be discarded
+        final Response r =
+            createWebClient("/rest/api/bookstore/client-closes-connection/closed", MediaType.APPLICATION_JSON)
+                .put(null);
+        assertThat(r.getStatus(), equalTo(204));
+
+        // Give server some time to finish up the sink
+        Thread.sleep(2000);
+
+        // Only two out of 4 messages should be delivered, others should be discarded
+        final BookBroadcasterStats stats =
+            createWebClient("/rest/api/bookstore/client-closes-connection/stats", MediaType.APPLICATION_JSON)
+                .get()
+                .readEntity(BookBroadcasterStats.class);
+
+        // Tomcat will feedback through onError callback, others through onComplete
+        assertThat(stats.isErrored(), equalTo(supportsErrorPropagation()));
+        // The sink should be in closed state
+        assertThat(stats.isWasClosed(), equalTo(true));
+        // The onClose callback should be called
+        assertThat(stats.isClosed(), equalTo(true));
+
+        // It is very hard to get the predictable match here, but at most
+        // 2 events could get through before the client's connection drop off
+        assertTrue(stats.getCompleted() == 2 || stats.getCompleted() == 1);
+    }
+
+    /**
+     * Jetty / Undertow do not propagate errors from the runnable passed to
+     * AsyncContext::start() up to the AsyncEventListener::onError(). Tomcat however
+     * does it.
+     * @return
+     */
+    protected boolean supportsErrorPropagation() {
+        return false;
     }
 
     private static Consumer<InboundSseEvent> collect(final Collection< Book > books) {

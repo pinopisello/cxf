@@ -100,11 +100,7 @@ public class HttpsURLConnectionFactory {
             try {
                 decorateWithTLS(tlsClientParameters, connection);
             } catch (Throwable ex) {
-                if (ex instanceof IOException) {
-                    throw (IOException) ex;
-                }
-                IOException ioException = new IOException("Error while initializing secure socket", ex);
-                throw ioException;
+                throw new IOException("Error while initializing secure socket", ex);
             }
         }
 

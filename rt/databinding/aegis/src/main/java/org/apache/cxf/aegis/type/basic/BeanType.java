@@ -301,11 +301,9 @@ public class BeanType extends AegisType {
                     property
                 });
             }
+        } catch (DatabindingException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof DatabindingException) {
-                throw (DatabindingException)e;
-            }
-
             throw new DatabindingException("Couldn't set property " + name + " on " + object + ". "
                                            + e.getMessage(), e);
         }
@@ -646,7 +644,7 @@ public class BeanType extends AegisType {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(32);
         sb.append(getClass().getName());
         sb.append(": [class=");
         Class<?> c = getTypeClass();
@@ -656,7 +654,7 @@ public class BeanType extends AegisType {
         sb.append((q == null) ? "<null>" : q.toString());
         sb.append(",\ninfo=");
         sb.append(getTypeInfo().toString());
-        sb.append("]");
+        sb.append(']');
         return sb.toString();
     }
 

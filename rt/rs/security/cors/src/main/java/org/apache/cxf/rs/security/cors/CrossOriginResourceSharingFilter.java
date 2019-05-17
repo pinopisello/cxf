@@ -150,7 +150,7 @@ public class CrossOriginResourceSharingFilter implements ContainerRequestFilter,
 
         // 5.1.4
         List<String> effectiveExposeHeaders = effectiveExposeHeaders(ann);
-        if (effectiveExposeHeaders != null && effectiveExposeHeaders.size() != 0) {
+        if (effectiveExposeHeaders != null && !effectiveExposeHeaders.isEmpty()) {
             m.getExchange().put(CorsHeaderConstants.HEADER_AC_EXPOSE_HEADERS, effectiveExposeHeaders);
         }
 
@@ -279,7 +279,7 @@ public class CrossOriginResourceSharingFilter implements ContainerRequestFilter,
         if (matchedResources == null) {
             return null;
         }
-        MultivaluedMap<String, String> values = new MetadataMap<String, String>();
+        MultivaluedMap<String, String> values = new MetadataMap<>();
         OperationResourceInfo ori = findPreflightMethod(matchedResources, requestUri, httpMethod, values, m);
         return ori == null ? null : ori.getAnnotatedMethod();
     }
@@ -308,7 +308,7 @@ public class CrossOriginResourceSharingFilter implements ContainerRequestFilter,
             if (subcri == null) {
                 return null;
             }
-            MultivaluedMap<String, String> newValues = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> newValues = new MetadataMap<>();
             newValues.putAll(values);
             return findPreflightMethod(Collections.singletonMap(subcri, newValues),
                                        values.getFirst(URITemplate.FINAL_MATCH_GROUP),
@@ -434,7 +434,7 @@ public class CrossOriginResourceSharingFilter implements ContainerRequestFilter,
         } else {
             actualHeaders = allowHeaders;
         }
-        Set<String> actualHeadersSet = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> actualHeadersSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         actualHeadersSet.addAll(actualHeaders);
         return actualHeadersSet.containsAll(aHeaders);
     }
@@ -515,7 +515,7 @@ public class CrossOriginResourceSharingFilter implements ContainerRequestFilter,
             sb.append(values.get(x));
             if (x != values.size() - 1) {
                 if (spaceSeparated) {
-                    sb.append(" ");
+                    sb.append(' ');
                 } else {
                     sb.append(", ");
                 }

@@ -42,7 +42,7 @@ public class Extension {
     protected String interfaceName;
     protected boolean deferred;
     protected Collection<String> namespaces = new ArrayList<>();
-    protected Object args[];
+    protected Object[] args;
     protected volatile Object obj;
     protected boolean optional;
     protected boolean notFound;
@@ -102,7 +102,7 @@ public class Extension {
     }
 
     public String toString() {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(128);
         buf.append("class: ");
         buf.append(className);
         buf.append(", interface: ");
@@ -118,7 +118,7 @@ public class Extension {
             buf.append(ns);
             n++;
         }
-        buf.append(")");
+        buf.append(')');
         return buf.toString();
     }
 
@@ -153,7 +153,7 @@ public class Extension {
         return namespaces;
     }
 
-    public void setArgs(Object a[]) {
+    public void setArgs(Object[] a) {
         args = a;
     }
 

@@ -30,8 +30,13 @@ public class js_browser_client_java_Server {
         Endpoint.publish(address, implementor);
     }
 
+<<<<<<< HEAD:distribution/src/main/release/samples/js_browser_client_java_first/src/main/java/demo/hw/server/js_browser_client_java_Server.java
     public static void main(String args[]) throws Exception {
         new js_browser_client_java_Server();
+=======
+    public static void main(String[] args) throws Exception {
+        new Server();
+>>>>>>> 5c4d446b66597dde2bf70e8971112547273bbf29:distribution/src/main/release/samples/js_browser_client_java_first/src/main/java/demo/hw/server/Server.java
         System.out.println("Server ready...");
 
         Thread.sleep(5 * 60 * 100000);

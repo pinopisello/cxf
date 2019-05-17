@@ -98,7 +98,7 @@ public class JSONProvider<T> extends AbstractJAXBProvider<T>  {
     }
 
     private ConcurrentHashMap<String, String> namespaceMap =
-        new ConcurrentHashMap<String, String>();
+        new ConcurrentHashMap<>();
     private boolean serializeAsArray;
     private List<String> arrayKeys;
     private List<String> primitiveArrayKeys;
@@ -173,18 +173,6 @@ public class JSONProvider<T> extends AbstractJAXBProvider<T>  {
 
     public void setWrapperMap(Map<String, String> map) {
         wrapperMap = map;
-    }
-
-    public void setEnableBuffering(boolean enableBuf) {
-        super.setEnableBuffering(enableBuf);
-    }
-
-    public void setConsumeMediaTypes(List<String> types) {
-        super.setConsumeMediaTypes(types);
-    }
-
-    public void setProduceMediaTypes(List<String> types) {
-        super.setProduceMediaTypes(types);
     }
 
     public void setSerializeAsArray(boolean asArray) {
@@ -361,7 +349,7 @@ public class JSONProvider<T> extends AbstractJAXBProvider<T>  {
         MediaType m, MultivaluedMap<String, Object> headers, OutputStream os)
         throws IOException {
         if (os == null) {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(256);
             sb.append("Jettison needs initialized OutputStream");
             if (getContext() != null && getContext().getContent(XMLStreamWriter.class) == null) {
                 sb.append("; if you need to customize Jettison output with the custom XMLStreamWriter"
@@ -566,9 +554,9 @@ public class JSONProvider<T> extends AbstractJAXBProvider<T>  {
 
         if (ignoreNamespaces && rootIsArray && (theArrayKeys == null || dropRootInJsonStream)) {
             if (theArrayKeys == null) {
-                theArrayKeys = new LinkedList<String>();
+                theArrayKeys = new LinkedList<>();
             } else if (dropRootInJsonStream) {
-                theArrayKeys = new LinkedList<String>(theArrayKeys);
+                theArrayKeys = new LinkedList<>(theArrayKeys);
             }
             if (qname != null) {
                 theArrayKeys.add(qname.getLocalPart());
@@ -595,7 +583,7 @@ public class JSONProvider<T> extends AbstractJAXBProvider<T>  {
     }
 
     protected boolean isRootArray(List<String> theArrayKeys) {
-        return theArrayKeys != null ? true : getBooleanJsonProperty(ROOT_IS_ARRAY_PROPERTY, serializeAsArray);
+        return theArrayKeys != null || getBooleanJsonProperty(ROOT_IS_ARRAY_PROPERTY, serializeAsArray);
     }
 
 

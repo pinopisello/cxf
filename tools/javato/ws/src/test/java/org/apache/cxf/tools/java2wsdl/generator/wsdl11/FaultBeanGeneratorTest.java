@@ -25,39 +25,23 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.cxf.helpers.JavaUtils;
 import org.apache.cxf.service.model.ServiceInfo;
 import org.apache.cxf.tools.common.ProcessorTestBase;
 import org.apache.cxf.tools.common.ToolConstants;
 import org.apache.cxf.tools.java2wsdl.processor.JavaToWSDLProcessor;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class FaultBeanGeneratorTest extends ProcessorTestBase {
     JavaToWSDLProcessor processor = new JavaToWSDLProcessor();
 
-    String classPath = "";
     @Before
     public void setUp() throws Exception {
-        classPath = System.getProperty("java.class.path");
-        System.setProperty("java.class.path", getClassPath());
-        if (JavaUtils.isJava9Compatible()) {
-            System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
-            String java9PlusFolder = output.getParent() + "/java9";
-            System.setProperty("java.class.path", System.getProperty("java.class.path") 
-                               + ":" + java9PlusFolder + "/jaxb-api-2.3.0.jar"
-                               + ":" + java9PlusFolder + "/jaxws-api-2.3.0.jar"
-                               + ":" + java9PlusFolder + "/geronimo-ws-metadata_2.0_spec-1.1.3.jar");
-        }
         processor.setEnvironment(env);
-    }
-
-    @After
-    public void tearDown() {
-        super.tearDown();
-        System.setProperty("java.class.path", classPath);
     }
 
     private ServiceInfo getServiceInfo() {
@@ -76,6 +60,7 @@ public class FaultBeanGeneratorTest extends ProcessorTestBase {
         generator.generate(output);
 
         String pkgBase = "org/apache/cxf/tools/fortest/cxf523/jaxws";
+        
         assertEquals(2, new File(output, pkgBase).listFiles().length);
         File faultBeanClass = new File(output, pkgBase + "/DBServiceFaultBean.java");
         assertTrue(faultBeanClass.exists());
@@ -88,6 +73,7 @@ public class FaultBeanGeneratorTest extends ProcessorTestBase {
     public void testGenFaultBeanWithCustomization() throws Exception {
         String testingClass = "org.apache.cxf.tools.fortest.jaxws.rpc.GreeterFault";
         env.put(ToolConstants.CFG_CLASSNAME, testingClass);
+        env.put(ToolConstants.CFG_VERBOSE, Boolean.TRUE);
 
         FaultBeanGenerator generator = new FaultBeanGenerator();
         generator.setServiceModel(getServiceInfo());
@@ -107,7 +93,7 @@ public class FaultBeanGeneratorTest extends ProcessorTestBase {
     public void testGetExceptionClasses() throws Exception {
         Class<?> seiClass = Class.forName("org.apache.hello_world.Greeter");
         FaultBeanGenerator generator = new FaultBeanGenerator();
-        Set<Class<?>> classes = new HashSet<Class<?>>();
+        Set<Class<?>> classes = new HashSet<>();
         for (Method method : seiClass.getMethods()) {
             classes.addAll(generator.getExceptionClasses(method));
         }

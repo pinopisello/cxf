@@ -55,10 +55,13 @@ import org.opensaml.xmlsec.signature.KeyInfo;
 import org.opensaml.xmlsec.signature.Signature;
 import org.opensaml.xmlsec.signature.support.SignatureConstants;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 /**
  * Some unit tests for the SAMLSSOResponseValidator.
  */
-public class SAMLSSOResponseValidatorTest extends org.junit.Assert {
+public class SAMLSSOResponseValidatorTest {
 
     static {
         OpenSAMLUtil.initSamlEngine();
@@ -696,7 +699,7 @@ public class SAMLSSOResponseValidatorTest extends org.junit.Assert {
         String sigAlgo = SignatureConstants.ALGO_ID_SIGNATURE_RSA_SHA1;
         String pubKeyAlgo = issuerCerts[0].getPublicKey().getAlgorithm();
 
-        if (pubKeyAlgo.equalsIgnoreCase("DSA")) {
+        if ("DSA".equalsIgnoreCase(pubKeyAlgo)) {
             sigAlgo = SignatureConstants.ALGO_ID_SIGNATURE_DSA;
         }
 

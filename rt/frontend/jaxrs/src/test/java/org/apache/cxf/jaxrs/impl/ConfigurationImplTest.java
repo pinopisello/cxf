@@ -49,10 +49,14 @@ import javax.ws.rs.ext.MessageBodyReader;
 
 import org.apache.cxf.common.logging.LogUtils;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class ConfigurationImplTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class ConfigurationImplTest {
 
     @Test
     public void testIsRegistered() throws Exception {
@@ -224,7 +228,7 @@ public class ConfigurationImplTest extends Assert {
     @Test
     public void testServerFilterContractsOnClientIsRejected() {
         try (ConfigurableImpl<Client> configurable 
-                = new ConfigurableImpl<Client>(createClientProxy(), RuntimeType.CLIENT)) {
+                = new ConfigurableImpl<>(createClientProxy(), RuntimeType.CLIENT)) {
             Configuration config = configurable.getConfiguration();
             configurable.register(TestFilter.class);
             Map<Class<?>, Integer> contracts = config.getContracts(TestFilter.class);
@@ -339,7 +343,7 @@ public class ConfigurationImplTest extends Assert {
         LogUtils.getL7dLogger(ConfigurableImpl.class).addHandler(handler);
 
         try (ConfigurableImpl<Client> configurable 
-                = new ConfigurableImpl<Client>(createClientProxy(), RuntimeType.CLIENT)) {
+                = new ConfigurableImpl<>(createClientProxy(), RuntimeType.CLIENT)) {
             Configuration config = configurable.getConfiguration();
     
             configurable.register(ClientFilterConstrainedToServer.class);
@@ -362,7 +366,7 @@ public class ConfigurationImplTest extends Assert {
         LogUtils.getL7dLogger(ConfigurableImpl.class).addHandler(handler);
 
         try (ConfigurableImpl<Client> configurable 
-                = new ConfigurableImpl<Client>(createClientProxy(), RuntimeType.CLIENT)) {
+                = new ConfigurableImpl<>(createClientProxy(), RuntimeType.CLIENT)) {
             Configuration config = configurable.getConfiguration();
     
             configurable.register(ContainerResponseFilterImpl.class);

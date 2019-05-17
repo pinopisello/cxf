@@ -40,12 +40,17 @@ import org.apache.cxf.transport.http_undertow.UndertowHTTPServerEngine;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class ApplicationContextTest extends Assert {
+
+public class ApplicationContextTest {
 
     private static final String S1 =
         ApplicationContextTest.class.getResource("/META-INF/cxf/cxf.xml").toString();
@@ -145,16 +150,16 @@ public class ApplicationContextTest extends Assert {
         assertEquals(111, engine.getThreadingParameters().getMinThreads());
         assertEquals(120, engine.getThreadingParameters().getMaxThreads());
 
-        assertEquals(engine.getTlsServerParameters().getClientAuthentication().isWant(), true);
-        assertEquals(engine.getTlsServerParameters().getClientAuthentication().isRequired(), true);
+        assertTrue(engine.getTlsServerParameters().getClientAuthentication().isWant());
+        assertTrue(engine.getTlsServerParameters().getClientAuthentication().isRequired());
 
         UndertowHTTPDestination jd4 =
             (UndertowHTTPDestination)factory.getDestination(
                 getEndpointInfo("sna", "foo2", "https://localhost:9003"), bus);
 
         engine = (UndertowHTTPServerEngine)jd4.getEngine();
-        assertEquals(engine.getTlsServerParameters().getClientAuthentication().isWant(), false);
-        assertEquals(engine.getTlsServerParameters().getClientAuthentication().isRequired(), false);
+        assertFalse(engine.getTlsServerParameters().getClientAuthentication().isWant());
+        assertFalse(engine.getTlsServerParameters().getClientAuthentication().isRequired());
 
         UndertowHTTPDestination jd5 =
             (UndertowHTTPDestination)factory.getDestination(

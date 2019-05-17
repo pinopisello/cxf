@@ -31,12 +31,16 @@ import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.spring.SpringBusFactory;
 import org.apache.cxf.systest.ws.common.SecurityTestUtil;
 import org.apache.cxf.systest.ws.common.TestParam;
+import org.apache.cxf.test.TestUtilities;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.example.contract.doubleit.DoubleItPortType;
 
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * A set of tests for GCM algorithms using custom WS-SecurityPolicy expressions.
@@ -52,7 +56,7 @@ public class GCMTest extends AbstractBusClientServerTestBase {
     private static final QName SERVICE_QNAME = new QName(NAMESPACE, "DoubleItService");
 
     private static boolean unrestrictedPoliciesInstalled =
-            SecurityTestUtil.checkUnrestrictedPoliciesInstalled();
+            TestUtilities.checkUnrestrictedPoliciesInstalled();
 
     final TestParam test;
 

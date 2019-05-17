@@ -64,6 +64,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  *
  */
@@ -342,7 +347,7 @@ public class WSSecurityClientTest extends AbstractBusClientServerTestBase {
             dispatcher.invoke(new StreamSource(is));
             fail("exception should have been generated");
         } catch (SOAPFaultException ex) {
-            assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+            assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
         }
 
         //
@@ -354,7 +359,7 @@ public class WSSecurityClientTest extends AbstractBusClientServerTestBase {
             dispatcher.invoke(new StreamSource(is));
             fail("exception should have been generated");
         } catch (SOAPFaultException ex) {
-            assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+            assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
         }
         //
         // Sending and empty security header should result in a Fault
@@ -365,7 +370,7 @@ public class WSSecurityClientTest extends AbstractBusClientServerTestBase {
             dispatcher.invoke(new StreamSource(is));
             fail("exception should have been generated");
         } catch (SOAPFaultException ex) {
-            assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+            assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
         }
 
     }

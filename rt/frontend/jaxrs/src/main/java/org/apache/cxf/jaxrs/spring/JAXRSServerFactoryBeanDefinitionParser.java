@@ -68,7 +68,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
     @Override
     protected void mapAttribute(BeanDefinitionBuilder bean, Element e, String name, String val) {
         if ("beanNames".equals(name)) {
-            String[] values = StringUtils.split(val, " ");
+            String[] values = val.split(" ");
             List<SpringResourceFactory> tempFactories = new ArrayList<>(values.length);
             for (String v : values) {
                 String theValue = v.trim();
@@ -266,7 +266,7 @@ public class JAXRSServerFactoryBeanDefinitionParser extends AbstractBeanDefiniti
                                                          Collection<Class<?>> classes,
                                                          Class<? extends Annotation> serviceClassAnnotation) {
         AutowireCapableBeanFactory beanFactory = context.getAutowireCapableBeanFactory();
-        final List< Object > providers = new ArrayList< Object >();
+        final List< Object > providers = new ArrayList<>();
         for (final Class< ? > clazz: classes) {
             if (serviceClassAnnotation != null && clazz.getAnnotation(serviceClassAnnotation) == null) {
                 continue;

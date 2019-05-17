@@ -37,6 +37,10 @@ import org.example.contract.doubleit.DoubleItPortType;
 
 import org.junit.BeforeClass;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * This tests JAAS authentication to the STS. A Username + Password extracted from either
  * a WS-Security UsernameToken for the JAX-WS service, or via HTTP/BA for a JAX-RS service,
@@ -403,12 +407,12 @@ public class JAASTest extends AbstractBusClientServerTestBase {
             if (authFailureExpected) {
                 throw new RuntimeException("Exception expected");
             }
-            org.junit.Assert.assertEquals(2 * numToDouble, resp);
+            assertEquals(2 * numToDouble, resp);
         } catch (WebApplicationException ex) {
             if (!authFailureExpected) {
                 throw new RuntimeException("Unexpected exception");
             }
-            org.junit.Assert.assertEquals(500, ex.getResponse().getStatus());
+            assertEquals(500, ex.getResponse().getStatus());
         }
     }
 

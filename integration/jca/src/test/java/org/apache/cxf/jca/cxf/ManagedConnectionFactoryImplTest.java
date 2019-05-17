@@ -38,12 +38,18 @@ import org.apache.cxf.connector.CXFConnectionFactory;
 import org.apache.hello_world_soap_http.Greeter;
 
 import org.easymock.EasyMock;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class ManagedConnectionFactoryImplTest extends Assert {
+
+public class ManagedConnectionFactoryImplTest {
 
     protected ManagedConnectionFactoryImpl mci;
 
@@ -144,7 +150,7 @@ public class ManagedConnectionFactoryImplTest extends Assert {
         assertTrue("not Object's hashCode method", hashCodeMethod != Object.class
             .getDeclaredMethod("hashCode", (Class[])null));
         assertEquals("equal with its self", mci, mci);
-        assertTrue("not equal with another", !mci.equals(new ManagedConnectionFactoryImpl()));
+        assertNotEquals("not equal with another", mci, new ManagedConnectionFactoryImpl());
     }
 
     @Test

@@ -57,6 +57,8 @@ import org.apache.cxf.transport.websocket.InvalidPathException;
 import org.apache.cxf.transport.websocket.WebSocketUtils;
 import org.eclipse.jetty.websocket.api.Session;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  *
  */
@@ -86,7 +88,7 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
             LOG.log(Level.WARNING, "invalid path: {0} not within {1}", new Object[]{path, origin});
             throw new InvalidPathException();
         }
-        this.attributes = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        this.attributes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         Object v = websocket.getAttribute("org.apache.cxf.transport.endpoint.address");
         if (v != null) {
             attributes.put("org.apache.cxf.transport.endpoint.address", v);
@@ -233,7 +235,7 @@ public class WebSocketVirtualServletRequest implements HttpServletRequest {
     @Override
     public BufferedReader getReader() throws IOException {
         LOG.log(Level.FINE, "getReader");
-        return new BufferedReader(new InputStreamReader(in, "utf-8"));
+        return new BufferedReader(new InputStreamReader(in, UTF_8));
     }
 
     @Override

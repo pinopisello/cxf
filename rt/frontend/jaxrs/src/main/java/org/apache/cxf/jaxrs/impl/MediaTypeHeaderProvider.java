@@ -47,7 +47,7 @@ public class MediaTypeHeaderProvider implements HeaderDelegate<MediaType> {
     private static final Pattern COMPLEX_PARAMETERS =
         Pattern.compile("(([\\w-]+=\"[^\"]*\")|([\\w-]+=[\\w-/\\+]+))");
 
-    private static Map<String, MediaType> map = new ConcurrentHashMap<String, MediaType>();
+    private static Map<String, MediaType> map = new ConcurrentHashMap<>();
     private static final int MAX_MT_CACHE_SIZE =
         SystemPropertyAction.getInteger("org.apache.cxf.jaxrs.max_mediatype_cache_size", 200);
 
@@ -87,14 +87,14 @@ public class MediaTypeHeaderProvider implements HeaderDelegate<MediaType> {
 
         String type = mType.substring(0, i);
         String subtype = mType.substring(i + 1, end);
-        if (subtype.indexOf("/") != -1) {
+        if (subtype.indexOf('/') != -1) {
             throw new IllegalArgumentException("Invalid media type string: " + mType);
         }
 
         Map<String, String> parameters = Collections.emptyMap();
         if (paramsStart != -1) {
 
-            parameters = new LinkedHashMap<String, String>();
+            parameters = new LinkedHashMap<>();
 
             String paramString = mType.substring(paramsStart + 1);
             if (paramString.contains("\"")) {
@@ -161,7 +161,7 @@ public class MediaTypeHeaderProvider implements HeaderDelegate<MediaType> {
             boolean mTypeNextEmpty = StringUtils.isEmpty(mTypeNext);
             if (mTypeNextEmpty || mTypeNext.startsWith(";")) {
                 if (!mTypeNextEmpty) {
-                    Map<String, String> parameters = new LinkedHashMap<String, String>();
+                    Map<String, String> parameters = new LinkedHashMap<>();
                     StringTokenizer st = new StringTokenizer(mType.substring(2).trim(), ";");
                     while (st.hasMoreTokens()) {
                         addParameter(parameters, st.nextToken());

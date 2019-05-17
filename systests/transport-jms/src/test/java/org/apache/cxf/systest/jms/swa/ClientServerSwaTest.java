@@ -39,6 +39,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 public class ClientServerSwaTest extends AbstractBusClientServerTestBase {
     public static final String ADDRESS
         = "jms:jndi:dynamicQueues/test.cxf.jmstransport.swa.queue"
@@ -91,8 +93,8 @@ public class ClientServerSwaTest extends AbstractBusClientServerTestBase {
         SwAService port = factory.create(SwAService.class);
 
 
-        Holder<String> textHolder = new Holder<String>();
-        Holder<DataHandler> data = new Holder<DataHandler>();
+        Holder<String> textHolder = new Holder<>();
+        Holder<DataHandler> data = new Holder<>();
 
         ByteArrayDataSource source = new ByteArrayDataSource("foobar".getBytes(), "application/octet-stream");
         DataHandler handler = new DataHandler(source);
@@ -104,7 +106,7 @@ public class ClientServerSwaTest extends AbstractBusClientServerTestBase {
         port.echoData(textHolder, data);
         InputStream bis = null;
         bis = data.value.getDataSource().getInputStream();
-        byte b[] = new byte[10];
+        byte[] b = new byte[10];
         bis.read(b, 0, 10);
         String string = IOUtils.newStringFromBytes(b);
         assertEquals("testfoobar", string);

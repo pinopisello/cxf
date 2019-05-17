@@ -46,11 +46,15 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageImpl;
 import org.apache.cxf.message.XMLMessage;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class AttachmentDeserializerTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+public class AttachmentDeserializerTest {
 
     private MessageImpl msg;
 
@@ -80,9 +84,9 @@ public class AttachmentDeserializerTest extends Assert {
             + "------=_Part_34950_1098328613.1263781527359--";
 
         Matcher m = Pattern.compile("^--(\\S*)$").matcher(message);
-        Assert.assertFalse(m.find());
+        assertFalse(m.find());
         m = Pattern.compile("^--(\\S*)$", Pattern.MULTILINE).matcher(message);
-        Assert.assertTrue(m.find());
+        assertTrue(m.find());
 
         msg = new MessageImpl();
         msg.setContent(InputStream.class, new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8)));
@@ -371,12 +375,12 @@ public class AttachmentDeserializerTest extends Assert {
 
     @Test
     public void testCXF2542() throws Exception {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(512);
         buf.append("------=_Part_0_2180223.1203118300920\n");
         buf.append("Content-Type: application/xop+xml; charset=UTF-8; type=\"text/xml\"\n");
         buf.append("Content-Transfer-Encoding: 8bit\n");
         buf.append("Content-ID: <soap.xml@xfire.codehaus.org>\n");
-        buf.append("\n");
+        buf.append('\n');
         buf.append("<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
                    + "xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" "
                    + "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
@@ -402,15 +406,12 @@ public class AttachmentDeserializerTest extends Assert {
 
     @Test
     public void imitateAttachmentInInterceptorForMessageWithMissingBoundary() throws Exception {
-        ByteArrayInputStream inputStream;
         String contentType = "multipart/mixed;boundary=abc123";
         String data = "--abc123\r\n\r\n<Document></Document>\r\n\r\n";
 
-        Message message;
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(data.getBytes());
 
-        inputStream = new ByteArrayInputStream(data.getBytes());
-
-        message = new XMLMessage(new MessageImpl());
+        Message message = new XMLMessage(new MessageImpl());
         message.put(Message.CONTENT_TYPE, contentType);
         message.setContent(InputStream.class, inputStream);
         message.put(AttachmentDeserializer.ATTACHMENT_DIRECTORY, System
@@ -424,7 +425,7 @@ public class AttachmentDeserializerTest extends Assert {
                                          Collections.singletonList("multipart/mixed"));
 
         ad.initializeAttachments();
-        message.getAttachments().size();
+        assertEquals(0, message.getAttachments().size());
 
         inputStream.close();
     }
@@ -478,7 +479,7 @@ public class AttachmentDeserializerTest extends Assert {
 
     private String getString(InputStream ins) throws Exception {
         try (ByteArrayOutputStream bout = new ByteArrayOutputStream(100)) {
-            byte b[] = new byte[100];
+            byte[] b = new byte[100];
             int i = ins.read(b);
             while (i > 0) {
                 bout.write(b, 0, i);
@@ -516,7 +517,7 @@ public class AttachmentDeserializerTest extends Assert {
         for (int x = 1; x < 50; x++) {
             String cid = "1882f79d-e20a-4b36-a222-7a75518cf395-" + x + "@cxf.apache.org";
             DataSource ds = AttachmentUtil.getAttachmentDataSource(cid, message.getAttachments());
-            byte bts[] = new byte[1024];
+            byte[] bts = new byte[1024];
 
             InputStream ins = ds.getInputStream();
             int count = 0;
@@ -557,7 +558,7 @@ public class AttachmentDeserializerTest extends Assert {
 
         String cid = "1a66bb35-67fc-4e89-9f33-48af417bf9fe-1@apache.org";
         DataSource ds = AttachmentUtil.getAttachmentDataSource(cid, message.getAttachments());
-        byte bts[] = new byte[1024];
+        byte[] bts = new byte[1024];
         InputStream ins = ds.getInputStream();
         int count = ins.read(bts, 0, bts.length);
         assertEquals(500, count);
@@ -599,7 +600,7 @@ public class AttachmentDeserializerTest extends Assert {
 
         String cid = "1a66bb35-67fc-4e89-9f33-48af417bf9fe-1@apache.org";
         DataSource ds = AttachmentUtil.getAttachmentDataSource(cid, message.getAttachments());
-        byte bts[] = new byte[1024];
+        byte[] bts = new byte[1024];
         InputStream ins = ds.getInputStream();
         int count = 0;
         int x = ins.read(bts, 500, 200);
@@ -650,7 +651,7 @@ public class AttachmentDeserializerTest extends Assert {
 
         String cid = "1a66bb35-67fc-4e89-9f33-48af417bf9fe-1@apache.org";
         DataSource ds = AttachmentUtil.getAttachmentDataSource(cid, message.getAttachments());
-        byte bts[] = new byte[1024];
+        byte[] bts = new byte[1024];
         InputStream ins = ds.getInputStream();
         int count = 0;
         int x = ins.read(bts, 100, 600);
@@ -677,4 +678,3 @@ public class AttachmentDeserializerTest extends Assert {
         ins.close();
     }
 }
-

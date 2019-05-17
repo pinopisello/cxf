@@ -145,9 +145,7 @@ public class WebFaultOutInterceptor extends FaultOutInterceptor {
 
             } catch (InvocationTargetException e) {
                 throw new Fault(new org.apache.cxf.common.i18n.Message("INVOCATION_TARGET_EXC", BUNDLE), e);
-            } catch (IllegalAccessException e) {
-                throw new Fault(new org.apache.cxf.common.i18n.Message("COULD_NOT_INVOKE", BUNDLE), e);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 throw new Fault(new org.apache.cxf.common.i18n.Message("COULD_NOT_INVOKE", BUNDLE), e);
             }
             Service service = message.getExchange().getService();
@@ -175,16 +173,16 @@ public class WebFaultOutInterceptor extends FaultOutInterceptor {
                 }
 
                 f.setMessage(ex.getMessage());
+            } catch (Fault f2) {
+                message.setContent(Exception.class, f2);
+                super.handleMessage(message);
             } catch (Exception nex) {
-                if (nex instanceof Fault) {
-                    message.setContent(Exception.class, nex);
-                    super.handleMessage(message);
-                } else {
-                    //if exception occurs while writing a fault, we'll just let things continue
-                    //and let the rest of the chain try handling it as is.
-                    LOG.log(Level.WARNING, "EXCEPTION_WHILE_WRITING_FAULT", nex);
-                }
+                //if exception occurs while writing a fault, we'll just let things continue
+                //and let the rest of the chain try handling it as is.
+                LOG.log(Level.WARNING, "EXCEPTION_WHILE_WRITING_FAULT", nex);
             }
+        } else if (cause instanceof SOAPFaultException && ((SOAPFaultException)cause).getFault().hasDetail()) {
+            return;
         } else {
             FaultMode mode = message.get(FaultMode.class);
             if (mode == FaultMode.CHECKED_APPLICATION_FAULT) {
@@ -203,7 +201,7 @@ public class WebFaultOutInterceptor extends FaultOutInterceptor {
                 if (cls != null) {
                     Object ret = cls.newInstance();
                     //copy props
-                    Method meth[] = cause.getClass().getMethods();
+                    Method[] meth = cause.getClass().getMethods();
                     for (Method m : meth) {
                         if (m.getParameterTypes().length == 0
                             && (m.getName().startsWith("get")
@@ -224,11 +222,7 @@ public class WebFaultOutInterceptor extends FaultOutInterceptor {
                     }
                     return ret;
                 }
-            } catch (ClassNotFoundException e1) {
-                //ignore
-            } catch (InstantiationException e) {
-                //ignore
-            } catch (IllegalAccessException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e1) {
                 //ignore
             }
         }

@@ -37,6 +37,7 @@ import org.apache.cxf.bus.spring.SpringBusFactory;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.systest.ws.common.SecurityTestUtil;
+import org.apache.cxf.test.TestUtilities;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.ext.WSSecurityException;
@@ -46,6 +47,11 @@ import org.example.contract.doubleit.DoubleItFault;
 import org.example.contract.doubleit.DoubleItPortType;
 
 import org.junit.BeforeClass;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Some tests for modified requests
@@ -58,7 +64,7 @@ public class ModifiedRequestTest extends AbstractBusClientServerTestBase {
     private static final QName SERVICE_QNAME = new QName(NAMESPACE, "DoubleItService");
 
     private static boolean unrestrictedPoliciesInstalled =
-        SecurityTestUtil.checkUnrestrictedPoliciesInstalled();
+        TestUtilities.checkUnrestrictedPoliciesInstalled();
 
     @BeforeClass
     public static void startServers() throws Exception {
@@ -312,7 +318,7 @@ public class ModifiedRequestTest extends AbstractBusClientServerTestBase {
                     XMLUtils.findElement(securityHeader, "Timestamp", WSS4JConstants.WSU_NS);
                 Element createdValue =
                     XMLUtils.findElement(timestampElement, "Created", WSS4JConstants.WSU_NS);
-                
+
                 ZonedDateTime created = ZonedDateTime.parse(createdValue.getTextContent());
                 // Add 5 seconds
                 createdValue.setTextContent(DateUtil.getDateTimeFormatter(true).format(created.plusSeconds(5L)));

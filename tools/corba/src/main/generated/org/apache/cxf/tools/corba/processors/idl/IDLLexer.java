@@ -44,7 +44,7 @@ public IDLLexer(LexerSharedInputState state) {
 	super(state);
 	caseSensitiveLiterals = true;
 	setCaseSensitive(true);
-	literals = new Hashtable<ANTLRHashString, Integer>();
+	literals = new Hashtable<>();
 	literals.put(new ANTLRHashString("switch", this), Integer.valueOf(56));
 	literals.put(new ANTLRHashString("typeprefix", this), Integer.valueOf(78));
 	literals.put(new ANTLRHashString("case", this), Integer.valueOf(57));
@@ -975,19 +975,19 @@ tryAgain:
 		case '?':
 		{
 			match('?');
-			text.setLength(_begin); text.append("?");
+			text.setLength(_begin); text.append('?');
 			break;
 		}
 		case '\'':
 		{
 			match('\'');
-			text.setLength(_begin); text.append("'");
+			text.setLength(_begin); text.append('\'');
 			break;
 		}
 		case '"':
 		{
 			match('"');
-			text.setLength(_begin); text.append("\"");
+			text.setLength(_begin); text.append('"');
 			break;
 		}
 		case '0':  case '1':  case '2':  case '3':

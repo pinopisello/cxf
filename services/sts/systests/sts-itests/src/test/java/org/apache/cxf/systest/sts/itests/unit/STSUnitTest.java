@@ -82,8 +82,8 @@ public class STSUnitTest extends BasicSTSIntegrationTest {
         // Get a token
         SecurityToken token =
             requestSecurityToken(SAML2_TOKEN_TYPE, BEARER_KEYTYPE, bus, stsEndpoint);
-        Assert.assertTrue(SAML2_TOKEN_TYPE.equals(token.getTokenType()));
-        Assert.assertTrue(token.getToken() != null);
+        Assert.assertEquals(SAML2_TOKEN_TYPE, token.getTokenType());
+        Assert.assertNotNull(token.getToken());
 
         // Process the token
         List<WSSecurityEngineResult> results = processToken(token);
@@ -91,7 +91,7 @@ public class STSUnitTest extends BasicSTSIntegrationTest {
         Assert.assertTrue(results != null && results.size() == 1);
         SamlAssertionWrapper assertion =
             (SamlAssertionWrapper)results.get(0).get(WSSecurityEngineResult.TAG_SAML_ASSERTION);
-        Assert.assertTrue(assertion != null);
+        Assert.assertNotNull(assertion);
         Assert.assertTrue(assertion.getSaml1() == null && assertion.getSaml2() != null);
         Assert.assertTrue(assertion.isSigned());
 

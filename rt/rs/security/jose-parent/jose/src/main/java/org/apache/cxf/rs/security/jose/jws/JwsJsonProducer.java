@@ -41,7 +41,7 @@ public class JwsJsonProducer {
     private boolean supportDetached;
     private String plainPayload;
     private String encodedPayload;
-    private List<JwsJsonSignatureEntry> signatures = new LinkedList<JwsJsonSignatureEntry>();
+    private List<JwsJsonSignatureEntry> signatures = new LinkedList<>();
     private JsonMapObjectReaderWriter writer = new JsonMapObjectReaderWriter();
     public JwsJsonProducer(String tbsDocument) {
         this(tbsDocument, false);
@@ -49,7 +49,7 @@ public class JwsJsonProducer {
     public JwsJsonProducer(String tbsDocument, boolean supportFlattened) {
         this(tbsDocument, supportFlattened, false);
     }
-    
+
     public JwsJsonProducer(String tbsDocument, boolean supportFlattened, boolean supportDetached) {
         this.plainPayload = tbsDocument;
         this.supportFlattened = supportFlattened;
@@ -72,32 +72,32 @@ public class JwsJsonProducer {
     public String getJwsJsonSignedDocument(boolean detached) {
         return doGetJwsJsonSignedDocument(detached);
     }
-    private String doGetJwsJsonSignedDocument(boolean detached) {    
+    private String doGetJwsJsonSignedDocument(boolean detached) {
         if (signatures.isEmpty()) {
             return null;
         }
 
         Boolean b64Status = validateB64Status(signatures);
         StringBuilder sb = new StringBuilder();
-        sb.append("{");
+        sb.append('{');
         if (!detached) {
-            sb.append("\"payload\":\"" + getActualPayload(b64Status) + "\"");
-            sb.append(",");
+            sb.append("\"payload\":\"").append(getActualPayload(b64Status)).append('"');
+            sb.append(',');
         }
         if (!supportFlattened || signatures.size() > 1) {
             sb.append("\"signatures\":[");
             for (int i = 0; i < signatures.size(); i++) {
                 JwsJsonSignatureEntry signature = signatures.get(i);
                 if (i > 0) {
-                    sb.append(",");
+                    sb.append(',');
                 }
                 sb.append(signature.toJson());
             }
-            sb.append("]");
+            sb.append(']');
         } else {
             sb.append(signatures.get(0).toJson(true));
         }
-        sb.append("}");
+        sb.append('}');
         return sb.toString();
     }
     public List<JwsJsonSignatureEntry> getSignatureEntries() {
@@ -198,7 +198,7 @@ public class JwsJsonProducer {
         }
     }
     static Boolean validateB64Status(List<JwsJsonSignatureEntry> signatures) {
-        Set<Boolean> b64Set = new LinkedHashSet<Boolean>();
+        Set<Boolean> b64Set = new LinkedHashSet<>();
         for (JwsJsonSignatureEntry entry : signatures) {
             JwsHeaders headers = entry.getProtectedHeader();
             Boolean status = headers != null ? headers.getPayloadEncodingStatus() : null;

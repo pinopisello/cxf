@@ -45,12 +45,15 @@ import org.omg.CORBA.portable.InputStream;
 import org.omg.CORBA.portable.OutputStream;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-public class CorbaObjectWriterTest extends Assert {
+
+public class CorbaObjectWriterTest {
 
     private static ORB orb;
 
@@ -227,7 +230,7 @@ public class CorbaObjectWriterTest extends Assert {
 
         InputStream iStream = oStream.create_input_stream();
         String s = iStream.read_string();
-        assertTrue(s.equals(stringValue));
+        assertEquals(s, stringValue);
     }
 
     @Test
@@ -240,12 +243,12 @@ public class CorbaObjectWriterTest extends Assert {
 
         InputStream iStream = oStream.create_input_stream();
         String s = iStream.read_wstring();
-        assertTrue(s.equals(wstringValue));
+        assertEquals(s, wstringValue);
     }
 
     @Test
     public void testWriteArray() {
-        int data[] = {1, 1, 2, 3, 5, 8, 13, 21};
+        int[] data = {1, 1, 2, 3, 5, 8, 13, 21};
 
         // create an array of longs
         QName longIdlType = new QName(CorbaConstants.NU_WSDL_CORBA, "long", CorbaConstants.NP_WSDL_CORBA);
@@ -279,7 +282,7 @@ public class CorbaObjectWriterTest extends Assert {
 
     @Test
     public void testWriteSequence() {
-        String data[] = {"one", "one", "two", "three", "five", "eight", "thirteen", "twenty-one"};
+        String[] data = {"one", "one", "two", "three", "five", "eight", "thirteen", "twenty-one"};
 
         // create an sequence of strings
         QName stringIdlType = new QName(CorbaConstants.NU_WSDL_CORBA, "string", CorbaConstants.NP_WSDL_CORBA);
@@ -309,7 +312,7 @@ public class CorbaObjectWriterTest extends Assert {
         int length = iStream.read_long();
         for (int i = 0; i < length; ++i) {
             String val = iStream.read_string();
-            assertTrue(val.equals(data[i]));
+            assertEquals(val, data[i]);
         }
     }
 
@@ -377,7 +380,7 @@ public class CorbaObjectWriterTest extends Assert {
         int readMember1 = iStream.read_long();
         assertTrue(readMember1 == member1);
         String readMember2 = iStream.read_string();
-        assertTrue(readMember2.equals(member2));
+        assertEquals(readMember2, member2);
         boolean readMember3 = iStream.read_boolean();
         assertTrue(readMember3 == member3);
     }
@@ -436,11 +439,11 @@ public class CorbaObjectWriterTest extends Assert {
         InputStream iStream = oStream.create_input_stream();
 
         String readId = iStream.read_string();
-        assertTrue(readId.equals(reposID));
+        assertEquals(readId, reposID);
         short readCode = iStream.read_short();
         assertTrue(readCode == code);
         String readMessage = iStream.read_string();
-        assertTrue(readMessage.equals(message));
+        assertEquals(readMessage, message);
     }
 
     @Test

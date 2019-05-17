@@ -176,7 +176,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         if (clientParameters == null) {
             clientParameters = tlsClientParameters;
         }
-        if (uri.getScheme().equals("https")
+        if ("https".equals(uri.getScheme())
             && clientParameters != null
             && clientParameters.getSSLSocketFactory() != null) {
             //if they configured in an SSLSocketFactory, we cannot do anything
@@ -429,7 +429,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         protected void setupWrappedStream() throws IOException {
             connect(true);
             wrappedStream = new OutputStream() {
-                public void write(byte b[], int off, int len) throws IOException {
+                public void write(byte[] b, int off, int len) throws IOException {
                     if (exception instanceof IOException) {
                         throw (IOException) exception;
                     }
@@ -567,7 +567,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
                 ctx.setUserToken(sslState);
             }
 
-            connectionFuture = new BasicFuture<Boolean>(callback);
+            connectionFuture = new BasicFuture<>(callback);
             HttpAsyncClient c = getHttpAsyncClient();
             Credentials creds = (Credentials)outMessage.getContextualProperty(Credentials.class.getName());
             if (creds != null) {
@@ -658,7 +658,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         }
 
         protected void closeInputStream() throws IOException {
-            byte bytes[] = new byte[1024];
+            byte[] bytes = new byte[1024];
             while (inbuf.read(bytes) > 0) {
                 //nothing
             }
@@ -739,7 +739,7 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
         }
 
         private String readHeaders(Headers h) throws IOException {
-            Header headers[] = getHttpResponse().getAllHeaders();
+            Header[] headers = getHttpResponse().getAllHeaders();
             h.headerMap().clear();
             String ct = null;
             for (Header header : headers) {
@@ -891,9 +891,11 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
 
             ctx = provider == null ? SSLContext.getInstance(protocol) : SSLContext
                 .getInstance(protocol, provider);
-            ctx.getClientSessionContext().setSessionTimeout(tlsClientParameters.getSslCacheTimeout());
 
             KeyManager[] keyManagers = tlsClientParameters.getKeyManagers();
+            if (keyManagers == null) {
+                keyManagers = org.apache.cxf.configuration.jsse.SSLUtils.getDefaultKeyStoreManagers(LOG);
+            }
             KeyManager[] configuredKeyManagers =
                 org.apache.cxf.transport.https.SSLUtils.configureKeyManagersWithCertAlias(
                     tlsClientParameters, keyManagers);
@@ -904,6 +906,10 @@ public class AsyncHTTPConduit extends URLConnectionHTTPConduit {
             }
 
             ctx.init(configuredKeyManagers, trustManagers, tlsClientParameters.getSecureRandom());
+
+            if (ctx.getClientSessionContext() != null) {
+                ctx.getClientSessionContext().setSessionTimeout(tlsClientParameters.getSslCacheTimeout());
+            }
         }
 
         sslContext = ctx;

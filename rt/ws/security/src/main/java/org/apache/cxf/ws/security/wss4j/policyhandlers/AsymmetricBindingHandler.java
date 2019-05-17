@@ -359,10 +359,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                     }
                 }
             }
-        } catch (WSSecurityException ex) {
-            LOG.log(Level.FINE, ex.getMessage(), ex);
-            throw new Fault(ex);
-        } catch (SOAPException ex) {
+        } catch (WSSecurityException | SOAPException ex) {
             LOG.log(Level.FINE, ex.getMessage(), ex);
             throw new Fault(ex);
         }
@@ -494,6 +491,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                 } else if (!isRequestor() && securityToken != null
                     && securityToken.getKey() instanceof PublicKey) {
                     encr.setUseThisPublicKey((PublicKey)securityToken.getKey());
+                    encr.setKeyIdentifierType(WSConstants.KEY_VALUE);
                 } else {
                     setEncryptionUser(encr, encrToken, false, crypto);
                 }
@@ -574,7 +572,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
             }
 
             if (encrKey == null) {
-                setupEncryptedKey(recToken, encrToken);
+                setupEncryptedKey(encrToken);
             }
 
             dkEncr.setExternalKey(this.encryptedKeyValue, this.encryptedKeyId);
@@ -646,7 +644,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
         }
         if (sigToken.getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
             // Set up the encrypted key to use
-            setupEncryptedKey(wrapper, sigToken);
+            setupEncryptedKey(sigToken);
 
             WSSecDKSign dkSign = new WSSecDKSign(secHeader);
             dkSign.setIdAllocator(wssConfig.getIdAllocator());
@@ -762,7 +760,7 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
         }
     }
 
-    private void setupEncryptedKey(AbstractTokenWrapper wrapper, AbstractToken token) throws WSSecurityException {
+    private void setupEncryptedKey(AbstractToken token) throws WSSecurityException {
         if (!isRequestor() && token.getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
             //If we already have them, simply return
             if (encryptedKeyId != null && encryptedKeyValue != null) {
@@ -786,17 +784,17 @@ public class AsymmetricBindingHandler extends AbstractBindingBuilder {
                 //message by a listener created for an async client
                 //Therefore we will create a new EncryptedKey
                 if (encryptedKeyId == null && encryptedKeyValue == null) {
-                    createEncryptedKey(wrapper, token);
+                    createEncryptedKey(token);
                 }
             } else {
                 unassertPolicy(token, "No security results found");
             }
         } else {
-            createEncryptedKey(wrapper, token);
+            createEncryptedKey(token);
         }
     }
 
-    private void createEncryptedKey(AbstractTokenWrapper wrapper, AbstractToken token)
+    private void createEncryptedKey(AbstractToken token)
         throws WSSecurityException {
         //Set up the encrypted key to use
         encrKey = this.getEncryptedKeyBuilder(token);

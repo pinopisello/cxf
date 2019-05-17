@@ -45,6 +45,7 @@ import org.apache.cxf.systest.ws.common.DoubleItImpl;
 import org.apache.cxf.systest.ws.common.KeystorePasswordCallback;
 import org.apache.cxf.systest.ws.common.SecurityTestUtil;
 import org.apache.cxf.systest.ws.ut.SecurityHeaderCacheInterceptor;
+import org.apache.cxf.test.TestUtilities;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 import org.apache.cxf.ws.security.wss4j.WSS4JOutInterceptor;
 import org.apache.cxf.ws.security.wss4j.WSS4JStaxOutInterceptor;
@@ -58,6 +59,11 @@ import org.example.contract.doubleit.DoubleItPortType;
 
 import org.junit.BeforeClass;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * A set of tests for WS-Security actions (i.e. the non WS-SecurityPolicy approach).
  */
@@ -69,7 +75,7 @@ public class ActionTest extends AbstractBusClientServerTestBase {
     private static final QName SERVICE_QNAME = new QName(NAMESPACE, "DoubleItService");
 
     private static boolean unrestrictedPoliciesInstalled =
-        SecurityTestUtil.checkUnrestrictedPoliciesInstalled();
+        TestUtilities.checkUnrestrictedPoliciesInstalled();
 
     @BeforeClass
     public static void startServers() throws Exception {
@@ -145,7 +151,7 @@ public class ActionTest extends AbstractBusClientServerTestBase {
             port.doubleIt(25);
             fail("Failure expected on not sending a UsernameToken element");
         } catch (javax.xml.ws.soap.SOAPFaultException ex) {
-            assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+            assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
         }
 
         // Here the Server is adding the WSS4JInInterceptor in code
@@ -187,7 +193,7 @@ public class ActionTest extends AbstractBusClientServerTestBase {
             port.doubleIt(25);
             fail("Failure expected on a replayed UsernameToken");
         } catch (javax.xml.ws.soap.SOAPFaultException ex) {
-            assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+            assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
         }
 
         ((java.io.Closeable)port).close();
@@ -248,7 +254,7 @@ public class ActionTest extends AbstractBusClientServerTestBase {
             port.doubleIt(25);
             fail("Failure expected on a replayed Timestamp");
         } catch (javax.xml.ws.soap.SOAPFaultException ex) {
-            assertTrue(ex.getMessage().equals(WSSecurityException.UNIFIED_SECURITY_ERR));
+            assertEquals(ex.getMessage(), WSSecurityException.UNIFIED_SECURITY_ERR);
         }
 
         ((java.io.Closeable)port).close();

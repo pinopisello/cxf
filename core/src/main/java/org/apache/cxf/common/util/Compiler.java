@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,8 +49,8 @@ public class Compiler {
     private String encoding;
     private boolean forceFork = Boolean.getBoolean(Compiler.class.getName() + "-fork");
     private File classpathTmpFile;
-    private List<String> errors = new LinkedList<String>();
-    private List<String> warnings = new LinkedList<String>();
+    private List<String> errors = new LinkedList<>();
+    private List<String> warnings = new LinkedList<>();
 
     public Compiler() {
     }
@@ -103,7 +104,7 @@ public class Compiler {
 
         if (StringUtils.isEmpty(classPath)) {
             String javaClasspath = SystemPropertyAction.getProperty("java.class.path");
-            boolean classpathSetted = javaClasspath != null ? true : false;
+            boolean classpathSetted = !StringUtils.isEmpty(javaClasspath);
             if (!classpathSetted) {
                 File f = new File(getClass().getClassLoader().getResource(".").getFile());
                 f = new File(f, "../lib");
@@ -182,7 +183,7 @@ public class Compiler {
         String classpath = list.get(classpathIdx + 1);
         checkLongClasspath(classpath, list, classpathIdx);
         int idx = list.size();
-        list.addAll(Arrays.asList(files));
+        Collections.addAll(list, files);
 
         return internalCompile(list.toArray(new String[0]), idx);
     }
@@ -247,7 +248,7 @@ public class Compiler {
 
     public boolean internalCompile(String[] args, int sourceFileIndex) {
         Process p = null;
-        String cmdArray[] = null;
+        String[] cmdArray = null;
         File tmpFile = null;
         try {
             if (isLongCommandLines(args) && sourceFileIndex >= 0) {
@@ -255,7 +256,7 @@ public class Compiler {
                 tmpFile = FileUtils.createTempFile("cxf-compiler", null);
                 out = new PrintWriter(new FileWriter(tmpFile));
                 for (int i = sourceFileIndex; i < args.length; i++) {
-                    if (args[i].indexOf(" ") > -1) {
+                    if (args[i].indexOf(' ') > -1) {
                         args[i] = args[i].replace(File.separatorChar, '/');
                         //
                         // javac gives an error if you use forward slashes
@@ -324,16 +325,16 @@ public class Compiler {
         return false;
     }
 
-    private boolean isLongCommandLines(String args[]) {
+    private boolean isLongCommandLines(String[] args) {
         StringBuilder strBuffer = new StringBuilder();
         for (int i = 0; i < args.length; i++) {
             strBuffer.append(args[i]);
         }
-        return strBuffer.toString().length() > 4096 ? true : false;
+        return strBuffer.length() > 4096;
     }
 
     private boolean isLongClasspath(String classpath) {
-        return classpath.length() > 2048 ? true : false;
+        return classpath.length() > 2048;
     }
 
     private void checkLongClasspath(String classpath, List<String> list, int classpathIdx) {

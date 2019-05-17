@@ -252,9 +252,9 @@ public final class EndpointReferenceUtils {
         new org.apache.cxf.ws.addressing.wsdl.ObjectFactory();
 
 
-    private static final Set<Class<?>> ADDRESSING_CLASSES = new HashSet<Class<?>>();
+    private static final Set<Class<?>> ADDRESSING_CLASSES = new HashSet<>();
     private static final AtomicReference<Reference<JAXBContext>> ADDRESSING_CONTEXT
-        = new AtomicReference<Reference<JAXBContext>>(new SoftReference<JAXBContext>(null));
+        = new AtomicReference<>(new SoftReference<JAXBContext>(null));
     static {
         ADDRESSING_CLASSES.add(WSA_WSDL_OBJECT_FACTORY.getClass());
         ADDRESSING_CLASSES.add(org.apache.cxf.ws.addressing.ObjectFactory.class);
@@ -318,7 +318,7 @@ public final class EndpointReferenceUtils {
                 if ((node.getNamespaceURI().equals(JAXWSAConstants.NS_WSAW)
                     || node.getNamespaceURI().equals(NS_WSAW_2005)
                     || node.getNamespaceURI().equals(JAXWSAConstants.NS_WSAM))
-                    && node.getLocalName().equals("ServiceName")) {
+                    && "ServiceName".equals(node.getLocalName())) {
                     String content = node.getTextContent();
                     String namespaceURI = node.getFirstChild().getNamespaceURI();
                     String service = content;
@@ -467,13 +467,7 @@ public final class EndpointReferenceUtils {
         MetadataType metadata = getSetMetadata(ref);
 
         //wsdlLocation attribute is a list of anyURI.
-        StringBuilder strBuf = new StringBuilder();
-        for (String str : wsdlLocation) {
-            strBuf.append(str);
-            strBuf.append(" ");
-        }
-
-        metadata.getOtherAttributes().put(WSDL_LOCATION, strBuf.toString().trim());
+        metadata.getOtherAttributes().put(WSDL_LOCATION, String.join(" ", wsdlLocation).trim());
     }
 
     public static String getWSDLLocation(EndpointReferenceType ref) {
@@ -553,21 +547,20 @@ public final class EndpointReferenceUtils {
     }
 
 
-    private static synchronized Schema createSchema(ServiceInfo serviceInfo, Bus b) {
+    private static Schema createSchema(ServiceInfo serviceInfo, Bus b) {
         if (b == null) {
             b = BusFactory.getThreadDefaultBus(false);
         }
         Schema schema = serviceInfo.getProperty(Schema.class.getName(), Schema.class);
         if (schema == null) {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            Map<String, byte[]> schemaSourcesMap = new LinkedHashMap<String, byte[]>();
-            Map<String, Source> schemaSourcesMap2 = new LinkedHashMap<String, Source>();
+            Map<String, byte[]> schemaSourcesMap = new LinkedHashMap<>();
+            Map<String, Source> schemaSourcesMap2 = new LinkedHashMap<>();
 
             XMLStreamWriter writer = null;
             try {
                 for (SchemaInfo si : serviceInfo.getSchemas()) {
                     Element el = si.getElement();
-                    unsetReadonly(el);
                     String baseURI = null;
                     try {
                         baseURI = el.getBaseURI();
@@ -631,27 +624,11 @@ public final class EndpointReferenceUtils {
                     LOG.log(Level.INFO, "Schema for: " + schemaInfo.getNamespaceURI() + "\n" + s);
                 }
             } finally {
-                for (Source src : schemaSourcesMap2.values()) {
-                    if (src instanceof DOMSource) {
-                        Node nd = ((DOMSource)src).getNode();
-                        unsetReadonly(nd);
-                    }
-                }
                 StaxUtils.close(writer);
             }
             serviceInfo.setProperty(Schema.class.getName(), schema);
         }
         return schema;
-    }
-
-    private static void unsetReadonly(Node nd) {
-        try {
-            //work around a bug in the version of Xerces that is in the JDK
-            //that only allows the Element to be used to create a schema once.
-            nd.getClass().getMethod("setReadOnly", Boolean.TYPE, Boolean.TYPE).invoke(nd, false, true);
-        } catch (Throwable ex) {
-            //ignore
-        }
     }
 
     public static Schema getSchema(ServiceInfo serviceInfo) {
@@ -752,7 +729,7 @@ public final class EndpointReferenceUtils {
      * @return EndpointReferenceType - the endpoint reference
      */
     public static EndpointReferenceType getAnonymousEndpointReference() {
-        EndpointReferenceType reference = new EndpointReferenceType();
+        final EndpointReferenceType reference = new EndpointReferenceType();
         setAddress(reference, ANONYMOUS_ADDRESS);
         return reference;
     }
@@ -836,13 +813,13 @@ public final class EndpointReferenceUtils {
     private static String getNameSpaceUri(Node node, String content, String namespaceURI) {
         if (namespaceURI == null) {
             namespaceURI = node.lookupNamespaceURI(content.substring(0,
-                                                                  content.indexOf(":")));
+                                                                  content.indexOf(':')));
         }
         return namespaceURI;
     }
 
     private static String getService(String content) {
-        return content.substring(content.indexOf(":") + 1, content.length());
+        return content.substring(content.indexOf(':') + 1, content.length());
     }
 
     /**
@@ -905,7 +882,7 @@ public final class EndpointReferenceUtils {
             jm.setProperty(Marshaller.JAXB_FRAGMENT, true);
             QName qname = new QName("http://www.w3.org/2005/08/addressing", "EndpointReference");
             JAXBElement<EndpointReferenceType> jaxEle
-                = new JAXBElement<EndpointReferenceType>(qname, EndpointReferenceType.class, epr);
+                = new JAXBElement<>(qname, EndpointReferenceType.class, epr);
 
 
             W3CDOMStreamWriter writer = new W3CDOMStreamWriter();
@@ -943,14 +920,8 @@ public final class EndpointReferenceUtils {
     }
 
     private static boolean portNameMatches(Server s, String portName) {
-        boolean ret = false;
-        if (null == portName
-            || portName.equals(s.getEndpoint().getEndpointInfo().getName().getLocalPart())) {
-            return true;
-        }
-        return ret;
+        return null == portName
+            || portName.equals(s.getEndpoint().getEndpointInfo().getName().getLocalPart());
     }
-
-
 
 }

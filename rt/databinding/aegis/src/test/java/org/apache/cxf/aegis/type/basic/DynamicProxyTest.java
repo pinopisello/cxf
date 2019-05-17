@@ -27,6 +27,13 @@ import org.apache.cxf.aegis.xml.stax.ElementReader;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class DynamicProxyTest extends AbstractAegisTest {
     TypeMapping mapping;
 
@@ -48,14 +55,14 @@ public class DynamicProxyTest extends AbstractAegisTest {
         ElementReader reader = new ElementReader(getResourceAsStream("MyInterface.xml"));
         IMyInterface data = (IMyInterface)type.readObject(reader, getContext());
         assertEquals("junk", data.getName());
-        assertEquals(true, data.isUseless());
+        assertTrue(data.isUseless());
         data.setName("bigjunk");
         data.setUseless(false);
         assertEquals("bigjunk", data.getName());
-        assertEquals(false, data.isUseless());
+        assertFalse(data.isUseless());
 
         assertTrue(data.hashCode() != 0);
-        assertTrue(data.equals(data));
+        assertEquals(data, data);
         // checkstyle isn't smart enough to know we're testing equals....
 //        assertFalse(data.equals(null));
 //        assertFalse("bigjunk".equals(data));
@@ -165,7 +172,7 @@ public class DynamicProxyTest extends AbstractAegisTest {
 
         assertNotNull(data.getMyInterface());
         assertEquals("junk", data.getMyInterface().getName());
-        assertEquals(true, data.getMyInterface().isUseless());
+        assertTrue(data.getMyInterface().isUseless());
     }
 
     public interface IMyInterface {

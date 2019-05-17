@@ -60,6 +60,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     private OAuthJoseJwtProducer jwtAccessTokenProducer;
     private Map<String, String> jwtAccessTokenClaimMap;
     private ProviderAuthenticationStrategy authenticationStrategy;
+    private String issuer;
 
     protected AbstractOAuthDataProvider() {
     }
@@ -93,7 +94,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
         if (messageContext != null) {
             String certCnf = (String)messageContext.get(JoseConstants.HEADER_X509_THUMBPRINT_SHA256);
             if (certCnf != null) {
-                // At a later stage we will likely introduce a dedicate Confirmation bean (as it is used in POP etc)
+                // At a later stage we will likely introduce a dedicated Confirmation bean (as it is used in POP etc)
                 at.getExtraProperties().put(JoseConstants.HEADER_X509_THUMBPRINT_SHA256, certCnf);
             }
         }
@@ -153,7 +154,7 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
             }
         }
         if (!at.getExtraProperties().isEmpty()) {
-            Map<String, String> actualExtraProps = new HashMap<String, String>();
+            Map<String, String> actualExtraProps = new HashMap<>();
             for (Map.Entry<String, String> entry : at.getExtraProperties().entrySet()) {
                 if (JoseConstants.HEADER_X509_THUMBPRINT_SHA256.equals(entry.getKey())) {
                     claims.setClaim(JwtConstants.CLAIM_CONFIRMATION,
@@ -187,7 +188,11 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     }
 
     protected ServerAccessToken createNewAccessToken(Client client, UserSubject userSub) {
-        return new BearerAccessToken(client, accessTokenLifetime);
+        BearerAccessToken token = new BearerAccessToken(client, accessTokenLifetime);
+        if (issuer != null) {
+            token.setIssuer(issuer);
+        }
+        return token;
     }
 
     @Override
@@ -366,13 +371,13 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
     protected RefreshToken doCreateNewRefreshToken(ServerAccessToken at) {
         RefreshToken rt = new RefreshToken(at.getClient(), refreshTokenLifetime);
         if (at.getAudiences() != null) {
-            List<String> audiences = new LinkedList<String>();
+            List<String> audiences = new LinkedList<>();
             audiences.addAll(at.getAudiences());
             rt.setAudiences(audiences);
         }
         rt.setGrantType(at.getGrantType());
         if (at.getScopes() != null) {
-            List<OAuthPermission> scopes = new LinkedList<OAuthPermission>();
+            List<OAuthPermission> scopes = new LinkedList<>();
             scopes.addAll(at.getScopes());
             rt.setScopes(scopes);
         }
@@ -658,5 +663,13 @@ public abstract class AbstractOAuthDataProvider implements OAuthDataProvider, Cl
 
     public void setPersistJwtEncoding(boolean persistJwtEncoding) {
         this.persistJwtEncoding = persistJwtEncoding;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 }

@@ -19,7 +19,6 @@
 package org.apache.cxf.interceptor.security;
 
 import java.security.Principal;
-import java.security.acl.Group;
 import java.util.logging.Logger;
 
 import javax.security.auth.Subject;
@@ -70,7 +69,8 @@ public abstract class AbstractSecurityContextInInterceptor extends AbstractPhase
 
     protected Principal getPrincipal(Principal originalPrincipal, Subject subject) {
         Principal[] ps = subject.getPrincipals().toArray(new Principal[subject.getPrincipals().size()]);
-        if (ps != null && ps.length > 0 && !(ps[0] instanceof Group)) {
+        if (ps != null && ps.length > 0 
+            && !DefaultSecurityContext.isGroupPrincipal(ps[0])) {
             return ps[0];
         }
         return originalPrincipal;

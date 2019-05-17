@@ -43,6 +43,9 @@ import org.apache.wss4j.common.WSS4JConstants;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * A number of tests for fault codes that are thrown from WSS4JInInterceptor.
@@ -97,7 +100,7 @@ public class WSS4JFaultCodeTest extends AbstractSecurityTest {
             assertTrue(fault.getReason().startsWith(
                 "An error was discovered processing the <wsse:Security> header"));
             QName faultCode = new QName(WSS4JConstants.WSSE_NS, "InvalidSecurity");
-            assertTrue(fault.getFaultCode().equals(faultCode));
+            assertEquals(fault.getFaultCode(), faultCode);
         }
     }
 
@@ -158,7 +161,7 @@ public class WSS4JFaultCodeTest extends AbstractSecurityTest {
         } catch (SoapFault fault) {
             assertTrue(fault.getReason().contains("Invalid timestamp"));
             QName faultCode = new QName(WSS4JConstants.WSSE_NS, "MessageExpired");
-            assertTrue(fault.getFaultCode().equals(faultCode));
+            assertEquals(fault.getFaultCode(), faultCode);
         }
     }
 
@@ -217,7 +220,7 @@ public class WSS4JFaultCodeTest extends AbstractSecurityTest {
             assertTrue(fault.getReason().startsWith(
                 "An error was discovered processing the <wsse:Security> header"));
             QName faultCode = new QName(WSS4JConstants.WSSE_NS, "InvalidSecurity");
-            assertTrue(fault.getFaultCode().equals(faultCode));
+            assertEquals(fault.getFaultCode(), faultCode);
         }
     }
 

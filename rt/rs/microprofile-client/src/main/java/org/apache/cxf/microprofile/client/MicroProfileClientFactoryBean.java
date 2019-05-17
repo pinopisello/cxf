@@ -40,13 +40,14 @@ import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.FilterProviderInfo;
 import org.apache.cxf.jaxrs.model.ProviderInfo;
 import org.apache.cxf.jaxrs.provider.jsrjsonp.JsrJsonpProvider;
+import org.apache.cxf.microprofile.client.cdi.CDIInterceptorWrapper;
 import org.apache.cxf.microprofile.client.proxy.MicroProfileClientProxyImpl;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
 public class MicroProfileClientFactoryBean extends JAXRSClientFactoryBean {
     private final Comparator<ProviderInfo<?>> comparator;
     private final List<Object> registeredProviders;
-    private Configuration configuration;
+    private final Configuration configuration;
     private ClassLoader proxyLoader;
     private boolean inheritHeaders;
     private ExecutorService executorService;
@@ -97,12 +98,13 @@ public class MicroProfileClientFactoryBean extends JAXRSClientFactoryBean {
     @Override
     protected ClientProxyImpl createClientProxy(ClassResourceInfo cri, boolean isRoot,
                                                 ClientState actualState, Object[] varValues) {
+        CDIInterceptorWrapper interceptorWrapper = CDIInterceptorWrapper.createWrapper(getServiceClass());
         if (actualState == null) {
             return new MicroProfileClientProxyImpl(URI.create(getAddress()), proxyLoader, cri, isRoot,
-                    inheritHeaders, executorService, varValues);
+                    inheritHeaders, executorService, configuration, interceptorWrapper, varValues);
         } else {
             return new MicroProfileClientProxyImpl(actualState, proxyLoader, cri, isRoot,
-                    inheritHeaders, executorService, varValues);
+                    inheritHeaders, executorService, configuration, interceptorWrapper, varValues);
         }
     }
 
@@ -113,10 +115,10 @@ public class MicroProfileClientFactoryBean extends JAXRSClientFactoryBean {
     private Set<Object> processProviders() {
         Set<Object> providers = new LinkedHashSet<>();
         for (Object provider : configuration.getInstances()) {
-            Class<?> providerCls = ClassHelper.getRealClass(bus, provider);
+            Class<?> providerCls = ClassHelper.getRealClass(getBus(), provider);
             if (provider instanceof ClientRequestFilter || provider instanceof ClientResponseFilter) {
                 FilterProviderInfo<Object> filter = new FilterProviderInfo<>(providerCls, providerCls,
-                        provider, bus, configuration.getContracts(providerCls));
+                        provider, getBus(), configuration.getContracts(providerCls));
                 providers.add(filter);
             } else {
                 providers.add(provider);

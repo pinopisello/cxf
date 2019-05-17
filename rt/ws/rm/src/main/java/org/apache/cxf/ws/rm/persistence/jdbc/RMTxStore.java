@@ -897,7 +897,7 @@ public class RMTxStore implements RMStore {
             DatabaseMetaData metadata = con.getMetaData();
             ResultSet rs = metadata.getColumns(null, null, tableName, "%");
             Set<String> dbCols = new HashSet<>();
-            List<String[]> newCols = new ArrayList<String[]>();
+            List<String[]> newCols = new ArrayList<>();
             while (rs.next()) {
                 dbCols.add(rs.getString(4));
             }
@@ -1110,9 +1110,7 @@ public class RMTxStore implements RMStore {
                 }
                 Class.forName(driverClassName);
                 con = DriverManager.getConnection(url, userName, password);
-            } catch (ClassNotFoundException ex) {
-                LogUtils.log(LOG, Level.SEVERE, "CONNECT_EXC", ex);
-            } catch (SQLException ex) {
+            } catch (ClassNotFoundException | SQLException ex) {
                 LogUtils.log(LOG, Level.SEVERE, "CONNECT_EXC", ex);
             }
         }
@@ -1244,10 +1242,10 @@ public class RMTxStore implements RMStore {
     }
 
     private static String buildCreateTableStatement(String name, String[][] cols, String[] keys) {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(128);
         buf.append("CREATE TABLE ").append(name).append(" (");
         for (String[] col : cols) {
-            buf.append(col[0]).append(" ").append(col[1]).append(", ");
+            buf.append(col[0]).append(' ').append(col[1]).append(", ");
         }
         buf.append("PRIMARY KEY (");
         for (int i = 0; i < keys.length; i++) {

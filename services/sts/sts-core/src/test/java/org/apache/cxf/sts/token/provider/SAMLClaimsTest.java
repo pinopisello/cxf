@@ -55,10 +55,16 @@ import org.apache.wss4j.common.util.DOM2Writer;
 import org.opensaml.core.xml.XMLObject;
 import org.opensaml.saml.saml2.core.Attribute;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * A unit test for creating a SAML Tokens with various Attributes populated by a ClaimsHandler.
  */
-public class SAMLClaimsTest extends org.junit.Assert {
+public class SAMLClaimsTest {
 
     public static final String CLAIM_STATIC_COMPANY =
         "http://apache.org/claims/test/company";
@@ -91,7 +97,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -132,7 +138,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -177,7 +183,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -204,7 +210,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
         ClaimsManager claimsManager = new ClaimsManager();
         StaticClaimsHandler claimsHandler = new StaticClaimsHandler();
         Map<String, String> staticClaimsMap = new HashMap<>();
-        staticClaimsMap.put(CLAIM_STATIC_COMPANY.toString(), CLAIM_STATIC_COMPANY_VALUE);
+        staticClaimsMap.put(CLAIM_STATIC_COMPANY, CLAIM_STATIC_COMPANY_VALUE);
         claimsHandler.setGlobalClaims(staticClaimsMap);
         claimsManager.setClaimHandlers(Collections.singletonList((ClaimsHandler)claimsHandler));
         providerParameters.setClaimsManager(claimsManager);
@@ -217,7 +223,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -230,7 +236,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
         SamlAssertionWrapper assertion = new SamlAssertionWrapper(token);
         List<Attribute> attributes = assertion.getSaml2().getAttributeStatements().get(0).getAttributes();
         assertEquals(attributes.size(), 1);
-        assertEquals(attributes.get(0).getName(), CLAIM_STATIC_COMPANY.toString());
+        assertEquals(attributes.get(0).getName(), CLAIM_STATIC_COMPANY);
         XMLObject valueObj = attributes.get(0).getAttributeValues().get(0);
         assertEquals(valueObj.getDOM().getTextContent(), CLAIM_STATIC_COMPANY_VALUE);
     }
@@ -249,7 +255,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         // Create claims map for specific application
         Map<String, String> endpointClaimsMap = new HashMap<>();
-        endpointClaimsMap.put(CLAIM_APPLICATION.toString(), CLAIM_APPLICATION_VALUE);
+        endpointClaimsMap.put(CLAIM_APPLICATION, CLAIM_APPLICATION_VALUE);
 
         Map<String, Map<String, String>> staticClaims = new HashMap<>();
         staticClaims.put(APPLICATION_APPLIES_TO, endpointClaimsMap);
@@ -270,7 +276,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -283,7 +289,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
         SamlAssertionWrapper assertion = new SamlAssertionWrapper(token);
         List<Attribute> attributes = assertion.getSaml2().getAttributeStatements().get(0).getAttributes();
         assertEquals(attributes.size(), 1);
-        assertEquals(attributes.get(0).getName(), CLAIM_APPLICATION.toString());
+        assertEquals(attributes.get(0).getName(), CLAIM_APPLICATION);
         XMLObject valueObj = attributes.get(0).getAttributeValues().get(0);
         assertEquals(valueObj.getDOM().getTextContent(), CLAIM_APPLICATION_VALUE);
     }
@@ -304,7 +310,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         // Create claims map for specific application
         Map<String, String> endpointClaimsMap = new HashMap<>();
-        endpointClaimsMap.put(CLAIM_APPLICATION.toString(), CLAIM_APPLICATION_VALUE);
+        endpointClaimsMap.put(CLAIM_APPLICATION, CLAIM_APPLICATION_VALUE);
 
         Map<String, Map<String, String>> staticClaims = new HashMap<>();
         staticClaims.put(APPLICATION_APPLIES_TO, endpointClaimsMap);
@@ -355,7 +361,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -394,7 +400,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();
@@ -438,7 +444,7 @@ public class SAMLClaimsTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         Element token = (Element)providerResponse.getToken();

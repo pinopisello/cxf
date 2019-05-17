@@ -156,7 +156,6 @@ public final class JAXBUtils {
         BUILTIN_DATATYPES_MAP.put("gDay", "javax.xml.datatype.XMLGregorianCalendar");
         BUILTIN_DATATYPES_MAP.put("duration", "javax.xml.datatype.Duration");
         BUILTIN_DATATYPES_MAP.put("NOTATION", "javax.xml.namespace.QName");
-        BUILTIN_DATATYPES_MAP.put("string", "java.lang.String");
 
         HOLDER_TYPES_MAP = new HashMap<>();
         HOLDER_TYPES_MAP.put("int", java.lang.Integer.class);
@@ -404,10 +403,9 @@ public final class JAXBUtils {
         // algorithm will not change an XML name that is already a legal and
         // conventional (!) Java class, method, or constant identifier
 
-        boolean legalIdentifier = false;
         StringBuilder buf = new StringBuilder(name);
         boolean hasUnderscore = false;
-        legalIdentifier = Character.isJavaIdentifierStart(buf.charAt(0));
+        boolean legalIdentifier = Character.isJavaIdentifierStart(buf.charAt(0));
 
         for (int i = 1; i < name.length() && legalIdentifier; i++) {
             legalIdentifier &= Character.isJavaIdentifierPart(buf.charAt(i));
@@ -508,7 +506,7 @@ public final class JAXBUtils {
         if (null == buf || buf.length() == 0) {
             return false;
         }
-        boolean result = false;
+        final boolean result;
         if (IdentifierType.CONSTANT == type) {
             for (int i = 0; i < buf.length(); i++) {
                 if (Character.isLowerCase(buf.charAt(i))) {
@@ -587,7 +585,7 @@ public final class JAXBUtils {
             return cls;
         }
         if (cls != null) {
-            if (cls.getName().equals("javax.xml.ws.wsaddressing.W3CEndpointReference")) {
+            if ("javax.xml.ws.wsaddressing.W3CEndpointReference".equals(cls.getName())) {
                 return cls;
             }
             Constructor<?> cons = ReflectionUtil.getDeclaredConstructor(cls);
@@ -650,7 +648,7 @@ public final class JAXBUtils {
     public static BridgeWrapper createBridge(Set<Class<?>> ctxClasses,
                                       QName qname,
                                       Class<?> refcls,
-                                      Annotation anns[]) throws JAXBException {
+                                      Annotation[] anns) throws JAXBException {
         try {
             Class<?> cls;
             Class<?> refClass;
@@ -668,7 +666,7 @@ public final class JAXBUtils {
                                                  anns.getClass()).newInstance(qname, refcls, anns);
             List<Object> typeRefs = new ArrayList<>();
             typeRefs.add(ref);
-            List<Class<?>> clses = new ArrayList<Class<?>>(ctxClasses);
+            List<Class<?>> clses = new ArrayList<>(ctxClasses);
             clses.add(refClass.getField("type").get(ref).getClass());
             if (!refcls.isInterface()) {
                 clses.add(refcls);
@@ -676,7 +674,7 @@ public final class JAXBUtils {
 
             Object ctx = null;
             for (Method m : cls.getDeclaredMethods()) {
-                if (m.getName().equals("newInstance")
+                if ("newInstance".equals(m.getName())
                     && m.getParameterTypes().length == 6) {
                     ctx = m.invoke(null, clses.toArray(new Class<?>[0]),
                                          typeRefs, null, null, true, null);
@@ -874,7 +872,7 @@ public final class JAXBUtils {
         // that are in the same package. Also check for ObjectFactory classes
         Map<String, InputStream> packages = new HashMap<>();
         Map<String, ClassLoader> packageLoaders = new HashMap<>();
-        Set<Class<?>> objectFactories = new HashSet<Class<?>>();
+        Set<Class<?>> objectFactories = new HashSet<>();
         for (Class<?> jcls : classes) {
             String pkgName = PackageUtils.getPackageName(jcls);
             if (!packages.containsKey(pkgName)) {
@@ -920,8 +918,8 @@ public final class JAXBUtils {
                     String line = reader.readLine();
                     while (line != null) {
                         line = line.trim();
-                        if (line.indexOf("#") != -1) {
-                            line = line.substring(0, line.indexOf("#"));
+                        if (line.indexOf('#') != -1) {
+                            line = line.substring(0, line.indexOf('#'));
                         }
                         if (!StringUtils.isEmpty(line)) {
                             try {
@@ -1147,13 +1145,13 @@ public final class JAXBUtils {
     public static class MapNamespacePrefixMapper2
         extends org.eclipse.persistence.internal.oxm.record.namespaces.MapNamespacePrefixMapper {
 
-        String nsctxt[];
+        String[] nsctxt;
 
         public MapNamespacePrefixMapper2(Map<String, String> foo) {
             super(foo);
         }
         public String[] getPreDeclaredNamespaceUris() {
-            String sup[] = super.getPreDeclaredNamespaceUris();
+            String[] sup = super.getPreDeclaredNamespaceUris();
             if (nsctxt == null) {
                 return sup;
             }
@@ -1163,7 +1161,7 @@ public final class JAXBUtils {
             }
             return s.toArray(new String[s.size()]);
         }
-        public void setContextualNamespaceDecls(String f[]) {
+        public void setContextualNamespaceDecls(String[] f) {
             nsctxt = f;
         }
         public String[] getContextualNamespaceDecls() {
@@ -1341,7 +1339,7 @@ public final class JAXBUtils {
 
             cw.visitEnd();
 
-            byte bts[] = cw.toByteArray();
+            byte[] bts = cw.toByteArray();
             cls = helper.loadClass(className,
                                    mcls, bts);
         }
@@ -1506,7 +1504,7 @@ public final class JAXBUtils {
 
         cw.visitEnd();
 
-        byte bts[] = cw.toByteArray();
+        byte[] bts = cw.toByteArray();
         return helper.loadClass(className,
                                 ref, bts);
     }
@@ -1536,11 +1534,13 @@ public final class JAXBUtils {
     }
 
     private static String getPostfix(Class<?> cls) {
-        if (cls.getName().contains("com.sun.xml.internal")
-            || cls.getName().contains("eclipse")) {
+        String className = cls.getName();
+        if (className.contains("com.sun.xml.internal")
+            || className.contains("eclipse")) {
             //eclipse moxy accepts sun package CharacterEscapeHandler 
             return ".internal";
-        } else if (cls.getName().contains("com.sun.xml.bind")) {
+        } else if (className.contains("com.sun.xml.bind")
+            || className.startsWith("com.ibm.xml")) {
             return "";
         }
         return null;
@@ -1563,7 +1563,7 @@ public final class JAXBUtils {
     public static void setEscapeHandler(Marshaller marshaller, Object escapeHandler) {
         try {
             String postFix = getPostfix(marshaller.getClass());
-            if (postFix != null) {
+            if (postFix != null && escapeHandler != null) {
                 marshaller.setProperty("com.sun.xml" + postFix + ".bind.characterEscapeHandler", escapeHandler);
             }
         } catch (PropertyException e) {

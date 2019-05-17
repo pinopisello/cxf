@@ -32,6 +32,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests thread pool config.
  */
@@ -89,7 +91,7 @@ public class ThreadPoolTest extends AbstractClientServerTestBase {
         //make sure things are running
         greeter.greetMeLater(1);
         greeter.greetMeLater(1);
-        TestRunnable r[] = new TestRunnable[5];
+        TestRunnable[] r = new TestRunnable[5];
         Thread[] invokers = new Thread[5];
         for (int i = 0; i < invokers.length; i++) {
             r[i] = new TestRunnable(i);

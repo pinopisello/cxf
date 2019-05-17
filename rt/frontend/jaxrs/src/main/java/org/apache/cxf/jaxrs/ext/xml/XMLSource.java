@@ -217,7 +217,7 @@ public class XMLSource {
      * @return the xml:base value
      */
     public URI getBaseURI() {
-        Map<String, String> map = new LinkedHashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<>();
         map.put("xml", XML_NAMESPACE);
         return getLink("/*/@xml:base", map);
     }
@@ -368,7 +368,7 @@ public class XMLSource {
 
         try {
 
-            JAXBElementProvider<?> provider = new JAXBElementProvider<Object>();
+            JAXBElementProvider<?> provider = new JAXBElementProvider<>();
             JAXBContext c = provider.getPackageContext(cls);
             if (c == null) {
                 c = provider.getClassContext(cls);

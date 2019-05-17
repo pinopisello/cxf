@@ -38,6 +38,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 public class NettyClientTest extends AbstractBusClientServerTestBase {
 
     public static final String PORT = allocatePort(NettyClientTest.class);
@@ -113,9 +116,7 @@ public class NettyClientTest extends AbstractBusClientServerTestBase {
             public void handleResponse(Response<GreetMeResponse> res) {
                 try {
                     res.get().getResponseType();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
@@ -136,9 +137,7 @@ public class NettyClientTest extends AbstractBusClientServerTestBase {
         public void handleResponse(Response<GreetMeLaterResponse> res) {
             try {
                 response = res.get();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
             }
         }

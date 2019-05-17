@@ -32,6 +32,7 @@ import javax.xml.soap.SOAPMessage;
 import org.w3c.dom.Element;
 
 import org.apache.cxf.binding.soap.SoapMessage;
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.DOMUtils;
 import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.rt.security.utils.SecurityUtils;
@@ -378,7 +379,7 @@ public class TransportBindingHandler extends AbstractBindingBuilder {
             dkSig.setStoreBytesInAttachment(storeBytesInAttachment);
             dkSig.setExpandXopInclude(isExpandXopInclude());
             dkSig.setWsDocInfo(wsDocInfo);
-            
+
             AlgorithmSuiteType algType = binding.getAlgorithmSuite().getAlgorithmSuiteType();
             dkSig.setDerivedKeyLength(algType.getSignatureDerivedKeyLength() / 8);
 
@@ -448,7 +449,7 @@ public class TransportBindingHandler extends AbstractBindingBuilder {
         if (token.getDerivedKeys() == DerivedKeys.RequireDerivedKeys) {
             return doDerivedKeySignature(tokenIncluded, secTok, token, sigParts);
         }
-        return doSignature(tokenIncluded, secTok, token, wrapper, sigParts);
+        return doSignature(tokenIncluded, secTok, token, sigParts);
     }
 
     private byte[] doDerivedKeySignature(
@@ -465,7 +466,7 @@ public class TransportBindingHandler extends AbstractBindingBuilder {
         dkSign.setStoreBytesInAttachment(storeBytesInAttachment);
         dkSign.setExpandXopInclude(isExpandXopInclude());
         dkSign.setWsDocInfo(wsDocInfo);
-        
+
         AlgorithmSuite algorithmSuite = tbinding.getAlgorithmSuite();
 
         //Setting the AttachedReference or the UnattachedReference according to the flag
@@ -510,7 +511,6 @@ public class TransportBindingHandler extends AbstractBindingBuilder {
         boolean tokenIncluded,
         SecurityToken secTok,
         AbstractToken token,
-        SupportingTokens wrapper,
         List<WSEncryptionPart> sigParts
     ) throws Exception {
         WSSecSignature sig = new WSSecSignature(secHeader);
@@ -586,7 +586,13 @@ public class TransportBindingHandler extends AbstractBindingBuilder {
                 String userNameKey = SecurityConstants.SIGNATURE_USERNAME;
                 uname = (String)SecurityUtils.getSecurityPropertyValue(userNameKey, message);
             }
-            String password = getPassword(uname, token, WSPasswordCallback.SIGNATURE);
+
+            String password =
+                (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SIGNATURE_PASSWORD, message);
+            if (StringUtils.isEmpty(password)) {
+                password = getPassword(uname, token, WSPasswordCallback.SIGNATURE);
+            }
+
             sig.setUserInfo(uname, password);
             sig.setSignatureAlgorithm(binding.getAlgorithmSuite().getAsymmetricSignature());
         } else {

@@ -62,10 +62,14 @@ import org.apache.wss4j.common.principal.CustomTokenPrincipal;
 
 import org.junit.Assert;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Some unit tests for the issue operation to issue JWT Tokens.
  */
-public class IssueJWTUnitTest extends org.junit.Assert {
+public class IssueJWTUnitTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -128,7 +132,7 @@ public class IssueJWTUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element token = null;

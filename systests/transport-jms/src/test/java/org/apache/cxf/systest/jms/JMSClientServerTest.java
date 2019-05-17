@@ -69,12 +69,17 @@ import org.apache.hello_world_doc_lit.SOAPService7;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class JMSClientServerTest extends AbstractBusClientServerTestBase {
     public static final String PORT = allocatePort(JMSClientServerTest.class);
@@ -204,9 +209,7 @@ public class JMSClientServerTest extends AbstractBusClientServerTestBase {
                     Thread thread2 = Thread.currentThread();
                     assertNotSame(thread, thread2);
                     assertEquals("Hello " + expected, response.get());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
@@ -583,7 +586,7 @@ public class JMSClientServerTest extends AbstractBusClientServerTestBase {
         assertTrue("response Headers must conain the app property set in request context.",
                    responseHdr.getPropertyKeys().size() > 0);
 
-        
+
         boolean found = responseHdr.getPropertyKeys().contains(testReturnPropertyName);
         assertTrue("response Headers must match the app property set in request context.", found);
         ((Closeable)greeter).close();
@@ -604,7 +607,7 @@ public class JMSClientServerTest extends AbstractBusClientServerTestBase {
 
         String name = "FooBar";
         String reply = greeter.greetMe(name);
-        Assert.assertEquals("Hello " + name, reply);
+        assertEquals("Hello " + name, reply);
         ((Closeable)greeter).close();
     }
 

@@ -49,10 +49,14 @@ import org.apache.cxf.ws.security.sts.provider.model.utility.AttributedDateTime;
 import org.apache.wss4j.common.WSS4JConstants;
 import org.apache.wss4j.common.util.DateUtil;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 /**
  * Some unit tests for the issue operation.
  */
-public class IssueUnitTest extends org.junit.Assert {
+public class IssueUnitTest {
 
     /**
      * Test to successfully issue a (dummy) token.
@@ -93,7 +97,7 @@ public class IssueUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -205,7 +209,7 @@ public class IssueUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
 
@@ -260,7 +264,7 @@ public class IssueUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -301,7 +305,7 @@ public class IssueUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
 
@@ -346,8 +350,8 @@ public class IssueUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
-        assertTrue("AuthenticationContext".equals(securityTokenResponse.get(0).getContext()));
+        assertFalse(securityTokenResponse.isEmpty());
+        assertEquals("AuthenticationContext", securityTokenResponse.get(0).getContext());
     }
 
     /**
@@ -382,7 +386,7 @@ public class IssueUnitTest extends org.junit.Assert {
         request.getAny().add(createAppliesToElement("http://dummy-service.com/dummy"));
         LifetimeType lifetime = createLifetime(300L * 5L);
         JAXBElement<LifetimeType> lifetimeJaxb =
-            new JAXBElement<LifetimeType>(QNameConstants.LIFETIME, LifetimeType.class, lifetime);
+            new JAXBElement<>(QNameConstants.LIFETIME, LifetimeType.class, lifetime);
         request.getAny().add(lifetimeJaxb);
 
         // Mock up message context
@@ -394,7 +398,7 @@ public class IssueUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -434,7 +438,7 @@ public class IssueUnitTest extends org.junit.Assert {
         // Issue a token
         RequestSecurityTokenResponseType response =
             issueOperation.issueSingle(request, null, msgCtx);
-        assertTrue(!response.getAny().isEmpty());
+        assertFalse(response.getAny().isEmpty());
     }
 
 

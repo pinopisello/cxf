@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.apache.cxf.common.util.Base64Utility;
@@ -52,7 +51,7 @@ public final class AuthorizationUtils {
         } catch (Exception ex) {
             throw ExceptionUtils.toNotAuthorizedException(ex, null);
         }
-        String authInfo[] = authDecoded.split(":");
+        String[] authInfo = authDecoded.split(":");
         if (authInfo.length == 2) {
             return authInfo;
         }
@@ -71,7 +70,7 @@ public final class AuthorizationUtils {
     public static String[] getAuthorizationParts(MessageContext mc,
                                                  Set<String> challenges,
                                                  String realm) {
-        List<String> headers = mc.getHttpHeaders().getRequestHeader("Authorization");
+        List<String> headers = mc.getHttpHeaders().getRequestHeader(HttpHeaders.AUTHORIZATION);
         if (headers != null && headers.size() == 1) {
             String[] parts = headers.get(0).split(" ");
             if (parts.length > 0
@@ -102,22 +101,19 @@ public final class AuthorizationUtils {
                 continue;
             }
             if (sb.length() > 0) {
-                sb.append(",");
+                sb.append(',');
             }
             sb.append(challenge);
         }
         if (sb.length() > 0) {
             if (realm != null) {
-                sb.append(" realm=\"" + realm + "\"");
+                sb.append(" realm=\"").append(realm).append('"');
             }
             rb.header(HttpHeaders.WWW_AUTHENTICATE, sb.toString());
         }
-        Response r = null;
         if (cause != null) {
-            r = rb.entity(cause.getMessage()).build();
-        } else {
-            r = rb.build();
+            rb.entity(cause.getMessage());
         }
-        throw ExceptionUtils.toNotAuthorizedException(cause, r);
+        throw ExceptionUtils.toNotAuthorizedException(cause, rb.build());
     }
 }

@@ -21,7 +21,6 @@ package org.apache.cxf.sts.operation;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -44,12 +43,12 @@ import org.apache.cxf.sts.STSPropertiesMBean;
 import org.apache.cxf.sts.SignatureProperties;
 import org.apache.cxf.sts.StaticSTSProperties;
 import org.apache.cxf.sts.common.PasswordCallbackHandler;
-import org.apache.cxf.sts.common.TestUtils;
 import org.apache.cxf.sts.service.EncryptionProperties;
 import org.apache.cxf.sts.service.ServiceMBean;
 import org.apache.cxf.sts.service.StaticService;
 import org.apache.cxf.sts.token.provider.SAMLTokenProvider;
 import org.apache.cxf.sts.token.provider.TokenProvider;
+import org.apache.cxf.test.TestUtilities;
 import org.apache.cxf.ws.security.sts.provider.STSException;
 import org.apache.cxf.ws.security.sts.provider.model.BinarySecretType;
 import org.apache.cxf.ws.security.sts.provider.model.EntropyType;
@@ -79,10 +78,17 @@ import org.apache.wss4j.dom.message.WSSecEncryptedKey;
 import org.apache.wss4j.dom.saml.WSSSAMLKeyInfoProcessor;
 import org.apache.wss4j.dom.util.WSSecurityUtil;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Some unit tests for the issue operation to issue SAML tokens.
  */
-public class IssueSamlUnitTest extends org.junit.Assert {
+public class IssueSamlUnitTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -94,7 +100,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
     private static boolean unrestrictedPoliciesInstalled;
 
     static {
-        unrestrictedPoliciesInstalled = TestUtils.checkUnrestrictedPoliciesInstalled();
+        unrestrictedPoliciesInstalled = TestUtilities.checkUnrestrictedPoliciesInstalled();
     };
 
     /**
@@ -148,7 +154,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -220,7 +226,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -293,7 +299,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -473,7 +479,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -556,14 +562,14 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         // Now add UseKey
         UseKeyType useKey = createUseKey(crypto, "myclientkey");
         JAXBElement<UseKeyType> useKeyType =
-            new JAXBElement<UseKeyType>(QNameConstants.USE_KEY, UseKeyType.class, useKey);
+            new JAXBElement<>(QNameConstants.USE_KEY, UseKeyType.class, useKey);
         request.getAny().add(useKeyType);
 
         RequestSecurityTokenResponseCollectionType response =
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -653,14 +659,14 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         EntropyType entropyType = new EntropyType();
         entropyType.getAny().add(binarySecretTypeJaxb);
         JAXBElement<EntropyType> entropyJaxbType =
-            new JAXBElement<EntropyType>(QNameConstants.ENTROPY, EntropyType.class, entropyType);
+            new JAXBElement<>(QNameConstants.ENTROPY, EntropyType.class, entropyType);
         request.getAny().add(entropyJaxbType);
 
         RequestSecurityTokenResponseCollectionType response =
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -746,14 +752,14 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         EntropyType entropyType = new EntropyType();
         entropyType.getAny().add(binarySecretTypeJaxb);
         JAXBElement<EntropyType> entropyJaxbType =
-            new JAXBElement<EntropyType>(QNameConstants.ENTROPY, EntropyType.class, entropyType);
+            new JAXBElement<>(QNameConstants.ENTROPY, EntropyType.class, entropyType);
         request.getAny().add(entropyJaxbType);
 
         RequestSecurityTokenResponseCollectionType response =
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -840,14 +846,14 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         EntropyType entropyType = new EntropyType();
         entropyType.getAny().add(encryptedKeyElement);
         JAXBElement<EntropyType> entropyJaxbType =
-            new JAXBElement<EntropyType>(QNameConstants.ENTROPY, EntropyType.class, entropyType);
+            new JAXBElement<>(QNameConstants.ENTROPY, EntropyType.class, entropyType);
         request.getAny().add(entropyJaxbType);
 
         RequestSecurityTokenResponseCollectionType response =
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -888,7 +894,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         );
 
         SAMLKeyInfo samlKeyInfo = assertionWrapper.getSubjectKeyInfo();
-        assertTrue(Arrays.equals(secret, samlKeyInfo.getSecret()));
+        assertArrayEquals(secret, samlKeyInfo.getSecret());
     }
 
 
@@ -944,7 +950,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test that no references were returned
         boolean foundReference = false;
@@ -1024,7 +1030,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -1051,7 +1057,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
      */
     @org.junit.Test
     public void testIssueSaml2DifferentSignatureToken() throws Exception {
-        if (!TestUtils.checkUnrestrictedPoliciesInstalled()) {
+        if (!TestUtilities.checkUnrestrictedPoliciesInstalled()) {
             return;
         }
 
@@ -1115,7 +1121,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -1180,7 +1186,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
 
         UseKeyType useKey = createUseKey(crypto, "myclientkey");
         JAXBElement<UseKeyType> useKeyType =
-            new JAXBElement<UseKeyType>(QNameConstants.USE_KEY, UseKeyType.class, useKey);
+            new JAXBElement<>(QNameConstants.USE_KEY, UseKeyType.class, useKey);
         request.getAny().add(useKeyType);
 
         request.getAny().add(createAppliesToElement("http://dummy-service.com/dummy"));
@@ -1199,7 +1205,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -1228,7 +1234,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         properties.put("org.apache.wss4j.crypto.merlin.keystore.file", "eve.jks");
 
         useKey = createUseKey(CryptoFactory.getInstance(properties), "eve");
-        useKeyType = new JAXBElement<UseKeyType>(QNameConstants.USE_KEY, UseKeyType.class, useKey);
+        useKeyType = new JAXBElement<>(QNameConstants.USE_KEY, UseKeyType.class, useKey);
         request.getAny().add(useKeyType);
 
         // This should fail as the UseKey certificate is not trusted
@@ -1243,7 +1249,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
         stsProperties.setValidateUseKey(false);
         response = issueOperation.issue(request, principal, msgCtx);
         securityTokenResponse = response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     @org.junit.Test
@@ -1315,7 +1321,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -1407,7 +1413,7 @@ public class IssueSamlUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;

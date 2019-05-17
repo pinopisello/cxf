@@ -26,7 +26,9 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.core.Response;
 
+import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.utils.HttpUtils;
 import org.apache.cxf.rs.security.jose.common.JoseUtils;
@@ -39,15 +41,20 @@ public class JwsClientResponseFilter extends AbstractJwsReaderProvider implement
     @Override
     public void filter(ClientRequestContext req, ClientResponseContext res) throws IOException {
         if (isMethodWithNoContent(req.getMethod())
+            || isStatusCodeWithNoContent(res.getStatus())
             || isCheckEmptyStream() && !res.hasEntity()) {
             return;
         }
-        JwsCompactConsumer p = new JwsCompactConsumer(IOUtils.readStringFromStream(res.getEntityStream()));
+        final String content = IOUtils.readStringFromStream(res.getEntityStream());
+        if (StringUtils.isEmpty(content)) {
+            return;
+        }
+        JwsCompactConsumer p = new JwsCompactConsumer(content);
         JwsSignatureVerifier theSigVerifier = getInitializedSigVerifier(p.getJwsHeaders());
         if (!p.verifySignatureWith(theSigVerifier)) {
             throw new JwsException(JwsException.Error.INVALID_SIGNATURE);
         }
-        
+
         byte[] bytes = p.getDecodedJwsPayloadBytes();
         res.setEntityStream(new ByteArrayInputStream(bytes));
         res.getHeaders().putSingle("Content-Length", Integer.toString(bytes.length));
@@ -55,7 +62,7 @@ public class JwsClientResponseFilter extends AbstractJwsReaderProvider implement
         if (ct != null) {
             res.getHeaders().putSingle("Content-Type", ct);
         }
-        
+
         if (super.isValidateHttpHeaders()) {
             super.validateHttpHeadersIfNeeded(res.getHeaders(), p.getJwsHeaders());
         }
@@ -63,5 +70,9 @@ public class JwsClientResponseFilter extends AbstractJwsReaderProvider implement
 
     protected boolean isMethodWithNoContent(String method) {
         return HttpMethod.DELETE.equals(method) || HttpUtils.isMethodWithNoResponseContent(method);
+    }
+
+    protected boolean isStatusCodeWithNoContent(int statusCode) {
+        return statusCode == Response.Status.NO_CONTENT.getStatusCode();
     }
 }

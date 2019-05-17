@@ -42,11 +42,13 @@ import org.apache.lucene.util.Version;
 import org.apache.tika.parser.pdf.PDFParser;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TikaLuceneContentExtractorTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+public class TikaLuceneContentExtractorTest {
     private TikaLuceneContentExtractor extractor;
     private Directory directory;
     private IndexWriter writer;
@@ -61,7 +63,7 @@ public class TikaLuceneContentExtractorTest extends Assert {
         writer = new IndexWriter(directory, config);
         writer.commit();
 
-        parser = new FiqlParser<SearchBean>(SearchBean.class);
+        parser = new FiqlParser<>(SearchBean.class);
         extractor = new TikaLuceneContentExtractor(new PDFParser());
     }
 
@@ -224,7 +226,7 @@ public class TikaLuceneContentExtractorTest extends Assert {
         IndexSearcher searcher = new IndexSearcher(reader);
 
         try {
-            LuceneQueryVisitor<SearchBean> visitor = new LuceneQueryVisitor<SearchBean>("ct", "contents");
+            LuceneQueryVisitor<SearchBean> visitor = new LuceneQueryVisitor<>("ct", "contents");
             visitor.setPrimitiveFieldTypeMap(fieldTypes);
             visitor.visit(parser.parse(expression));
 

@@ -302,7 +302,7 @@ class SecureConversationInInterceptor extends AbstractPhaseInterceptor<SoapMessa
             String prefix,
             String namespace
         ) throws Exception {
-            doIssueOrRenew(requestEl, exchange, binaryExchange, writer, prefix, namespace, null);
+            doIssueOrRenew(requestEl, exchange, writer, prefix, namespace, null);
         }
 
         void doRenew(Element requestEl,
@@ -312,14 +312,13 @@ class SecureConversationInInterceptor extends AbstractPhaseInterceptor<SoapMessa
                      W3CDOMStreamWriter writer,
                      String prefix,
                      String namespace) throws Exception {
-            doIssueOrRenew(requestEl, exchange, binaryExchange, writer, prefix, namespace,
+            doIssueOrRenew(requestEl, exchange, writer, prefix, namespace,
                     renewToken.getId());
         }
 
 
         private void doIssueOrRenew(Element requestEl,
                                Exchange exchange,
-                               Element binaryExchange,
                                W3CDOMStreamWriter writer,
                                String prefix,
                                String namespace,
@@ -330,7 +329,7 @@ class SecureConversationInInterceptor extends AbstractPhaseInterceptor<SoapMessa
             }
             writer.writeStartElement(prefix, "RequestSecurityTokenResponse", namespace);
 
-            byte clientEntropy[] = null;
+            byte[] clientEntropy = null;
             int keySize = 256;
             long ttl = WSS4JUtils.getSecurityTokenLifetime(exchange.getOutMessage());
             String tokenType = null;

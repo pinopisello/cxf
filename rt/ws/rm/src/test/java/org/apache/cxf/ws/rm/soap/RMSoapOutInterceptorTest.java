@@ -53,10 +53,11 @@ import org.apache.cxf.ws.rm.v200702.ObjectFactory;
 import org.apache.cxf.ws.rm.v200702.SequenceAcknowledgement;
 import org.apache.cxf.ws.rm.v200702.SequenceType;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-public class RMSoapOutInterceptorTest extends Assert {
+import static org.junit.Assert.assertTrue;
+
+public class RMSoapOutInterceptorTest {
 
     private static final Long ONE = Long.valueOf(1);
     private static final Long TEN = Long.valueOf(10);
@@ -257,7 +258,7 @@ public class RMSoapOutInterceptorTest extends Assert {
     }
 
     private void verifyHeaders(SoapMessage message, String... names) {
-        List<Header> headers = new ArrayList<Header>(message.getHeaders());
+        List<Header> headers = new ArrayList<>(message.getHeaders());
 
         // check all expected headers are present
 
@@ -290,8 +291,6 @@ public class RMSoapOutInterceptorTest extends Assert {
         }
 
         // no other headers should be present
-        if (!headers.isEmpty()) {
-            assertTrue("Unexpected header element " + headers.get(0).getName(), false);
-        }
+        assertTrue(headers.isEmpty());
     }
 }

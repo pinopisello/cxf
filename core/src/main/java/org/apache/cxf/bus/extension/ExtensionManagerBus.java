@@ -64,8 +64,8 @@ public class ExtensionManagerBus extends AbstractBasicInterceptorProvider implem
     protected final Set<Class<?>> missingExtensions;
     protected String id;
     private BusState state;
-    private final Collection<Feature> features = new CopyOnWriteArrayList<Feature>();
-    private final Map<String, Object> properties = new ConcurrentHashMap<String, Object>(16, 0.75f, 4);
+    private final Collection<Feature> features = new CopyOnWriteArrayList<>();
+    private final Map<String, Object> properties = new ConcurrentHashMap<>(16, 0.75f, 4);
 
 
     private final ExtensionManagerImpl extensionManager;
@@ -73,12 +73,12 @@ public class ExtensionManagerBus extends AbstractBasicInterceptorProvider implem
     public ExtensionManagerBus(Map<Class<?>, Object> extensions, Map<String, Object> props,
           ClassLoader extensionClassLoader) {
         if (extensions == null) {
-            extensions = new ConcurrentHashMap<Class<?>, Object>(16, 0.75f, 4);
+            extensions = new ConcurrentHashMap<>(16, 0.75f, 4);
         } else {
-            extensions = new ConcurrentHashMap<Class<?>, Object>(extensions);
+            extensions = new ConcurrentHashMap<>(extensions);
         }
         this.extensions = extensions;
-        this.missingExtensions = new CopyOnWriteArraySet<Class<?>>();
+        this.missingExtensions = new CopyOnWriteArraySet<>();
 
 
         state = BusState.INITIAL;
@@ -188,7 +188,7 @@ public class ExtensionManagerBus extends AbstractBasicInterceptorProvider implem
                 } else {
                     //force loading
                     Collection<?> objs = loc.getBeansOfType(extensionType);
-                    if (objs != null && objs.size() != 0) {
+                    if (objs != null && !objs.isEmpty()) {
                         extensions.put(extensionType, objs.iterator().next());
                     }
                     obj = extensions.get(extensionType);

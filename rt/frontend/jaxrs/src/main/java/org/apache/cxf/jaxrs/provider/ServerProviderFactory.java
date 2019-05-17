@@ -76,19 +76,19 @@ public final class ServerProviderFactory extends ProviderFactory {
     private static final String WADL_PROVIDER_NAME = "org.apache.cxf.jaxrs.model.wadl.WadlGenerator";
     private static final String MAKE_DEFAULT_WAE_LEAST_SPECIFIC = "default.wae.mapper.least.specific";
     private List<ProviderInfo<ExceptionMapper<?>>> exceptionMappers =
-        new ArrayList<ProviderInfo<ExceptionMapper<?>>>(1);
+        new ArrayList<>(1);
 
     private List<ProviderInfo<ContainerRequestFilter>> preMatchContainerRequestFilters =
-        new ArrayList<ProviderInfo<ContainerRequestFilter>>(1);
+        new ArrayList<>(1);
     private Map<NameKey, ProviderInfo<ContainerRequestFilter>> postMatchContainerRequestFilters =
-        new NameKeyMap<ProviderInfo<ContainerRequestFilter>>(true);
+        new NameKeyMap<>(true);
     private Map<NameKey, ProviderInfo<ContainerResponseFilter>> containerResponseFilters =
-        new NameKeyMap<ProviderInfo<ContainerResponseFilter>>(false);
+        new NameKeyMap<>(false);
     private RequestPreprocessor requestPreprocessor;
     private ApplicationInfo application;
-    private Set<DynamicFeature> dynamicFeatures = new LinkedHashSet<DynamicFeature>();
+    private Set<DynamicFeature> dynamicFeatures = new LinkedHashSet<>();
 
-    private Map<Class<?>, BeanParamInfo> beanParams = new ConcurrentHashMap<Class<?>, BeanParamInfo>();
+    private Map<Class<?>, BeanParamInfo> beanParams = new ConcurrentHashMap<>();
     private ProviderInfo<ContainerRequestFilter> wadlGenerator;
 
     private ServerProviderFactory(Bus bus) {
@@ -201,7 +201,7 @@ public final class ServerProviderFactory extends ProviderFactory {
     @SuppressWarnings("unchecked")
     @Override
     protected void setProviders(boolean custom, boolean busGlobal, Object... providers) {
-        List<Object> allProviders = new LinkedList<Object>();
+        List<Object> allProviders = new LinkedList<>();
         for (Object p : providers) {
             if (p instanceof Feature) {
                 FeatureContext featureContext = createServerFeatureContext();
@@ -234,9 +234,9 @@ public final class ServerProviderFactory extends ProviderFactory {
 
 
         List<ProviderInfo<ContainerRequestFilter>> postMatchRequestFilters =
-            new LinkedList<ProviderInfo<ContainerRequestFilter>>();
+            new LinkedList<>();
         List<ProviderInfo<ContainerResponseFilter>> postMatchResponseFilters =
-            new LinkedList<ProviderInfo<ContainerResponseFilter>>();
+            new LinkedList<>();
 
         List<ProviderInfo<? extends Object>> theProviders =
             prepareProviders(custom, busGlobal, allProviders.toArray(), application);

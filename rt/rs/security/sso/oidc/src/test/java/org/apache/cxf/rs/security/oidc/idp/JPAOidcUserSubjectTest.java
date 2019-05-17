@@ -30,11 +30,13 @@ import org.apache.cxf.rs.security.oauth2.provider.JPAOAuthDataProvider;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class JPAOidcUserSubjectTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+public class JPAOidcUserSubjectTest {
     private EntityManagerFactory emFactory;
     private JPAOAuthDataProvider provider;
 
@@ -61,7 +63,7 @@ public class JPAOidcUserSubjectTest extends Assert {
     }
 
     protected String getPersistenceUnitName() {
-        return "testUnitHibernate";
+        return "test-hibernate-cxf-rt-rs-security-sso-oidc";
     }
 
     @Test

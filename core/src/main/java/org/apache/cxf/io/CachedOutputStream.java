@@ -221,6 +221,9 @@ public class CachedOutputStream extends OutputStream {
         }
         doClose();
         currentStream.close();
+        if (ciphers != null) {
+            ciphers.clean();
+        }
         if (!maybeDeleteTempFile(currentStream)) {
             postClose();
         }
@@ -340,7 +343,7 @@ public class CachedOutputStream extends OutputStream {
                 LoadingByteArrayOutputStream lout = (LoadingByteArrayOutputStream)currentStream;
                 out.append(IOUtils.newStringFromBytes(lout.getRawBytes(), charsetName, 0, (int)limit));
             } else if (currentStream instanceof ByteArrayOutputStream) {
-                byte bytes[] = ((ByteArrayOutputStream)currentStream).toByteArray();
+                byte[] bytes = ((ByteArrayOutputStream)currentStream).toByteArray();
                 out.append(IOUtils.newStringFromBytes(bytes, charsetName, 0, (int)limit));
             } else {
                 throw new IOException("Unknown format of currentStream");
@@ -349,7 +352,7 @@ public class CachedOutputStream extends OutputStream {
             // read the file
             try (InputStream fin = createInputStream(tempFile);
                 Reader reader = new InputStreamReader(fin, charsetName)) {
-                char bytes[] = new char[1024];
+                char[] bytes = new char[1024];
                 long x = reader.read(bytes);
                 while (x != -1) {
                     if ((count + x) > limit) {
@@ -388,7 +391,7 @@ public class CachedOutputStream extends OutputStream {
             // read the file
             try (InputStream fin = createInputStream(tempFile);
                 Reader reader = new InputStreamReader(fin, charsetName)) {
-                char bytes[] = new char[1024];
+                char[] bytes = new char[1024];
                 int x = reader.read(bytes);
                 while (x != -1) {
                     out.append(bytes, 0, x);
@@ -411,7 +414,7 @@ public class CachedOutputStream extends OutputStream {
     }
 
     public String toString() {
-        StringBuilder builder = new StringBuilder().append("[")
+        StringBuilder builder = new StringBuilder().append('[')
             .append(CachedOutputStream.class.getName())
             .append(" Content: ");
         try {
@@ -419,7 +422,7 @@ public class CachedOutputStream extends OutputStream {
         } catch (IOException e) {
             //ignore
         }
-        return builder.append("]").toString();
+        return builder.append(']').toString();
     }
 
     protected void onWrite() throws IOException {

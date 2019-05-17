@@ -136,7 +136,7 @@ public class NettyHttpConduit extends URLConnectionHTTPConduit implements BusLif
         if (clientParameters == null) {
             clientParameters = tlsClientParameters;
         }
-        if (uri.getScheme().equals("https")
+        if ("https".equals(uri.getScheme())
             && clientParameters != null
             && clientParameters.getSSLSocketFactory() != null) {
             //if they configured in an SSLSocketFactory, we cannot do anything
@@ -289,7 +289,7 @@ public class NettyHttpConduit extends URLConnectionHTTPConduit implements BusLif
         protected void setupWrappedStream() throws IOException {
             connect(true);
             wrappedStream = new OutputStream() {
-                public void write(byte b[], int off, int len) throws IOException {
+                public void write(byte[] b, int off, int len) throws IOException {
                     outputStream.write(b, off, len);
                 }
                 public void write(int b) throws IOException {
@@ -331,7 +331,7 @@ public class NettyHttpConduit extends URLConnectionHTTPConduit implements BusLif
         }
 
         protected void connect(boolean output) {
-            if (url.getScheme().equals("https")) {
+            if ("https".equals(url.getScheme())) {
                 TLSClientParameters clientParameters = findTLSClientParameters();
                 bootstrap.handler(new NettyHttpClientPipelineFactory(clientParameters));
             } else {

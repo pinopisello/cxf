@@ -53,7 +53,7 @@ public final class ClientNonSpring {
     private ClientNonSpring() {
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         if (args.length == 0) {
             System.out.println("please specify wsdl");
@@ -111,13 +111,13 @@ public final class ClientNonSpring {
         trustStore.load(new FileInputStream(keyStoreLoc), "cspass".toCharArray());
         TrustManager[] myTrustStoreKeyManagers = getTrustManagers(trustStore);
         tlsCP.setTrustManagers(myTrustStoreKeyManagers);
-
+        tlsCP.setDisableCNCheck(true);
         httpConduit.setTlsClientParameters(tlsCP);
     }
 
     private static TrustManager[] getTrustManagers(KeyStore trustStore)
         throws NoSuchAlgorithmException, KeyStoreException {
-        String alg = KeyManagerFactory.getDefaultAlgorithm();
+        String alg = TrustManagerFactory.getDefaultAlgorithm();
         TrustManagerFactory fac = TrustManagerFactory.getInstance(alg);
         fac.init(trustStore);
         return fac.getTrustManagers();

@@ -35,11 +35,11 @@ import org.apache.cxf.sts.QNameConstants;
 import org.apache.cxf.sts.STSConstants;
 import org.apache.cxf.sts.StaticSTSProperties;
 import org.apache.cxf.sts.common.PasswordCallbackHandler;
-import org.apache.cxf.sts.common.TestUtils;
 import org.apache.cxf.sts.service.EncryptionProperties;
 import org.apache.cxf.sts.service.ServiceMBean;
 import org.apache.cxf.sts.service.StaticService;
 import org.apache.cxf.sts.token.provider.TokenProvider;
+import org.apache.cxf.test.TestUtilities;
 import org.apache.cxf.ws.security.sts.provider.STSException;
 import org.apache.cxf.ws.security.sts.provider.model.RequestSecurityTokenResponseCollectionType;
 import org.apache.cxf.ws.security.sts.provider.model.RequestSecurityTokenResponseType;
@@ -49,15 +49,18 @@ import org.apache.wss4j.common.crypto.Crypto;
 import org.apache.wss4j.common.crypto.CryptoFactory;
 import org.apache.wss4j.dom.WSConstants;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 /**
  * Some unit tests for issuing encrypted tokens.
  */
-public class IssueEncryptedUnitTest extends org.junit.Assert {
+public class IssueEncryptedUnitTest {
 
     private static boolean unrestrictedPoliciesInstalled;
 
     static {
-        unrestrictedPoliciesInstalled = TestUtils.checkUnrestrictedPoliciesInstalled();
+        unrestrictedPoliciesInstalled = TestUtilities.checkUnrestrictedPoliciesInstalled();
     };
 
     /**
@@ -109,7 +112,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -160,7 +163,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         encryptionProperties.setEncryptionName("myservicekey");
         service.setEncryptionProperties(encryptionProperties);
@@ -168,7 +171,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
         // Issue a (encrypted) token
         response = issueOperation.issue(request, null, msgCtx);
         securityTokenResponse = response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
 
@@ -219,7 +222,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         encryptionProperties.setEncryptionAlgorithm(WSS4JConstants.KEYTRANSPORT_RSA15);
         try {
@@ -281,7 +284,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Now specify a non-supported algorithm
         List<String> acceptedAlgorithms = Collections.singletonList(WSS4JConstants.KEYTRANSPORT_RSA15);
@@ -359,7 +362,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         encryptionProperties.setKeyWrapAlgorithm(WSS4JConstants.AES_128);
         try {
@@ -432,7 +435,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Now specify a non-supported algorithm
         String aesKw = "http://www.w3.org/2001/04/xmlenc#kw-aes128";
@@ -502,7 +505,7 @@ public class IssueEncryptedUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         encryptionProperties.setKeyIdentifierType(WSConstants.SKI_KEY_IDENTIFIER);
         issueOperation.issue(request, null, msgCtx);

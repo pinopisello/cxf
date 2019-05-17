@@ -35,11 +35,14 @@ import org.apache.cxf.ws.rm.v200702.Identifier;
 
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class RMOutInterceptorTest extends Assert {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class RMOutInterceptorTest {
 
     private IMocksControl control;
 
@@ -160,7 +163,7 @@ public class RMOutInterceptorTest extends Assert {
         EasyMock.expect(message.getExchange()).andReturn(exchange).anyTimes();
         EasyMock.expect(exchange.getOutFaultMessage()).andReturn(null).anyTimes();
         control.replay();
-        assertTrue(!rmi.isRuntimeFault(message));
+        assertFalse(rmi.isRuntimeFault(message));
         control.verify();
     }
 

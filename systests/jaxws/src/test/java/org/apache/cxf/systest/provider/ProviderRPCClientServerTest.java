@@ -39,6 +39,10 @@ import org.apache.hello_world_rpclit.SOAPServiceRPCLit;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 public class ProviderRPCClientServerTest extends AbstractBusClientServerTestBase {
     private static final String PORT = Server.PORT;
 
@@ -178,7 +182,7 @@ public class ProviderRPCClientServerTest extends AbstractBusClientServerTestBase
         SOAPServiceRPCLit service = new SOAPServiceRPCLit(wsdl, serviceName);
         assertNotNull(service);
 
-        String addresses[] = {
+        String[] addresses = {
             "http://localhost:" + PORT
                 + "/SOAPServiceProviderRPCLit/SoapPortProviderRPCLit8",
             "http://localhost:" + PORT

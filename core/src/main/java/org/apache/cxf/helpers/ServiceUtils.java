@@ -170,12 +170,12 @@ public final class ServiceUtils {
      */
     public static String makeServiceNameFromClassName(Class<?> clazz) {
         String name = clazz.getName();
-        int last = name.lastIndexOf(".");
+        int last = name.lastIndexOf('.');
         if (last != -1) {
             name = name.substring(last + 1);
         }
 
-        int inner = name.lastIndexOf("$");
+        int inner = name.lastIndexOf('$');
         if (inner != -1) {
             name = name.substring(inner + 1);
         }
@@ -222,7 +222,7 @@ public final class ServiceUtils {
      * @return the namespace
      */
     public static String makeNamespaceFromClassName(String className, String protocol) {
-        int index = className.lastIndexOf(".");
+        int index = className.lastIndexOf('.');
 
         if (index == -1) {
             return protocol + "://" + "DefaultNamespace";
@@ -233,24 +233,11 @@ public final class ServiceUtils {
         StringTokenizer st = new StringTokenizer(packageName, ".");
         String[] words = new String[st.countTokens()];
 
-        for (int i = 0; i < words.length; ++i) {
+        for (int i = words.length - 1; i >= 0; --i) {
             words[i] = st.nextToken();
         }
 
-        StringBuilder sb = new StringBuilder(80);
-
-        for (int i = words.length - 1; i >= 0; --i) {
-            String word = words[i];
-
-            // seperate with dot
-            if (i != words.length - 1) {
-                sb.append('.');
-            }
-
-            sb.append(word);
-        }
-
-        return protocol + "://" + sb.toString() + "/";
+        return protocol + "://" + String.join(".", words) + "/";
     }
 
     /**
@@ -270,11 +257,11 @@ public final class ServiceUtils {
             hostname = u.getHost();
             path = u.getPath();
         } catch (MalformedURLException e) {
-            if (namespace.indexOf(":") > -1) {
-                hostname = namespace.substring(namespace.indexOf(":") + 1);
+            if (namespace.indexOf(':') > -1) {
+                hostname = namespace.substring(namespace.indexOf(':') + 1);
 
-                if (hostname.indexOf("/") > -1) {
-                    hostname = hostname.substring(0, hostname.indexOf("/"));
+                if (hostname.indexOf('/') > -1) {
+                    hostname = hostname.substring(0, hostname.indexOf('/'));
                 }
             } else {
                 hostname = namespace;

@@ -47,12 +47,13 @@ import org.apache.cxf.security.claims.authorization.Claim;
 import org.apache.cxf.security.claims.authorization.ClaimMode;
 import org.apache.cxf.security.claims.authorization.Claims;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.fail;
 
-public class ClaimsAuthorizingInterceptorTest extends Assert {
+
+public class ClaimsAuthorizingInterceptorTest {
 
     private ClaimsAuthorizingInterceptor interceptor;
 
@@ -245,7 +246,7 @@ public class ClaimsAuthorizingInterceptorTest extends Assert {
                                    org.apache.cxf.rt.security.claims.Claim... claim)
                                throws Exception {
         ClaimCollection claims = new ClaimCollection();
-        claims.addAll(Arrays.asList(claim));
+        Collections.addAll(claims, claim);
 
         Set<Principal> roles =
             parseRolesFromClaims(claims, roleName,

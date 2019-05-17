@@ -45,6 +45,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * This class tests several issues and Conduit policies based
  * on a set up of redirecting servers.
@@ -65,7 +69,7 @@ public class HTTPConduitTest extends AbstractBusClientServerTestBase {
 
     private static List<String> servers = new ArrayList<>();
 
-    private static Map<String, String> addrMap = new TreeMap<String, String>();
+    private static Map<String, String> addrMap = new TreeMap<>();
 
     private final QName serviceName =
         new QName("http://apache.org/hello_world", "SOAPService");

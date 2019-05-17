@@ -68,6 +68,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Some tests for STSClient configuration.
  */
@@ -220,7 +222,7 @@ public class STSTokenRetrieverTest extends AbstractBusClientServerTestBase {
         KeyStore keyStore = loadClientKeystore();
         trustManagerFactory.init(keyStore);
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-        SSLContext sc = SSLContext.getInstance("SSL");
+        SSLContext sc = SSLContext.getInstance("TLS");
         sc.init(null, trustManagers, new java.security.SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
 
@@ -266,7 +268,7 @@ public class STSTokenRetrieverTest extends AbstractBusClientServerTestBase {
         Assert.assertNotNull(token);
         Assert.assertEquals(TOKEN_TYPE_SAML_2_0, token.getTokenType());
         Assert.assertNotNull(token.getId());
-        Assert.assertTrue(token.getExpires().isAfter(Instant.now()));
+        assertTrue(token.getExpires().isAfter(Instant.now()));
         Assert.assertEquals("Assertion", token.getToken().getLocalName());
     }
 

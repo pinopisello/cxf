@@ -232,7 +232,7 @@ public final class OAuthUtils {
                 continue;
             }
             if (sb.length() > 0) {
-                sb.append(" ");
+                sb.append(' ');
             }
             sb.append(perm.getPermission());
         }
@@ -240,7 +240,7 @@ public final class OAuthUtils {
     }
 
     public static List<String> convertPermissionsToScopeList(List<OAuthPermission> perms) {
-        List<String> list = new LinkedList<String>();
+        List<String> list = new LinkedList<>();
         for (OAuthPermission perm : perms) {
             list.add(perm.getPermission());
         }
@@ -258,7 +258,7 @@ public final class OAuthUtils {
     }
 
     public static List<String> parseScope(String requestedScope) {
-        List<String> list = new LinkedList<String>();
+        List<String> list = new LinkedList<>();
         if (requestedScope != null) {
             String[] scopeValues = requestedScope.split(" ");
             for (String scope : scopeValues) {
@@ -312,7 +312,7 @@ public final class OAuthUtils {
         String theURI = wildcard ? uri.substring(0, uri.length() - 1) : uri;
         try {
             URITemplate template = new URITemplate(theURI);
-            MultivaluedMap<String, String> map = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> map = new MetadataMap<>();
             if (template.match(servletPath, map)) {
                 String finalGroup = map.getFirst(URITemplate.FINAL_MATCH_GROUP);
                 if (wildcard || StringUtils.isEmpty(finalGroup) || "/".equals(finalGroup)) {

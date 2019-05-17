@@ -96,6 +96,10 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the addition of WS-RM properties to application messages and the
@@ -422,7 +426,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
 
         // three application messages plus createSequence
 
-        awaitMessages(4, 1, 2000);
+        awaitMessages(4, 1, 1000);
 
         MessageFlow mf = new MessageFlow(outRecorder.getOutboundMessages(),
             inRecorder.getInboundMessages(), Names200408.WSA_NAMESPACE_NAME, RM10Constants.NAMESPACE_URI);
@@ -1136,7 +1140,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
             }
         }
 
-        ClientThread clients[] = new ClientThread[2];
+        ClientThread[] clients = new ClientThread[2];
 
         try {
             for (int i = 0; i < clients.length; i++) {
@@ -1226,7 +1230,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
             }
         }
 
-        ClientThread clients[] = new ClientThread[2];
+        ClientThread[] clients = new ClientThread[2];
 
         try {
             for (int i = 0; i < clients.length; i++) {
@@ -1800,7 +1804,7 @@ public class SequenceTest extends AbstractBusClientServerTestBase {
         private Collection<RMMessage> getMessages(Identifier seq, Map<Identifier, Collection<RMMessage>> map) {
             Collection<RMMessage> cm = map.get(seq);
             if (cm == null) {
-                cm = new LinkedList<RMMessage>();
+                cm = new LinkedList<>();
                 map.put(seq, cm);
             }
             return cm;

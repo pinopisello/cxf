@@ -83,14 +83,18 @@ public class JettyHTTPServerEngineFactoryHolder {
             factory = new JettyHTTPServerEngineFactory(defaultBus);
 
             Map<String, ThreadingParameters> threadingParametersMap
-                = new TreeMap<String, ThreadingParameters>();
+                = new TreeMap<>();
 
             if (config.getIdentifiedThreadingParameters() != null) {
                 for (ThreadingParametersIdentifiedType threads : config.getIdentifiedThreadingParameters()) {
                     ThreadingParameters rThreads = new ThreadingParameters();
                     String id = threads.getId();
-                    rThreads.setMaxThreads(threads.getThreadingParameters().getMaxThreads());
-                    rThreads.setMinThreads(threads.getThreadingParameters().getMinThreads());
+                    if (threads.getThreadingParameters().getMaxThreads() != null) {
+                        rThreads.setMaxThreads(threads.getThreadingParameters().getMaxThreads());
+                    }
+                    if (threads.getThreadingParameters().getMinThreads() != null) {
+                        rThreads.setMinThreads(threads.getThreadingParameters().getMinThreads());
+                    }
                     rThreads.setThreadNamePrefix(threads.getThreadingParameters().getThreadNamePrefix());
                     threadingParametersMap.put(id, rThreads);
                 }
@@ -99,7 +103,7 @@ public class JettyHTTPServerEngineFactoryHolder {
             }
 
             //SSL
-            Map<String, TLSServerParameters> sslMap = new TreeMap<String, TLSServerParameters>();
+            Map<String, TLSServerParameters> sslMap = new TreeMap<>();
             if (config.getIdentifiedTLSServerParameters() != null) {
 
                 for (TLSServerParametersIdentifiedType t : config.getIdentifiedTLSServerParameters()) {
@@ -164,14 +168,20 @@ public class JettyHTTPServerEngineFactoryHolder {
                 if (engine.getThreadingParameters() != null) {
                     ThreadingParametersType threads = engine.getThreadingParameters();
                     ThreadingParameters rThreads = new ThreadingParameters();
-                    rThreads.setMaxThreads(threads.getMaxThreads());
-                    rThreads.setMinThreads(threads.getMinThreads());
+                    if (threads.getMaxThreads() != null) {
+                        rThreads.setMaxThreads(threads.getMaxThreads());
+                    }
+                    if (threads.getMinThreads() != null) {
+                        rThreads.setMinThreads(threads.getMinThreads());
+                    }
 
                     eng.setThreadingParameters(rThreads);
                 }
 
                 //eng.setServer(engine.getTlsServerParameters());
-                if (engine.getTlsServerParameters() != null) {
+                if (engine.getTlsServerParameters() != null
+                    && (engine.getTlsServerParameters().getKeyManagers() != null
+                    || engine.getTlsServerParameters().getTrustManagers() != null)) {
                     TLSServerParameters parameter = null;
                     try {
                         parameter = new TLSServerParametersConfig(engine.getTlsServerParameters());
@@ -231,7 +241,7 @@ public class JettyHTTPServerEngineFactoryHolder {
     protected synchronized JAXBContext getContext(Class<?> cls) {
         if (jaxbContext == null || jaxbClasses == null || !jaxbClasses.contains(cls)) {
             try {
-                Set<Class<?>> tmp = new HashSet<Class<?>>();
+                Set<Class<?>> tmp = new HashSet<>();
                 if (jaxbClasses != null) {
                     tmp.addAll(jaxbClasses);
                 }

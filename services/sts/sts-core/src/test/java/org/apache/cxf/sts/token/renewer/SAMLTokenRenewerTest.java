@@ -60,10 +60,15 @@ import org.apache.wss4j.common.util.DateUtil;
 
 import org.junit.BeforeClass;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Some unit tests for renewing a SAML token via the SAMLTokenRenewer.
  */
-public class SAMLTokenRenewerTest extends org.junit.Assert {
+public class SAMLTokenRenewerTest {
 
     private static TokenStore tokenStore;
 
@@ -99,8 +104,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.VALID);
 
         // Renew the Assertion
@@ -120,8 +125,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenRenewerResponse renewerResponse =
                 samlTokenRenewer.renewToken(renewerParameters);
-        assertTrue(renewerResponse != null);
-        assertTrue(renewerResponse.getToken() != null);
+        assertNotNull(renewerResponse);
+        assertNotNull(renewerResponse.getToken());
 
         String oldId = new SamlAssertionWrapper(samlToken).getId();
         String newId = new SamlAssertionWrapper(renewerResponse.getToken()).getId();
@@ -133,8 +138,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
         validatorParameters.setToken(validateTarget);
 
         validatorResponse = samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.VALID);
 
         // Now try to renew it again!
@@ -145,8 +150,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
         assertTrue(samlTokenRenewer.canHandleToken(validatorResponse.getToken()));
 
         renewerResponse = samlTokenRenewer.renewToken(renewerParameters);
-        assertTrue(renewerResponse != null);
-        assertTrue(renewerResponse.getToken() != null);
+        assertNotNull(renewerResponse);
+        assertNotNull(renewerResponse.getToken());
     }
 
     /**
@@ -176,8 +181,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.VALID);
 
         // Renew the Assertion
@@ -232,8 +237,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.EXPIRED);
 
         // Renew the Assertion
@@ -261,8 +266,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
         samlTokenRenewer.setAllowRenewalAfterExpiry(true);
         TokenRenewerResponse renewerResponse =
                 samlTokenRenewer.renewToken(renewerParameters);
-        assertTrue(renewerResponse != null);
-        assertTrue(renewerResponse.getToken() != null);
+        assertNotNull(renewerResponse);
+        assertNotNull(renewerResponse.getToken());
 
         String oldId = new SamlAssertionWrapper(samlToken).getId();
         String newId = new SamlAssertionWrapper(renewerResponse.getToken()).getId();
@@ -274,8 +279,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
         validatorParameters.setToken(validateTarget);
 
         validatorResponse = samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.VALID);
     }
 
@@ -308,8 +313,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.EXPIRED);
 
         // Renew the Assertion
@@ -337,8 +342,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
         samlTokenRenewer.setAllowRenewalAfterExpiry(true);
         TokenRenewerResponse renewerResponse =
                 samlTokenRenewer.renewToken(renewerParameters);
-        assertTrue(renewerResponse != null);
-        assertTrue(renewerResponse.getToken() != null);
+        assertNotNull(renewerResponse);
+        assertNotNull(renewerResponse.getToken());
 
         String oldId = new SamlAssertionWrapper(samlToken).getId();
         String newId = new SamlAssertionWrapper(renewerResponse.getToken()).getId();
@@ -350,8 +355,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
         validatorParameters.setToken(validateTarget);
 
         validatorResponse = samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.VALID);
     }
 
@@ -385,8 +390,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.EXPIRED);
 
         // Renew the Assertion
@@ -444,8 +449,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.EXPIRED);
 
         // Renew the Assertion
@@ -500,8 +505,8 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         TokenValidatorResponse validatorResponse =
                 samlTokenValidator.validateToken(validatorParameters);
-        assertTrue(validatorResponse != null);
-        assertTrue(validatorResponse.getToken() != null);
+        assertNotNull(validatorResponse);
+        assertNotNull(validatorResponse.getToken());
         assertTrue(validatorResponse.getToken().getState() == STATE.VALID);
 
         // Renew the Assertion
@@ -579,18 +584,18 @@ public class SAMLTokenRenewerTest extends org.junit.Assert {
 
         if (ttlMs != 0) {
             Lifetime lifetime = new Lifetime();
-            
+
             Instant creationTime = Instant.now();
             Instant expirationTime = creationTime.plusNanos(ttlMs * 1000000L);
 
             lifetime.setCreated(creationTime.atZone(ZoneOffset.UTC).format(DateUtil.getDateTimeFormatter(true)));
             lifetime.setExpires(expirationTime.atZone(ZoneOffset.UTC).format(DateUtil.getDateTimeFormatter(true)));
-            
+
             providerParameters.getTokenRequirements().setLifetime(lifetime);
         }
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return (Element)providerResponse.getToken();

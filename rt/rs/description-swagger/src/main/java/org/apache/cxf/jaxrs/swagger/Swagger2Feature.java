@@ -19,14 +19,13 @@
 package org.apache.cxf.jaxrs.swagger;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -45,17 +44,20 @@ import org.apache.cxf.annotations.Provider;
 import org.apache.cxf.annotations.Provider.Scope;
 import org.apache.cxf.annotations.Provider.Type;
 import org.apache.cxf.common.util.PropertyUtils;
-import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServiceFactoryBean;
+import org.apache.cxf.jaxrs.common.openapi.DefaultApplicationFactory;
+import org.apache.cxf.jaxrs.common.openapi.DelegatingServletConfig;
+import org.apache.cxf.jaxrs.common.openapi.SwaggerProperties;
+import org.apache.cxf.jaxrs.common.openapi.SyntheticServletConfig;
 import org.apache.cxf.jaxrs.ext.ContextProvider;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.jaxrs.model.ApplicationInfo;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.provider.ServerProviderFactory;
 import org.apache.cxf.jaxrs.swagger.ui.SwaggerUiConfig;
+import org.apache.cxf.jaxrs.swagger.ui.SwaggerUiSupport;
 import org.apache.cxf.jaxrs.utils.InjectionUtils;
-import org.apache.cxf.jaxrs.utils.ResourceUtils;
 import org.apache.cxf.message.Message;
 
 import io.swagger.jaxrs.config.BeanConfig;
@@ -63,27 +65,13 @@ import io.swagger.jaxrs.config.DefaultReaderConfig;
 import io.swagger.jaxrs.config.ReaderConfig;
 import io.swagger.jaxrs.config.SwaggerContextService;
 import io.swagger.jaxrs.listing.ApiListingResource;
+import io.swagger.jaxrs.listing.SwaggerSerializers;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.SecuritySchemeDefinition;
 
 @Provider(value = Type.Feature, scope = Scope.Server)
-public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUiSupport {
-
-    private static final String DEFAULT_LICENSE_VALUE = "Apache 2.0 License";
-    private static final String DEFAULT_LICENSE_URL = "http://www.apache.org/licenses/LICENSE-2.0.html";
-
-    private static final String DEFAULT_PROPS_LOCATION = "/swagger.properties";
-    private static final String RESOURCE_PACKAGE_PROPERTY = "resource.package";
-    private static final String TITLE_PROPERTY = "title";
+public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUiSupport, SwaggerProperties {
     private static final String SCHEMES_PROPERTY = "schemes";
-    private static final String VERSION_PROPERTY = "version";
-    private static final String DESCRIPTION_PROPERTY = "description";
-    private static final String CONTACT_PROPERTY = "contact";
-    private static final String LICENSE_PROPERTY = "license";
-    private static final String LICENSE_URL_PROPERTY = "license.url";
-    private static final String TERMS_URL_PROPERTY = "terms.url";
-    private static final String PRETTY_PRINT_PROPERTY = "pretty.print";
-    private static final String FILTER_CLASS_PROPERTY = "filter.class";
     private static final String HOST_PROPERTY = "host";
     private static final String USE_PATH_CFG_PROPERTY = "use.path.based.config";
 
@@ -128,19 +116,8 @@ public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUi
 
         ServerProviderFactory factory =
             (ServerProviderFactory)server.getEndpoint().get(ServerProviderFactory.class.getName());
-        ApplicationInfo appInfo = null;
-        if (!isScan()) {
-            appInfo = factory.getApplicationProvider();
-            if (appInfo == null) {
-                Set<Class<?>> serviceClasses = new HashSet<>();
-                for (ClassResourceInfo cri : sfb.getClassResourceInfo()) {
-                    serviceClasses.add(cri.getServiceClass());
-                }
-                appInfo = new ApplicationInfo(new DefaultApplication(serviceClasses), bus);
-                server.getEndpoint().put(Application.class.getName(), appInfo);
-            }
-        }
-
+        final ApplicationInfo appInfo = DefaultApplicationFactory.createApplicationInfoOrDefault(server, 
+            factory, sfb, bus, isScan());
 
         List<Object> swaggerResources = new LinkedList<>();
 
@@ -151,12 +128,14 @@ public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUi
         swaggerResources.add(apiListingResource);
 
         List<Object> providers = new ArrayList<>();
+        providers.add(new SwaggerSerializers());
+
         if (isRunAsFilter()) {
             providers.add(new SwaggerContainerRequestFilter(appInfo == null ? null : appInfo.getProvider(),
                                                             customizer));
         }
 
-        final Properties swaggerProps = getSwaggerProperties(bus);
+        final Properties swaggerProps = getSwaggerProperties(propertiesLocation, bus);
         final Registration swaggerUiRegistration = getSwaggerUi(bus, swaggerProps, isRunAsFilter());
 
         if (!isRunAsFilter()) {
@@ -197,28 +176,6 @@ public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUi
         factory.setUserProviders(providers);
     }
 
-    protected Properties getSwaggerProperties(Bus bus) {
-        InputStream is = ResourceUtils.getClasspathResourceStream(propertiesLocation,
-                                                 AbstractSwaggerFeature.class,
-                                                 bus);
-        Properties props = null;
-        if (is != null) {
-            props = new Properties();
-            try {
-                props.load(is);
-            } catch (IOException ex) {
-                props = null;
-            } finally {
-                try {
-                    is.close();
-                } catch (IOException ignore) {
-                    // ignore
-                }
-            }
-        }
-
-        return props;
-    }
     protected void initBeanConfig(BeanConfig beanConfig, Properties props) {
 
         // resource package
@@ -483,10 +440,28 @@ public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUi
             if (sc == null) {
                 final ServletContext context = (ServletContext)message.get("HTTP.CONTEXT");
                 if (context != null) {
-                    return new SyntheticServletConfig(context);
+                    return new SyntheticServletConfig(context) {
+                        @Override
+                        public String getInitParameter(String name) {
+                            if (Objects.equals(SwaggerContextService.USE_PATH_BASED_CONFIG, name)) {
+                                return "true";
+                            } else {
+                                return super.getInitParameter(name);
+                            }
+                        }
+                    };
                 }
             } else if (sc.getInitParameter(SwaggerContextService.USE_PATH_BASED_CONFIG) == null) {
-                return new DelegatingServletConfig(sc);
+                return new DelegatingServletConfig(sc) {
+                    @Override
+                    public String getInitParameter(String name) {
+                        if (Objects.equals(SwaggerContextService.USE_PATH_BASED_CONFIG, name)) {
+                            return "true";
+                        } else {
+                            return super.getInitParameter(name);
+                        }
+                    }
+                };
             }
 
             return sc;
@@ -553,23 +528,12 @@ public class Swagger2Feature extends AbstractSwaggerFeature implements SwaggerUi
             rc.setScanAllResources(true);
             if (ignoreRoutesParam != null) {
                 Set<String> routes = new LinkedHashSet<>();
-                for (String route : StringUtils.split(ignoreRoutesParam, ",")) {
+                for (String route : ignoreRoutesParam.split(",")) {
                     routes.add(route.trim());
                 }
                 rc.setIgnoredRoutes(routes);
             }
             mc.getServletContext().setAttribute(ReaderConfig.class.getName(), rc);
-        }
-    }
-
-    protected static class DefaultApplication extends Application {
-        Set<Class<?>> serviceClasses;
-        DefaultApplication(Set<Class<?>> serviceClasses) {
-            this.serviceClasses = serviceClasses;
-        }
-        @Override
-        public Set<Class<?>> getClasses() {
-            return serviceClasses;
         }
     }
 }

@@ -74,8 +74,8 @@ public abstract class BusFactory {
         volatile boolean stale;
     }
 
-    protected static final Map<Thread, BusHolder> THREAD_BUSSES = new WeakHashMap<Thread, BusHolder>();
-    protected static final ThreadLocal<BusHolder> THREAD_BUS = new ThreadLocal<BusHolder>();
+    protected static final Map<Thread, BusHolder> THREAD_BUSSES = new WeakHashMap<>();
+    protected static final ThreadLocal<BusHolder> THREAD_BUS = new ThreadLocal<>();
 
     private static final Logger LOG = LogUtils.getL7dLogger(BusFactory.class);
 
@@ -398,9 +398,7 @@ public abstract class BusFactory {
                         idx = busFactoryCondition.indexOf(',');
                     }
                     cls.getClassLoader().loadClass(busFactoryCondition);
-                } catch (ClassNotFoundException e) {
-                    busFactoryClass = DEFAULT_BUS_FACTORY;
-                } catch (NoClassDefFoundError e) {
+                } catch (ClassNotFoundException | NoClassDefFoundError e) {
                     busFactoryClass = DEFAULT_BUS_FACTORY;
                 }
 

@@ -56,6 +56,10 @@ import org.apache.cxf.ws.rm.persistence.jdbc.RMTxStore;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests the addition of WS-RM properties to application messages and the
  * exchange of WS-RM protocol messages.
@@ -76,7 +80,7 @@ public abstract class AbstractClientPersistenceTest extends AbstractBusClientSer
         String port;
         String pfx;
 
-        public Server(String args[]) {
+        public Server(String[] args) {
             port = args[0];
             pfx = args[1];
         }
@@ -112,7 +116,7 @@ public abstract class AbstractClientPersistenceTest extends AbstractBusClientSer
             ep = null;
         }
 
-        public static void main(String args[]) {
+        public static void main(String[] args) {
             new Server(args).start();
         }
 

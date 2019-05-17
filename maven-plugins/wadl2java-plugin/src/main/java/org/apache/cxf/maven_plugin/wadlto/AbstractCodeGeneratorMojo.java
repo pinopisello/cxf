@@ -123,13 +123,13 @@ public abstract class AbstractCodeGeneratorMojo extends AbstractMojo {
      * *.wadl
      */
     @Parameter
-    String includes[];
+    String[] includes;
 
     /**
      * A list of wadl files to exclude. Can contain ant-style wildcards and double wildcards.
      */
     @Parameter
-    String excludes[];
+    String[] excludes;
 
     /**
      * Allows running the JavaToWs in a separate process.
@@ -262,8 +262,8 @@ public abstract class AbstractCodeGeneratorMojo extends AbstractMojo {
 
     protected void forkOnce(Set<URI> classPath, List<WadlOption> effectiveOptions)
         throws MojoExecutionException {
-        List<WadlOption> toDo = new LinkedList<WadlOption>();
-        List<List<String>> wargs = new LinkedList<List<String>>();
+        List<WadlOption> toDo = new LinkedList<>();
+        List<List<String>> wargs = new LinkedList<>();
         for (WadlOption option : effectiveOptions) {
             File outputDirFile = option.getOutputDir();
             outputDirFile.mkdirs();
@@ -286,7 +286,7 @@ public abstract class AbstractCodeGeneratorMojo extends AbstractMojo {
             return;
         }
 
-        Set<URI> artifactsPath = new LinkedHashSet<URI>();
+        Set<URI> artifactsPath = new LinkedHashSet<>();
         for (Artifact a : pluginArtifacts) {
             File file = a.getFile();
             if (file == null) {
@@ -299,11 +299,11 @@ public abstract class AbstractCodeGeneratorMojo extends AbstractMojo {
         addPluginArtifact(artifactsPath);
         artifactsPath.addAll(classPath);
 
-        String args[] = createForkOnceArgs(wargs);
+        String[] args = createForkOnceArgs(wargs);
         runForked(artifactsPath, ForkOnceCodeGenerator.class, args);
 
         for (WadlOption option : toDo) {
-            File dirs[] = option.getDeleteDirs();
+            File[] dirs = option.getDeleteDirs();
             if (dirs != null) {
                 for (int idx = 0; idx < dirs.length; ++idx) {
                     deleteDir(dirs[idx]);
@@ -390,7 +390,7 @@ public abstract class AbstractCodeGeneratorMojo extends AbstractMojo {
             getLog().debug("Calling wadl2java with args: " + Arrays.toString(args));
 
             if (!"false".equals(fork)) {
-                Set<URI> artifactsPath = new LinkedHashSet<URI>();
+                Set<URI> artifactsPath = new LinkedHashSet<>();
                 for (Artifact a : pluginArtifacts) {
                     File file = a.getFile();
                     if (file == null) {
@@ -576,7 +576,7 @@ public abstract class AbstractCodeGeneratorMojo extends AbstractMojo {
         } else if (timestamp > doneFile.lastModified()) {
             doWork = true;
         } else {
-            File files[] = wadlOption.getDependencies();
+            File[] files = wadlOption.getDependencies();
             if (files != null) {
                 for (int z = 0; z < files.length; ++z) {
                     if (files[z].lastModified() > doneFile.lastModified()) {

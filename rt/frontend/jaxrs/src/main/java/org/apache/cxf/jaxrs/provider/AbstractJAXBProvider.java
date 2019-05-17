@@ -27,6 +27,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,7 +98,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
         new HashSet<Class<?>>(Arrays.asList(InputStream.class,
                                             OutputStream.class,
                                             StreamingOutput.class));
-    protected Set<Class<?>> collectionContextClasses = new HashSet<Class<?>>();
+    protected Set<Class<?>> collectionContextClasses = new HashSet<>();
 
     protected Map<String, String> jaxbElementClassMap = Collections.emptyMap();
     protected boolean unmarshalAsJaxbElement;
@@ -140,6 +142,22 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
     private Marshaller.Listener marshallerListener;
     private DocumentDepthProperties depthProperties;
     private String namespaceMapperPropertyName;
+
+    private static JAXBContext newJAXBContextInstance(Class<?>[] classes, Map<String, Object> cProperties) 
+        throws JAXBException {
+
+        try {
+            return AccessController.doPrivileged((PrivilegedExceptionAction<JAXBContext>)() -> {
+                return JAXBContext.newInstance(classes, cProperties);
+            });
+        } catch (PrivilegedActionException e) {
+            Throwable t = e.getCause();
+            if (t instanceof JAXBException) {
+                throw (JAXBException) t;
+            }
+            throw new RuntimeException(t);
+        }
+    }
 
     public void setXmlRootAsJaxbElement(boolean xmlRootAsJaxbElement) {
         this.xmlRootAsJaxbElement = xmlRootAsJaxbElement;
@@ -190,12 +208,12 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
             JAXBContext context = null;
             Set<Class<?>> allTypes = null;
             if (cris != null) {
-                allTypes = new HashSet<Class<?>>(ResourceUtils.getAllRequestResponseTypes(cris, true)
+                allTypes = new HashSet<>(ResourceUtils.getAllRequestResponseTypes(cris, true)
                     .getAllTypes().keySet());
-                context = ResourceUtils.createJaxbContext(allTypes, extraClass, cProperties);
+                context = org.apache.cxf.jaxrs.utils.JAXBUtils.createJaxbContext(allTypes, extraClass, cProperties);
             } else if (extraClass != null) {
-                allTypes = new HashSet<Class<?>>(Arrays.asList(extraClass));
-                context = ResourceUtils.createJaxbContext(allTypes, null, cProperties);
+                allTypes = new HashSet<>(Arrays.asList(extraClass));
+                context = org.apache.cxf.jaxrs.utils.JAXBUtils.createJaxbContext(allTypes, null, cProperties);
             }
 
             if (context != null) {
@@ -209,7 +227,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
             }
         }
         if (cris != null) {
-            List<String> schemaLocs = new LinkedList<String>();
+            List<String> schemaLocs = new LinkedList<>();
             SchemaValidation sv = null;
             for (ClassResourceInfo cri : cris) {
                 sv = cri.getServiceClass().getAnnotation(SchemaValidation.class);
@@ -338,7 +356,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
         return marshalAsJaxbElement && (!xmlTypeAsJaxbElementOnly || isXmlType(type))
             || isSupported(type, genericType, anns);
     }
-    public void writeTo(T t, Type genericType, Annotation annotations[],
+    public void writeTo(T t, Type genericType, Annotation[] annotations,
                  MediaType mediaType,
                  MultivaluedMap<String, Object> httpHeaders,
                  OutputStream entityStream) throws IOException, WebApplicationException {
@@ -353,7 +371,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
                 collectionContextClasses.add(CollectionWrapper.class);
                 collectionContextClasses.add(type);
             }
-            return JAXBContext.newInstance(
+            return newJAXBContextInstance(
                 collectionContextClasses.toArray(new Class[0]), cProperties);
         }
     }
@@ -506,7 +524,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
         synchronized (classContexts) {
             JAXBContext context = classContexts.get(type);
             if (context == null) {
-                Class<?>[] classes = null;
+                Class<?>[] classes;
                 if (extraClass != null) {
                     classes = new Class[extraClass.length + 1];
                     classes[0] = type;
@@ -515,7 +533,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
                     classes = new Class[] {type};
                 }
 
-                context = JAXBContext.newInstance(classes, cProperties);
+                context = newJAXBContextInstance(classes, cProperties);
                 classContexts.put(type, context);
             }
             return context;
@@ -545,7 +563,7 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
                             for (Class<?> extra : extraClass) {
                                 String extraPackage = PackageUtils.getPackageName(extra);
                                 if (!extraPackage.equals(packageName)) {
-                                    sb.append(":").append(extraPackage);
+                                    sb.append(':').append(extraPackage);
                                 }
                             }
                             contextName = sb.toString();
@@ -711,9 +729,8 @@ public abstract class AbstractJAXBProvider<T> extends AbstractConfigurableProvid
             ? Response.Status.BAD_REQUEST : Response.Status.INTERNAL_SERVER_ERROR;
         Response r = JAXRSUtils.toResponseBuilder(status)
             .type(MediaType.TEXT_PLAIN).entity(message).build();
-        WebApplicationException ex = read ? ExceptionUtils.toBadRequestException(t, r)
+        throw read ? ExceptionUtils.toBadRequestException(t, r)
             : ExceptionUtils.toInternalServerErrorException(t, r);
-        throw ex;
     }
 
     protected void handleJAXBException(JAXBException e, boolean read) {

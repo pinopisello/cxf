@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
+import javax.security.auth.DestroyFailedException;
 import javax.security.auth.callback.CallbackHandler;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.HttpHeaders;
@@ -134,7 +135,7 @@ public class SamlPostBindingFilter extends AbstractServiceProviderFilter {
         String sigAlgo = getSignatureAlgorithm();
         String pubKeyAlgo = issuerCerts[0].getPublicKey().getAlgorithm();
         LOG.fine("automatic sig algo detection: " + pubKeyAlgo);
-        if (pubKeyAlgo.equalsIgnoreCase("DSA")) {
+        if ("DSA".equalsIgnoreCase(pubKeyAlgo)) {
             sigAlgo = SSOConstants.DSA_SHA1;
         }
         LOG.fine("Using Signature algorithm " + sigAlgo);
@@ -171,6 +172,13 @@ public class SamlPostBindingFilter extends AbstractServiceProviderFilter {
         signableObject.setSignature(signature);
         signableObject.releaseDOM();
         signableObject.releaseChildrenDOM(true);
+
+        // Clean the private key from memory when we're done
+        try {
+            privateKey.destroy();
+        } catch (DestroyFailedException ex) {
+            // ignore
+        }
 
     }
 

@@ -71,10 +71,18 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.systest.jaxrs.BookStore.BookInfo;
 import org.apache.cxf.testutil.common.AbstractBusClientServerTestBase;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase {
 
@@ -339,7 +347,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
         wc.accept("application/xml").type("application/xml");
 
         GenericEntity<List<Book>> collectionEntity = createGenericEntity();
-        final Holder<Book> holder = new Holder<Book>();
+        final Holder<Book> holder = new Holder<>();
         InvocationCallback<Book> callback = createCallback(holder);
 
         Future<Book> future = wc.post(collectionEntity, callback);
@@ -358,7 +366,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
         wc.accept("application/xml").type("application/xml");
 
         GenericEntity<List<Book>> collectionEntity = createGenericEntity();
-        final Holder<Book> holder = new Holder<Book>();
+        final Holder<Book> holder = new Holder<>();
         InvocationCallback<Book> callback =
             new GenericInvocationCallback<Book>(holder) { };
 
@@ -380,7 +388,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
 
         GenericEntity<List<Book>> collectionEntity = createGenericEntity();
 
-        final Holder<Book> holder = new Holder<Book>();
+        final Holder<Book> holder = new Holder<>();
         InvocationCallback<Book> callback = createCallback(holder);
 
         Future<Book> future = wc.async().post(Entity.entity(collectionEntity, "application/xml"),
@@ -457,7 +465,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
 
         wc.accept(mt).type(mt);
         GenericEntity<List<Book>> collectionEntity = createGenericEntity();
-        final Holder<List<Book>> holder = new Holder<List<Book>>();
+        final Holder<List<Book>> holder = new Holder<>();
         InvocationCallback<List<Book>> callback = new CustomInvocationCallback(holder);
 
         Future<List<Book>> future = wc.async().post(Entity.entity(collectionEntity, mt),
@@ -626,7 +634,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
 
         WebClient wc = createWebClient(address);
 
-        final Holder<Book> holder = new Holder<Book>();
+        final Holder<Book> holder = new Holder<>();
         InvocationCallback<Book> callback = createCallback(holder);
 
         Future<Book> future = asyncInvoker ? wc.async().get(callback) : wc.get(callback);
@@ -641,7 +649,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
 
         WebClient wc = createWebClientPost(address);
 
-        final Holder<Book> holder = new Holder<Book>();
+        final Holder<Book> holder = new Holder<>();
         final InvocationCallback<Book> callback = new InvocationCallback<Book>() {
             public void completed(Book response) {
                 holder.value = response;
@@ -663,7 +671,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
         WebClient wc = createWebClient(address);
         wc.accept(MediaType.APPLICATION_XML_TYPE);
 
-        final Holder<Response> holder = new Holder<Response>();
+        final Holder<Response> holder = new Holder<>();
         final InvocationCallback<Response> callback = new InvocationCallback<Response>() {
             public void completed(Response response) {
                 holder.value = response;
@@ -818,8 +826,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
 
         Book b1 = new Book("CXF in Action", 123L);
         Book b2 = new Book("CXF Rocks", 124L);
-        List<JAXBElement<Book>> books =
-            new ArrayList<JAXBElement<Book>>();
+        List<JAXBElement<Book>> books = new ArrayList<>();
         books.add(new JAXBElement<Book>(new QName("bookRootElement"),
             Book.class, b1));
         books.add(new JAXBElement<Book>(new QName("bookRootElement"),
@@ -975,7 +982,7 @@ public class JAXRS20ClientServerBookTest extends AbstractBusClientServerTestBase
                            ClientResponseContext respContext) throws IOException {
             MultivaluedMap<String, String> headers = respContext.getHeaders();
             if (!local) {
-                Assert.assertEquals(1, headers.get("Date").size());
+                assertEquals(1, headers.get("Date").size());
             }
             headers.putSingle(HttpHeaders.LOCATION, "http://localhost/redirect");
 

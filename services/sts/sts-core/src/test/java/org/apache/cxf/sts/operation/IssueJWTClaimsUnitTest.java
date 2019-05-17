@@ -87,12 +87,15 @@ import org.apache.wss4j.common.principal.CustomTokenPrincipal;
 import org.apache.wss4j.common.saml.builder.SAML2Constants;
 import org.apache.wss4j.common.util.DOM2Writer;
 
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Some unit tests for the issue operation to issue JWT tokens with Claims information.
  */
-public class IssueJWTClaimsUnitTest extends org.junit.Assert {
+public class IssueJWTClaimsUnitTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -156,7 +159,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
         // Validate the token
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(token.getTextContent());
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
+        assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
         assertEquals(jwt.getClaim(ClaimTypes.LASTNAME.toString()), "doe");
         assertEquals(jwt.getClaim(ROLE_CLAIM.toString()), "administrator");
     }
@@ -173,7 +176,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
         return securityTokenResponse;
     }
 
@@ -284,7 +287,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
         // Validate the token
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(token.getTextContent());
         JwtToken jwt = jwtConsumer.getJwtToken();
-        Assert.assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
+        assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
         assertEquals(jwt.getClaim(ClaimTypes.LASTNAME.toString()), "doe");
     }
 
@@ -367,7 +370,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
         Element samlToken =
             createSAMLAssertion(WSS4JConstants.WSS_SAML2_TOKEN_TYPE, crypto, "mystskey",
                     callbackHandler, realms);
-        
+
         DocumentFragment f = samlToken.getOwnerDocument().createDocumentFragment();
         f.appendChild(samlToken);
         Document docToken = samlToken.getOwnerDocument();
@@ -413,7 +416,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(token.getTextContent());
         JwtToken jwt = jwtConsumer.getJwtToken();
         // subject unchanged
-        Assert.assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
+        assertEquals("alice", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
         // transformed claim (to uppercase)
         assertEquals(jwt.getClaim(ClaimTypes.LASTNAME.toString()), "DOE");
     }
@@ -564,7 +567,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
         JwsJwtCompactConsumer jwtConsumer = new JwsJwtCompactConsumer(token.getTextContent());
         JwtToken jwt = jwtConsumer.getJwtToken();
         // subject changed (to uppercase)
-        Assert.assertEquals("ALICE", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
+        assertEquals("ALICE", jwt.getClaim(JwtConstants.CLAIM_SUBJECT));
         // claim unchanged but requested
         assertEquals(jwt.getClaim(ClaimTypes.LASTNAME.toString()), "doe");
     }
@@ -727,7 +730,7 @@ public class IssueJWTClaimsUnitTest extends org.junit.Assert {
         providerParameters.setRequestedSecondaryClaims(requestedClaims);
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return (Element)providerResponse.getToken();

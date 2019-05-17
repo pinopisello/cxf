@@ -120,11 +120,11 @@ public class AuthorizationRequestHandler {
                 List<OAuthPermission> originalScopes = token.getScopes();
                 for (OAuthPermission perm : originalScopes) {
                     String param = oAuthMessage.getParameter(perm.getPermission() + "_status");
-                    if (param != null && OAuthConstants.AUTHORIZATION_DECISION_ALLOW.equals(param)) {
+                    if (OAuthConstants.AUTHORIZATION_DECISION_ALLOW.equals(param)) {
                         approvedScopesSet.add(perm);
                     }
                 }
-                List<OAuthPermission> approvedScopes = new LinkedList<OAuthPermission>(approvedScopesSet);
+                List<OAuthPermission> approvedScopes = new LinkedList<>(approvedScopesSet);
                 if (approvedScopes.isEmpty()) {
                     approvedScopes = originalScopes;
                 } else if (approvedScopes.size() < originalScopes.size()) {

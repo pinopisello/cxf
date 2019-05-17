@@ -48,6 +48,8 @@ import org.apache.cxf.common.util.SystemPropertyAction;
 import org.apache.cxf.helpers.FileUtils;
 import org.apache.cxf.helpers.IOUtils;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class CachedWriter extends Writer {
     private static final File DEFAULT_TEMP_DIR;
     private static int defaultThreshold;
@@ -245,6 +247,9 @@ public class CachedWriter extends Writer {
         doClose();
         currentStream.close();
         maybeDeleteTempFile(currentStream);
+        if (ciphers != null) {
+            ciphers.clean();
+        }
         postClose();
     }
 
@@ -320,7 +325,7 @@ public class CachedWriter extends Writer {
         // read the file
         try (Reader fin = createInputStreamReader(tempFile)) {
             CharArrayWriter out = new CharArrayWriter((int)tempFile.length());
-            char bytes[] = new char[1024];
+            char[] bytes = new char[1024];
             int x = fin.read(bytes);
             while (x != -1) {
                 out.write(bytes, 0, x);
@@ -341,7 +346,7 @@ public class CachedWriter extends Writer {
         } else {
             // read the file
             try (Reader fin = createInputStreamReader(tempFile)) {
-                char bytes[] = new char[1024];
+                char[] bytes = new char[1024];
                 int x = fin.read(bytes);
                 while (x != -1) {
                     out.write(bytes, 0, x);
@@ -370,7 +375,7 @@ public class CachedWriter extends Writer {
         } else {
             // read the file
             try (Reader fin = createInputStreamReader(tempFile)) {
-                char bytes[] = new char[1024];
+                char[] bytes = new char[1024];
                 long x = fin.read(bytes);
                 while (x != -1) {
                     if ((count + x) > limit) {
@@ -401,7 +406,7 @@ public class CachedWriter extends Writer {
         } else {
             // read the file
             try (Reader r = createInputStreamReader(tempFile)) {
-                char chars[] = new char[1024];
+                char[] chars = new char[1024];
                 int x = r.read(chars);
                 while (x != -1) {
                     out.append(chars, 0, x);
@@ -424,7 +429,7 @@ public class CachedWriter extends Writer {
     }
 
     public String toString() {
-        StringBuilder builder = new StringBuilder().append("[")
+        StringBuilder builder = new StringBuilder().append('[')
             .append(CachedWriter.class.getName())
             .append(" Content: ");
         try {
@@ -432,7 +437,7 @@ public class CachedWriter extends Writer {
         } catch (IOException e) {
             //ignore
         }
-        return builder.append("]").toString();
+        return builder.append(']').toString();
     }
 
     protected void onWrite() throws IOException {
@@ -622,7 +627,7 @@ public class CachedWriter extends Writer {
                 }
             };
         }
-        return new OutputStreamWriter(out, "utf-8") {
+        return new OutputStreamWriter(out, UTF_8) {
             public void close() throws IOException {
                 if (!cosClosed) {
                     super.close();
@@ -645,7 +650,7 @@ public class CachedWriter extends Writer {
                 }
             };
         }
-        return new InputStreamReader(in, "utf-8");
+        return new InputStreamReader(in, UTF_8);
     }
 
 }

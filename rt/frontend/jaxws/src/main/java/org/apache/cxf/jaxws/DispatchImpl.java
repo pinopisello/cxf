@@ -316,10 +316,10 @@ public class DispatchImpl<T> implements Dispatch<T>, BindingProvider, Closeable 
                     addInvokeOperation(opName, isOneWay);
                 }
             }
-            Holder<T> holder = new Holder<T>(obj);
+            Holder<T> holder = new Holder<>(obj);
             opName = calculateOpName(holder, opName, hasOpName);
 
-            Object ret[] = client.invokeWrapped(opName, holder.value);
+            Object[] ret = client.invokeWrapped(opName, holder.value);
             if (isOneWay || ret == null || ret.length == 0) {
                 return null;
             }
@@ -434,7 +434,7 @@ public class DispatchImpl<T> implements Dispatch<T>, BindingProvider, Closeable 
             }
         };            
 
-        Response<T> ret = new JaxwsResponseCallback<T>(callback);
+        Response<T> ret = new JaxwsResponseCallback<>(callback);
         try {
             boolean hasOpName;
 
@@ -451,7 +451,7 @@ public class DispatchImpl<T> implements Dispatch<T>, BindingProvider, Closeable 
                 }
             }
 
-            Holder<T> holder = new Holder<T>(obj);
+            Holder<T> holder = new Holder<>(obj);
             opName = calculateOpName(holder, opName, hasOpName);
 
             client.invokeWrapped(callback,
@@ -550,7 +550,7 @@ public class DispatchImpl<T> implements Dispatch<T>, BindingProvider, Closeable 
     }
 
     private Map<String, QName> createPayloadEleOpNameMap(BindingInfo bindingInfo, boolean reverseMapping) {
-        Map<String, QName> payloadElementMap = new java.util.HashMap<String, QName>();
+        Map<String, QName> payloadElementMap = new java.util.HashMap<>();
         // assume a document binding style, which is default according to W3C spec on WSDL
         String bindingStyle = "document";
         // if the bindingInfo is a SOAPBindingInfo instance then we can see if it has a style

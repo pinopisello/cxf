@@ -30,7 +30,7 @@ public final class jax_rs_content_negotiationClient {
     private jax_rs_content_negotiationClient() {
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         // Sent HTTP GET request to query customer info, expect XML
         System.out.println("Sent HTTP GET request to query customer info, expect XML");
         HttpGet get = new HttpGet("http://localhost:9000/customerservice/customers/123");

@@ -38,6 +38,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 public class WrapperBeanGeneratorTest extends ProcessorTestBase {
     JavaToWSDLProcessor processor = new JavaToWSDLProcessor();
     ClassLoader classLoader;
@@ -58,9 +61,6 @@ public class WrapperBeanGeneratorTest extends ProcessorTestBase {
     @Before
     public void setUp() throws Exception {
         processor.setEnvironment(env);
-        if (JavaUtils.isJava9Compatible()) {
-            System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
-        }
     }
 
     private ServiceInfo getServiceInfo() {
@@ -137,13 +137,11 @@ public class WrapperBeanGeneratorTest extends ProcessorTestBase {
         generator.setToolContext(env);
         generator.setServiceModel(getServiceInfo());
         if (JavaUtils.isJava9Compatible()) {
-            String java9PlusFolder = output.getParent() + "/java9";
-            System.setProperty("java.class.path", System.getProperty("java.class.path") 
-                               + ":" + java9PlusFolder + "/jaxb-api-2.3.0.jar"
-                               + ":" + java9PlusFolder + "/jaxws-api-2.3.0.jar"
-                               + ":" + java9PlusFolder + "/geronimo-ws-metadata_2.0_spec-1.1.3.jar");
+            System.setProperty("org.apache.cxf.common.util.Compiler-fork", "true");
+            String java9PlusFolder = output.getParent() + java.io.File.separator + "java9";
+            System.setProperty("java.class.path", System.getProperty("java.class.path")
+                               + java.io.File.pathSeparator + java9PlusFolder + java.io.File.separator + "*");
         }
-
         generator.generate(output);
         Class<?> clz = classLoader.loadClass("org.apache.cxf.SayHi");
         assertNotNull(clz);

@@ -53,8 +53,7 @@ import org.apache.cxf.resource.ResourceResolver;
 public class ResourceInjector extends AbstractAnnotationVisitor {
 
     private static final Logger LOG = LogUtils.getL7dLogger(ResourceInjector.class);
-    private static final List<Class<? extends Annotation>> ANNOTATIONS =
-        new ArrayList<Class<? extends Annotation>>();
+    private static final List<Class<? extends Annotation>> ANNOTATIONS = new ArrayList<>();
 
     static {
         ANNOTATIONS.add(Resource.class);
@@ -391,7 +390,7 @@ public class ResourceInjector extends AbstractAnnotationVisitor {
 
     private Collection<Method> getAnnotatedMethods(Class<? extends Annotation> acls) {
 
-        Collection<Method> methods = new LinkedList<Method>();
+        Collection<Method> methods = new LinkedList<>();
         addAnnotatedMethods(acls, getTarget().getClass().getMethods(), methods);
         addAnnotatedMethods(acls, ReflectionUtil.getDeclaredMethods(getTarget().getClass()), methods);
         if (getTargetClass() != getTarget().getClass()) {

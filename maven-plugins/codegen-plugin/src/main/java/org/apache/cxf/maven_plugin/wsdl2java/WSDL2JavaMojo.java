@@ -140,7 +140,7 @@ public class WSDL2JavaMojo extends AbstractCodegenMoho {
      * If you have not enabled wsdl scanning, these options call out the wsdls to process.
      */
     @Parameter
-    WsdlOption wsdlOptions[];
+    WsdlOption[] wsdlOptions;
 
     /**
      * Default options to be used when a wsdl has not had it's options explicitly specified.
@@ -223,7 +223,7 @@ public class WSDL2JavaMojo extends AbstractCodegenMoho {
         } else if (wsdlOption.isDefServiceName()) {
             doWork = true;
         } else {
-            URI dependencies[] = wsdlOption.getDependencyURIs(project
+            URI[] dependencies = wsdlOption.getDependencyURIs(project
                     .getBasedir().toURI());
             if (dependencies != null) {
                 for (int z = 0; z < dependencies.length; ++z) {
@@ -380,7 +380,7 @@ public class WSDL2JavaMojo extends AbstractCodegenMoho {
         getLog().debug("Calling wsdl2java with args: " + Arrays.toString(args));
 
         if (!"false".equals(fork)) {
-            Set<URI> artifactsPath = new LinkedHashSet<URI>();
+            Set<URI> artifactsPath = new LinkedHashSet<>();
             for (Artifact a : pluginArtifacts) {
                 File file = a.getFile();
                 if (file == null) {

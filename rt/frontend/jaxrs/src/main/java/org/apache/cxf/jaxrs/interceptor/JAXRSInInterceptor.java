@@ -173,7 +173,7 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
             throw ExceptionUtils.toNotFoundException(null, resp);
         }
 
-        MultivaluedMap<String, String> matchedValues = new MetadataMap<String, String>();
+        MultivaluedMap<String, String> matchedValues = new MetadataMap<>();
 
         OperationResourceInfo ori = null;
 
@@ -254,11 +254,6 @@ public class JAXRSInInterceptor extends AbstractPhaseInterceptor<Message> {
             //cri.isSingleton is not guaranteed to indicate we have a 'pure' singleton
             exchange.put(Message.SERVICE_OBJECT, rp.getInstance(message));
         }
-    }
-
-    @Override
-    public void handleFault(Message message) {
-        super.handleFault(message);
     }
 
     private Message createOutMessage(Message inMessage, Response r) {

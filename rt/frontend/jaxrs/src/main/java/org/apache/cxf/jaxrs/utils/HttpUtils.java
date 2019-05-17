@@ -348,7 +348,7 @@ public final class HttpUtils {
             }
             sb.append(value);
             if (i + 1 < values.size()) {
-                sb.append(",");
+                sb.append(',');
             }
         }
         return sb.toString();
@@ -477,7 +477,7 @@ public final class HttpUtils {
             }
             return (path == null || path.length() == 0) ? "/" : path;
         } catch (URISyntaxException ex) {
-            return endpointAddress == null ? "/" : endpointAddress;
+            return endpointAddress;
         }
     }
 
@@ -527,7 +527,7 @@ public final class HttpUtils {
             ind = 0;
         }
         if (ind == 0) {
-            path = path.substring(ind + address.length());
+            path = path.substring(address.length());
         }
         if (addSlash && !path.startsWith("/")) {
             path = "/" + path;
@@ -644,7 +644,7 @@ public final class HttpUtils {
 
         // No, then just keep climbing up until we find a common base.
         URI relative = URI.create("");
-        while (!(uriRel.getPath().startsWith(commonBase.getPath())) && !(commonBase.getPath().equals("/"))) {
+        while (!(uriRel.getPath().startsWith(commonBase.getPath())) && !"/".equals(commonBase.getPath())) {
             commonBase = commonBase.resolve("../");
             relative = relative.resolve("../");
         }

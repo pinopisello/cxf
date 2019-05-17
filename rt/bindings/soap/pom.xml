@@ -27,14 +27,14 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
         <cxf.module.name>org.apache.cxf.binding.soap</cxf.module.name>
         <cxf.osgi.import>
             javax.xml.soap;version="${cxf.osgi.saaj.version}",
-            javax.activation;version="${cxf.osgi.javax.annotation.version}",
+            javax.activation;version="${cxf.osgi.javax.activation.version}",
             org.apache.aries*;version="${cxf.aries.version.range}";resolution:=optional,
             org.springframework*;resolution:="optional";version="${cxf.osgi.spring.version}",
             javax.xml.bind*;version="${cxf.osgi.javax.bind.version}"
@@ -81,7 +81,7 @@
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>com.sun.xml.bind</groupId>
+                    <groupId>org.glassfish.jaxb</groupId>
                     <artifactId>jaxb-xjc</artifactId>
                 </exclusion>
             </exclusions>

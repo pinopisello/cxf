@@ -46,16 +46,25 @@ import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.ContextUtils;
 
 public class DefaultLogEventMapper {
-    private static final Set<String> BINARY_CONTENT_MEDIA_TYPES;
+    private static final Set<String> DEFAULT_BINARY_CONTENT_MEDIA_TYPES;
     static {
-        BINARY_CONTENT_MEDIA_TYPES = new HashSet<>();
-        BINARY_CONTENT_MEDIA_TYPES.add("application/octet-stream");
-        BINARY_CONTENT_MEDIA_TYPES.add("application/pdf");
-        BINARY_CONTENT_MEDIA_TYPES.add("image/png");
-        BINARY_CONTENT_MEDIA_TYPES.add("image/jpeg");
-        BINARY_CONTENT_MEDIA_TYPES.add("image/gif");
+        Set<String> mediaTypes = new HashSet<>(5);
+        mediaTypes.add("application/octet-stream");
+        mediaTypes.add("application/pdf");
+        mediaTypes.add("image/png");
+        mediaTypes.add("image/jpeg");
+        mediaTypes.add("image/gif");
+        DEFAULT_BINARY_CONTENT_MEDIA_TYPES = Collections.unmodifiableSet(mediaTypes);
     }
     private static final String MULTIPART_CONTENT_MEDIA_TYPE = "multipart";
+
+    private final Set<String> binaryContentMediaTypes = new HashSet<>(DEFAULT_BINARY_CONTENT_MEDIA_TYPES);
+
+    public void addBinaryContentMediaTypes(String mediaTypes) {
+        if (mediaTypes != null) {
+            Collections.addAll(binaryContentMediaTypes, mediaTypes.split(";"));
+        }
+    }
 
     public LogEvent map(Message message) {
         final LogEvent event = new LogEvent();
@@ -112,7 +121,7 @@ public class DefaultLogEventMapper {
         while (principalIt.hasNext()) {
             principals.append(principalIt.next());
             if (principalIt.hasNext()) {
-                principals.append(",");
+                principals.append(',');
             }
         }
         if (principals.length() == 0) {
@@ -171,7 +180,7 @@ public class DefaultLogEventMapper {
 
     private boolean isBinaryContent(Message message) {
         String contentType = safeGet(message, Message.CONTENT_TYPE);
-        return contentType != null && BINARY_CONTENT_MEDIA_TYPES.contains(contentType);
+        return contentType != null && binaryContentMediaTypes.contains(contentType);
     }
 
     private boolean isMultipartContent(Message message) {
@@ -187,7 +196,7 @@ public class DefaultLogEventMapper {
      */
     private boolean isSOAPMessage(Message message) {
         Binding binding = message.getExchange().getBinding();
-        return binding != null && binding.getClass().getSimpleName().equals("SoapBinding");
+        return binding != null && "SoapBinding".equals(binding.getClass().getSimpleName());
     }
 
     /**

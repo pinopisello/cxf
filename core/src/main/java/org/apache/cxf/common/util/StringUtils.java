@@ -19,49 +19,20 @@
 
 package org.apache.cxf.common.util;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public final class StringUtils {
-    public static final Map<String, Pattern> PATTERN_MAP = new HashMap<>();
-    static {
-        String patterns[] = {"/", " ", ":", ",", ";", "=", "\\.", "\\+"};
-        for (String p : patterns) {
-            PATTERN_MAP.put(p, Pattern.compile(p));
-        }
-    }
+
     private static final Predicate<String> NOT_EMPTY = (String s) -> !s.isEmpty();
 
     private StringUtils() {
-    }
-
-    public static String[] split(String s, String regex) {
-        return split(s, regex, 0);
-    }
-    public static String[] split(String s, String regex, int limit) {
-        Pattern p = PATTERN_MAP.getOrDefault(regex, Pattern.compile(regex));
-        return p.split(s, limit);
-    }
-    
-    public static Stream<String> splitAsStream(String s, String regex) {
-        Pattern p = PATTERN_MAP.getOrDefault(regex, Pattern.compile(regex));
-        return p.splitAsStream(s);
-    }
-
-    public static boolean isFileExist(String file) {
-        return new File(file).exists() && new File(file).isFile();
     }
 
     public static boolean isEmpty(String str) {
@@ -75,7 +46,7 @@ public final class StringUtils {
         }
         return true;
     }
-    
+
     public static Predicate<String> notEmpty() {
         return NOT_EMPTY;
     }
@@ -95,63 +66,21 @@ public final class StringUtils {
         return str1;
     }
 
-    public static List<String> getParts(String str, String separator) {
-        String[] parts = split(str, separator);
-        List<String> ret = new ArrayList<>(parts.length);
-        for (String part : parts) {
-            if (!isEmpty(part)) {
-                ret.add(part);
-            }
-        }
-        return ret;
-    }
-
-    public static String getFirstNotEmpty(String str, String separator) {
-        List<String> parts = Arrays.asList(split(str, separator));
-        for (String part : parts) {
-            if (!isEmpty(part)) {
-                return part;
-            }
-        }
-        return str;
-    }
-
-    public static String getFirstNotEmpty(List<String> list) {
-        if (isEmpty(list)) {
-            return null;
-        }
-        for (String item : list) {
-            if (!isEmpty(item)) {
-                return item;
-            }
-        }
-        return null;
-    }
-
-    public static List<String> getFound(String contents, String regex) {
+    public static String getFirstFound(String contents, String regex) {
         if (isEmpty(regex) || isEmpty(contents)) {
             return null;
         }
-        List<String> results = new ArrayList<>();
         Pattern pattern = Pattern.compile(regex, Pattern.UNICODE_CASE);
         Matcher matcher = pattern.matcher(contents);
 
-        while (matcher.find()) {
+        if (matcher.find()) {
             if (matcher.groupCount() > 0) {
-                results.add(matcher.group(1));
+                return matcher.group(1);
             } else {
-                results.add(matcher.group());
+                return matcher.group();
             }
         }
-        return results;
-    }
-
-    public static String getFirstFound(String contents, String regex) {
-        List<String> founds = getFound(contents, regex);
-        if (isEmpty(founds)) {
-            return null;
-        }
-        return founds.get(0);
+        return null;
     }
 
     public static String addDefaultPortIfMissing(String urlString) {
@@ -184,16 +113,16 @@ public final class StringUtils {
      * @return capitalized form.
      */
     public static String capitalize(String name) {
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             return name;
         }
-        char chars[] = name.toCharArray();
+        char[] chars = name.toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
         return new String(chars);
     }
 
     public static String uncapitalize(String str) {
-        if (str == null || str.length() == 0) {
+        if (str == null || str.isEmpty()) {
             return str;
         }
         return new StringBuilder(str.length())

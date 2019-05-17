@@ -19,7 +19,6 @@
 
 package org.apache.cxf.systest.jaxrs;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,6 +31,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -61,6 +61,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ResourceContext;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Cookie;
@@ -311,7 +312,7 @@ public class BookStore {
     @Produces("application/xml")
     @Consumes("application/xml")
     public Response patchBook(Book book) {
-        if (book.getName().equals("Timeout")) {
+        if ("Timeout".equals(book.getName())) {
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
@@ -473,7 +474,7 @@ public class BookStore {
     @Path("emptyput")
     @Consumes("application/json")
     public void emptyput() {
-        if (!httpHeaders.getMediaType().toString().equals("application/json")) {
+        if (!"application/json".equals(httpHeaders.getMediaType().toString())) {
             throw new RuntimeException();
         }
     }
@@ -1030,16 +1031,58 @@ public class BookStore {
         return books.get(id + 123);
     }
 
-
-
     @GET
     @Path("/books/response/{bookId}/")
     @Produces("application/xml")
     public Response getBookAsResponse(@PathParam("bookId") String id) throws BookNotFoundFault {
         Book entity = doGetBook(id);
         EntityTag etag = new EntityTag(Integer.toString(entity.hashCode()));
-        return Response.ok().tag(etag).entity(entity).build();
+
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(100000);
+        cacheControl.setPrivate(true);
+
+        return Response.ok().tag(etag).entity(entity).cacheControl(cacheControl).build();
     }
+
+    @GET
+    @Path("/books/response2/{bookId}/")
+    @Produces("application/xml")
+    public Response getBookAsResponse2(@PathParam("bookId") String id) throws BookNotFoundFault {
+        Book entity = doGetBook(id);
+        EntityTag etag = new EntityTag(Integer.toString(entity.hashCode()));
+
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(1);
+        cacheControl.setPrivate(true);
+
+        return Response.ok().tag(etag).entity(entity).cacheControl(cacheControl).build();
+    }
+
+    @GET
+    @Path("/books/response3/{bookId}/")
+    @Produces("application/xml")
+    public Response getBookAsResponse3(@PathParam("bookId") String id,
+                                       @HeaderParam("If-Modified-Since") String modifiedSince
+    ) throws BookNotFoundFault {
+        Book entity = doGetBook(id);
+
+        EntityTag etag = new EntityTag(Integer.toString(entity.hashCode()));
+
+        CacheControl cacheControl = new CacheControl();
+        cacheControl.setMaxAge(1);
+        cacheControl.setPrivate(true);
+
+        if (modifiedSince != null) {
+            return Response.status(304).tag(etag)
+                .cacheControl(cacheControl).lastModified(new Date()).build();
+        } else {
+            return Response.ok().tag(etag).entity(entity)
+                .cacheControl(cacheControl).lastModified(new Date()).build();
+        }
+    }
+
+
 
     @GET
     @Path("/books/{bookId}/cglib")
@@ -1805,7 +1848,7 @@ public class BookStore {
                 throw new RuntimeException();
             }
             BookStore.this.messageContext.put(Message.RESPONSE_CODE, 503);
-            MultivaluedMap<String, String> headers = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> headers = new MetadataMap<>();
             headers.putSingle("Content-Type", "text/custom+plain");
             headers.putSingle("CustomHeader", "CustomValue");
             BookStore.this.messageContext.put(Message.PROTOCOL_HEADERS, headers);
@@ -2043,7 +2086,7 @@ public class BookStore {
             for (int i = 0; i < arg0.length; i++) {
                 sb.append(Integer.toString(arg0[i]));
                 if (i + 1 < arg0.length) {
-                    sb.append(",");
+                    sb.append(',');
                 }
             }
             arg6.write(sb.toString().getBytes());
@@ -2085,7 +2128,7 @@ public class BookStore {
             for (int i = 0; i < arr.length; i++) {
                 sb.append(Double.toString(arr[i]));
                 if (i + 1 < arr.length) {
-                    sb.append(",");
+                    sb.append(',');
                 }
             }
             arg6.write(sb.toString().getBytes());

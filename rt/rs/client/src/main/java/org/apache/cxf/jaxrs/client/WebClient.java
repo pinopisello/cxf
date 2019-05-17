@@ -899,8 +899,9 @@ public class WebClient extends AbstractClient {
         } finally {
             resetResponseStateImmediatelyIfNeeded();
         }
-        
-        if (r.getStatus() >= 300 && responseClass != Response.class) {
+
+        int status = r.getStatus();
+        if (status != 304 && status >= 300 && responseClass != Response.class) {
             throw convertToWebApplicationException(r);
         }
         return r;
@@ -924,7 +925,7 @@ public class WebClient extends AbstractClient {
                                           Class<?> respClass,
                                           Type outType,
                                           InvocationCallback<T> callback) {
-        JaxrsClientCallback<T> cb = new JaxrsClientCallback<T>(callback, respClass, outType);
+        JaxrsClientCallback<T> cb = new JaxrsClientCallback<>(callback, respClass, outType);
         prepareAsyncClient(httpMethod, body, requestClass, inType, respClass, outType, cb);
         return cb.createFuture();
     }
@@ -1026,7 +1027,7 @@ public class WebClient extends AbstractClient {
                                    inAnns, respClass, outType, exchange, invContext);
     }
     //CHECKSTYLE:OFF
-    protected Response doChainedInvocation(String httpMethod,
+    protected Response doChainedInvocation(String httpMethod, //NOPMD
                                            MultivaluedMap<String, String> headers,
                                            Object body,
                                            Class<?> requestClass,
@@ -1060,7 +1061,7 @@ public class WebClient extends AbstractClient {
     }
 
     //CHECKSTYLE:OFF
-    private Message finalizeMessage(String httpMethod,
+    private Message finalizeMessage(String httpMethod, //NOPMD
                                    MultivaluedMap<String, String> headers,
                                    Object body,
                                    Class<?> requestClass,
@@ -1115,11 +1116,10 @@ public class WebClient extends AbstractClient {
             if (results != null && results.length == 1) {
                 return (Response)results[0];
             }
+        } catch (WebApplicationException | ProcessingException ex) {
+            throw ex;
         } catch (Exception ex) {
-            throw ex instanceof WebApplicationException
-                ? (WebApplicationException)ex
-                : ex instanceof ProcessingException
-                ? (ProcessingException)ex : new ProcessingException(ex);
+            throw new ProcessingException(ex);
         }
 
         try {
@@ -1153,9 +1153,10 @@ public class WebClient extends AbstractClient {
             getState().setResponse(r);
             ((ResponseImpl)r).setOutMessage(outMessage);
             return r;
+        } catch (ProcessingException ex) {
+            throw ex;
         } catch (Throwable ex) {
-            throw (ex instanceof ProcessingException) ? (ProcessingException)ex
-                                                  : new ProcessingException(ex);
+            throw new ProcessingException(ex);
         } finally {
             ClientProviderFactory.getInstance(outMessage).clearThreadLocalProxies();
         }
@@ -1262,7 +1263,7 @@ public class WebClient extends AbstractClient {
     public CompletionStageRxInvoker rx() {
         return rx(lookUpExecutorService());
     }
-    
+
     public CompletionStageRxInvoker rx(ExecutorService ex) {
         return new CompletionStageRxInvokerImpl(this, ex);
     }
@@ -1303,7 +1304,7 @@ public class WebClient extends AbstractClient {
             javax.naming.InitialContext ic = new javax.naming.InitialContext();
             Object execService = ic.lookup("java:comp/DefaultManagedExecutorService");
             if (execService != null) {
-                return (ExecutorService)execService; 
+                return (ExecutorService)execService;
             }
         } catch (Throwable ex) {
             // ignore

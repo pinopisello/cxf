@@ -18,7 +18,6 @@
  */
 package org.apache.cxf.rs.security.oauth2.client;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +28,7 @@ import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.ResponseProcessingException;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
@@ -287,15 +287,13 @@ public final class OAuthClientUtils {
         if (consumer != null) {
             boolean secretAvailable = !StringUtils.isEmpty(consumer.getClientSecret());
             if (setAuthorizationHeader && secretAvailable) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Basic ");
                 try {
-                    String data = consumer.getClientId() + ":" + consumer.getClientSecret();
-                    sb.append(Base64Utility.encode(data.getBytes(StandardCharsets.UTF_8)));
+                    String data = Base64Utility.encode((consumer.getClientId() + ':' + consumer.getClientSecret())
+                            .getBytes(StandardCharsets.UTF_8));
+                    accessTokenService.replaceHeader(HttpHeaders.AUTHORIZATION, "Basic " + data);
                 } catch (Exception ex) {
                     throw new ProcessingException(ex);
                 }
-                accessTokenService.replaceHeader("Authorization", sb.toString());
             } else {
                 form.param(OAuthConstants.CLIENT_ID, consumer.getClientId());
                 if (secretAvailable) {
@@ -307,10 +305,13 @@ public final class OAuthClientUtils {
             // the authenticated credentials and the client registration id
         }
         Response response = accessTokenService.form(form);
-        Map<String, String> map = null;
+        final Map<String, String> map;
         try {
-            map = new OAuthJSONProvider().readJSONResponse((InputStream)response.getEntity());
-        } catch (IOException ex) {
+            map = response.getMediaType() == null
+                    || response.getMediaType().isCompatible(MediaType.APPLICATION_JSON_TYPE)
+                            ? new OAuthJSONProvider().readJSONResponse((InputStream) response.getEntity())
+                            : Collections.emptyMap();
+        } catch (Exception ex) {
             throw new ResponseProcessingException(response, ex);
         }
         if (200 == response.getStatus()) {
@@ -334,16 +335,15 @@ public final class OAuthClientUtils {
 
     public static ClientAccessToken fromMapToClientToken(Map<String, String> map,
                                                          String defaultTokenType) {
-        if (map.containsKey(OAuthConstants.ACCESS_TOKEN)) {
+        final String tokenKey = map.remove(OAuthConstants.ACCESS_TOKEN);
+        if (tokenKey != null) {
 
             String tokenType = map.remove(OAuthConstants.ACCESS_TOKEN_TYPE);
             if (tokenType == null) {
                 tokenType = defaultTokenType;
             }
             if (tokenType != null) {
-                ClientAccessToken token = new ClientAccessToken(
-                                              tokenType,
-                                              map.remove(OAuthConstants.ACCESS_TOKEN));
+                ClientAccessToken token = new ClientAccessToken(tokenType, tokenKey);
 
                 String refreshToken = map.remove(OAuthConstants.REFRESH_TOKEN);
                 if (refreshToken != null) {
@@ -413,7 +413,7 @@ public final class OAuthClientUtils {
         String tokenType = token.getTokenType().toLowerCase();
         if (OAuthConstants.BEARER_TOKEN_TYPE.equalsIgnoreCase(tokenType)) {
             sb.append(OAuthConstants.BEARER_AUTHORIZATION_SCHEME);
-            sb.append(" ");
+            sb.append(' ');
             sb.append(token.getTokenKey());
         } else if (OAuthConstants.HAWK_TOKEN_TYPE.equalsIgnoreCase(tokenType)) {
             if (httpProps == null) {

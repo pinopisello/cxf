@@ -50,7 +50,7 @@ static String TOMCAT_URL="http://127.0.0.1:8080/jaxws_async/services/SoapContext
     private Client() {
     }
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         if (args.length == 0) {
             System.out.println("please specify wsdl");

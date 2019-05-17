@@ -39,6 +39,10 @@ import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class ManagedConnectionImplTest extends ManagedConnectionTestBase {
 
     protected URL wsdl;
@@ -119,7 +123,7 @@ public class ManagedConnectionImplTest extends ManagedConnectionTestBase {
     @Test
     public void testGetConnectionWithDudSubjectB() throws ResourceException {
         String user = new String("user");
-        char password[] = {'a', 'b', 'c'};
+        char[] password = {'a', 'b', 'c'};
         PasswordCredential creds = new PasswordCredential(user, password);
         subj.getPrivateCredentials().add(creds);
         Object o = mci.getConnection(subj, cri);
@@ -131,7 +135,7 @@ public class ManagedConnectionImplTest extends ManagedConnectionTestBase {
     @Test
     public void testGetConnectionWithSubject() throws ResourceException {
         String user = new String("user");
-        char password[] = {'a', 'b', 'c'};
+        char[] password = {'a', 'b', 'c'};
         PasswordCredential creds = new PasswordCredential(user, password);
         creds.setManagedConnectionFactory(factory);
         subj.getPrivateCredentials().add(creds);
@@ -199,7 +203,7 @@ public class ManagedConnectionImplTest extends ManagedConnectionTestBase {
             mci.associateConnection(dodgyHandle);
             fail("Except exception on call with ClassCast Exception");
         } catch (ResourceAdapterInternalException raie) {
-            assertTrue(true);
+            // expected
         }
 
     }

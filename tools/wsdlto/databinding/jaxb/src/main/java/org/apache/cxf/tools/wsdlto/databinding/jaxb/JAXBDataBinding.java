@@ -411,7 +411,7 @@ public class JAXBDataBinding implements DataBindingProfile {
             } catch (BadCommandLineException e) {
                 StringBuilder msg = new StringBuilder("XJC reported 'BadCommandLineException' for -xjc argument:");
                 for (String arg : args) {
-                    msg.append(arg + " ");
+                    msg.append(arg).append(' ');
                 }
                 LOG.log(Level.FINE, msg.toString(), e);
                 if (opts != null) {
@@ -553,7 +553,14 @@ public class JAXBDataBinding implements DataBindingProfile {
                 String s = r.getAttributeValue(null, "schemaLocation");
                 if (StringUtils.isEmpty(s)) {
                     Document d = StaxUtils.read(r);
-                    XPath p = XPathFactory.newInstance().newXPath();
+
+                    XPathFactory xpathFactory = XPathFactory.newInstance();
+                    try {
+                        xpathFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+                    } catch (javax.xml.xpath.XPathFactoryConfigurationException ex) {
+                        // ignore
+                    }
+                    XPath p = xpathFactory.newXPath();
                     p.setNamespaceContext(new W3CNamespaceContext(d.getDocumentElement()));
                     XPathExpression xpe = p.compile(d.getDocumentElement().getAttribute("node"));
                     for (XmlSchema schema : schemas.getXmlSchemas()) {
@@ -754,7 +761,7 @@ public class JAXBDataBinding implements DataBindingProfile {
         };
     }
     private String getPluginUsageString(Options opts) {
-        StringBuilder buf = new StringBuilder();
+        StringBuilder buf = new StringBuilder(128);
         buf.append("\nAvailable plugin options:\n");
         for (Plugin pl : opts.getAllPlugins()) {
             buf.append(pl.getUsage());
@@ -791,7 +798,7 @@ public class JAXBDataBinding implements DataBindingProfile {
         ClassCollector classCollector = context.get(ClassCollector.class);
         Collection<String> files = classCollector.getGeneratedFileInfo();
         for (String file : files) {
-            int dotIndex = file.lastIndexOf(".");
+            int dotIndex = file.lastIndexOf('.');
             String sub = dotIndex <= 0 ? "" : file.substring(0, dotIndex - 1);
             if (sub.equals(packageName)) {
                 return true;
@@ -890,7 +897,7 @@ public class JAXBDataBinding implements DataBindingProfile {
                                                                      ToolConstants.SCHEMA_URI,
                                                                      "include");
         boolean hasJAXB = DOMUtils.hasElementInNS(element, ToolConstants.NS_JAXB_BINDINGS);
-        if (impElemList.isEmpty() && incElemList.size() == 0 && !hasJAXB) {
+        if (impElemList.isEmpty() && incElemList.isEmpty() && !hasJAXB) {
             return element;
         }
         element = (Element)cloneNode(element.getOwnerDocument(), element, true);

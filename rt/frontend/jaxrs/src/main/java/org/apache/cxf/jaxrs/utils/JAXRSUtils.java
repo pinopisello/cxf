@@ -164,7 +164,7 @@ public final class JAXRSUtils {
     private static final String NO_CONTENT_EXCEPTION = "javax.ws.rs.core.NoContentException";
     private static final String HTTP_CHARSET_PARAM = "charset";
     private static final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
-    private static final Set<Class<?>> STREAMING_OUT_TYPES = new HashSet<Class<?>>(
+    private static final Set<Class<?>> STREAMING_OUT_TYPES = new HashSet<>(
         Arrays.asList(InputStream.class, Reader.class, StreamingOutput.class));
 
     private JAXRSUtils() {
@@ -181,7 +181,7 @@ public final class JAXRSUtils {
     public static List<PathSegment> getPathSegments(String thePath, boolean decode,
                                                     boolean ignoreLastSlash) {
         List<PathSegment> theList = 
-            StringUtils.splitAsStream(thePath, "/")
+            Arrays.asList(thePath.split("/")).stream()
             .filter(StringUtils.notEmpty())
             .map(p -> new PathSegmentImpl(p, decode))
             .collect(Collectors.toList());
@@ -301,7 +301,7 @@ public final class JAXRSUtils {
                                                         BUNDLE,
                                                         path).toString());
         if (resources.size() == 1) {
-            MultivaluedMap<String, String> values = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> values = new MetadataMap<>();
             return resources.get(0).getURITemplate().match(path, values)
                    ? Collections.singletonMap(resources.get(0), values) : null;
         }
@@ -311,7 +311,7 @@ public final class JAXRSUtils {
                 new ClassResourceInfoComparator(message));
 
         for (ClassResourceInfo cri : resources) {
-            MultivaluedMap<String, String> map = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> map = new MetadataMap<>();
             if (cri.getURITemplate().match(path, map)) {
                 candidateList.put(cri, map);
                 LOG.fine(() -> new org.apache.cxf.common.i18n.Message("CRI_SELECTED_POSSIBLY",
@@ -329,7 +329,7 @@ public final class JAXRSUtils {
 
         if (!candidateList.isEmpty()) {
             Map<ClassResourceInfo, MultivaluedMap<String, String>> cris =
-                new LinkedHashMap<ClassResourceInfo, MultivaluedMap<String, String>>(candidateList.size());
+                new LinkedHashMap<>(candidateList.size());
             ClassResourceInfo firstCri = null;
             for (Map.Entry<ClassResourceInfo, MultivaluedMap<String, String>> entry : candidateList.entrySet()) {
                 ClassResourceInfo cri = entry.getKey();
@@ -405,7 +405,7 @@ public final class JAXRSUtils {
                 boolean added = false;
 
                 URITemplate uriTemplate = ori.getURITemplate();
-                MultivaluedMap<String, String> map = new MetadataMap<String, String>(values);
+                MultivaluedMap<String, String> map = new MetadataMap<>(values);
                 if (uriTemplate != null && uriTemplate.match(path, map)) {
                     String finalGroup = map.getFirst(URITemplate.FINAL_MATCH_GROUP);
                     boolean finalPath = StringUtils.isEmpty(finalGroup) || PATH_SEGMENT_SEP.equals(finalGroup);
@@ -414,7 +414,7 @@ public final class JAXRSUtils {
                         candidateList.put(ori, map);
                         if (finalPath) {
                             if (finalPathSubresources == null) {
-                                finalPathSubresources = new LinkedList<OperationResourceInfo>();
+                                finalPathSubresources = new LinkedList<>();
                             }
                             finalPathSubresources.add(ori);
                         }
@@ -684,7 +684,7 @@ public final class JAXRSUtils {
         if (mts.size() == 1) {
             actualMts = mts;
         } else {
-            actualMts = new LinkedList<MediaType>();
+            actualMts = new LinkedList<>();
             for (MediaType mt : mts) {
                 if (isMediaTypeCompatible(mt, ct)) {
                     actualMts.add(mt);
@@ -699,6 +699,18 @@ public final class JAXRSUtils {
         int size2 = mts2.size();
         for (int i = 0; i < size1 && i < size2; i++) {
             int result = compareMediaTypes(mts1.get(i), mts2.get(i), qs);
+            if (result != 0) {
+                return result;
+            }
+        }
+        return size1 == size2 ? 0 : size1 < size2 ? -1 : 1;
+    }
+    
+    public static int compareMethodParameters(Class<?>[] paraList1, Class<?>[] paraList2) {
+        int size1 = paraList1.length;
+        int size2 = paraList2.length;
+        for (int i = 0; i < size1 && i < size2; i++) {
+            int result = paraList1[i].getName().compareTo(paraList2[i].getName());
             if (result != 0) {
                 return result;
             }
@@ -941,7 +953,7 @@ public final class JAXRSUtils {
         List<PathSegment> segments = JAXRSUtils.getPathSegments(
                                       (String)m.get(Message.REQUEST_URI), decode);
         if (!segments.isEmpty()) {
-            MultivaluedMap<String, String> params = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> params = new MetadataMap<>();
             for (PathSegment ps : segments) {
                 MultivaluedMap<String, String> matrix = ps.getMatrixParameters();
                 for (Map.Entry<String, List<String>> entry : matrix.entrySet()) {
@@ -982,7 +994,7 @@ public final class JAXRSUtils {
             (MultivaluedMap<String, String>)m.get(FormUtils.FORM_PARAM_MAP);
 
         if (params == null) {
-            params = new MetadataMap<String, String>();
+            params = new MetadataMap<>();
             m.put(FormUtils.FORM_PARAM_MAP, params);
 
             if (mt == null || mt.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE)) {
@@ -1249,7 +1261,7 @@ public final class JAXRSUtils {
                                                                     boolean decode,
                                                                     boolean decodePlus) {
         MultivaluedMap<String, String> map =
-            new MetadataMap<String, String>(new LinkedHashMap<String, List<String>>());
+            new MetadataMap<>(new LinkedHashMap<String, List<String>>());
 
         getStructuredParams(map, query, sep, decode, decodePlus);
 

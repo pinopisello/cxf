@@ -49,7 +49,7 @@ import org.apache.cxf.sts.claims.ClaimsManager;
 import org.apache.cxf.sts.common.CustomUserClaimsHandler;
 import org.apache.cxf.sts.common.PasswordCallbackHandler;
 import org.apache.cxf.sts.request.KeyRequirements;
-import org.apache.cxf.sts.request.ReceivedKey;
+import org.apache.cxf.sts.request.ReceivedCredential;
 import org.apache.cxf.sts.request.TokenRequirements;
 import org.apache.cxf.sts.service.EncryptionProperties;
 import org.apache.cxf.sts.service.ServiceMBean;
@@ -88,10 +88,16 @@ import org.apache.wss4j.common.saml.SamlAssertionWrapper;
 import org.apache.wss4j.common.saml.builder.SAML2Constants;
 import org.apache.wss4j.common.util.DOM2Writer;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 /**
  * Some unit tests for the issue operation.
  */
-public class IssueOnbehalfofUnitTest extends org.junit.Assert {
+public class IssueOnbehalfofUnitTest {
 
     public static final QName REQUESTED_SECURITY_TOKEN =
         QNameConstants.WS_TRUST_FACTORY.createRequestedSecurityToken(null).getName();
@@ -164,7 +170,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -235,7 +241,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -316,7 +322,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -397,7 +403,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -478,7 +484,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -559,7 +565,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -793,7 +799,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, null, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
     }
 
     /**
@@ -955,7 +961,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
         List<RequestSecurityTokenResponseType> securityTokenResponseList =
             response.getRequestSecurityTokenResponse();
 
-        assertTrue(!securityTokenResponseList.isEmpty());
+        assertFalse(securityTokenResponseList.isEmpty());
         RequestSecurityTokenResponseType securityTokenResponse = securityTokenResponseList.get(0);
 
         // Test the generated token.
@@ -1051,7 +1057,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -1173,7 +1179,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             issueOperation.issue(request, principal, msgCtx);
         List<RequestSecurityTokenResponseType> securityTokenResponse =
             response.getRequestSecurityTokenResponse();
-        assertTrue(!securityTokenResponse.isEmpty());
+        assertFalse(securityTokenResponse.isEmpty());
 
         // Test the generated token.
         Element assertion = null;
@@ -1225,7 +1231,7 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
             providerParameters.setRealm("A");
         }
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         return (Element)providerResponse.getToken();
@@ -1247,9 +1253,9 @@ public class IssueOnbehalfofUnitTest extends org.junit.Assert {
         CryptoType cryptoType = new CryptoType(CryptoType.TYPE.ALIAS);
         cryptoType.setAlias("myclientkey");
         X509Certificate[] certs = crypto.getX509Certificates(cryptoType);
-        ReceivedKey receivedKey = new ReceivedKey();
-        receivedKey.setX509Cert(certs[0]);
-        keyRequirements.setReceivedKey(receivedKey);
+        ReceivedCredential receivedCredential = new ReceivedCredential();
+        receivedCredential.setX509Cert(certs[0]);
+        keyRequirements.setReceivedCredential(receivedCredential);
 
         parameters.setKeyRequirements(keyRequirements);
 

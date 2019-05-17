@@ -50,7 +50,9 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
     public static final String PORT = allocatePort(AsyncHTTPConduitTest.class);
@@ -126,7 +128,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
         ep.stop();
         ep = null;
     }
-    
+
     @Test
     public void testResponseSameBufferSize() throws Exception {
         updateAddressPort(g, PORT);
@@ -139,7 +141,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
             fail();
         }
     }
-    
+
     @Test
     public void testTimeout() throws Exception {
         updateAddressPort(g, PORT);
@@ -216,9 +218,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
             public void handleResponse(Response<GreetMeResponse> res) {
                 try {
                     res.get().getResponseType();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
             }
@@ -258,7 +258,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
 
         //warmup
         for (int x = 0; x < 10000; x++) {
-            //builder.append("a");
+            //builder.append('a');
             //long s1 = System.nanoTime();
             //System.out.println("aa1: " + s1);
             String value = g.greetMe(request);
@@ -270,7 +270,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
 
         long start = System.currentTimeMillis();
         for (int x = 0; x < 10000; x++) {
-            //builder.append("a");
+            //builder.append('a');
             //long s1 = System.nanoTime();
             //System.out.println("aa1: " + s1);
             g.greetMe(request);
@@ -295,10 +295,10 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
         final int warmupIter = 5000;
         final int runIter = 5000;
         final CountDownLatch wlatch = new CountDownLatch(warmupIter);
-        final boolean wdone[] = new boolean[warmupIter];
+        final boolean[] wdone = new boolean[warmupIter];
 
         @SuppressWarnings("unchecked")
-        AsyncHandler<GreetMeLaterResponse> whandler[] = new AsyncHandler[warmupIter];
+        AsyncHandler<GreetMeLaterResponse>[] whandler = new AsyncHandler[warmupIter];
         for (int x = 0; x < warmupIter; x++) {
             final int c = x;
             whandler[x] = new AsyncHandler<GreetMeLaterResponse>() {
@@ -309,9 +309,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
                         if (c != Integer.parseInt(s)) {
                             System.out.println("Problem " + c + " != " + s);
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
+                    } catch (InterruptedException | ExecutionException e) {
                         e.printStackTrace();
                     }
                     wdone[c] = true;
@@ -323,7 +321,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
         //warmup
         long start = System.currentTimeMillis();
         for (int x = 0; x < warmupIter; x++) {
-            //builder.append("a");
+            //builder.append('a');
             //long s1 = System.nanoTime();
             //System.out.println("aa1: " + s1);
             g.greetMeLaterAsync(x, whandler[x]);
@@ -353,7 +351,7 @@ public class AsyncHTTPConduitTest extends AbstractBusClientServerTestBase {
 
         start = System.currentTimeMillis();
         for (int x = 0; x < runIter; x++) {
-            //builder.append("a");
+            //builder.append('a');
             //long s1 = System.nanoTime();
             //System.out.println("aa1: " + s1);
             g.greetMeLaterAsync(x, rhandler);

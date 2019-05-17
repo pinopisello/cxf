@@ -28,7 +28,7 @@ import javax.ws.rs.core.MediaType;
 
 public class AccumulatingIntersector implements MimeTypesIntersector {
     private static final String MEDIA_TYPE_DISTANCE_PARAM = "d";
-    private final Set<MediaType> supportedMimeTypeList = new LinkedHashSet<MediaType>();
+    private final Set<MediaType> supportedMimeTypeList = new LinkedHashSet<>();
     private final boolean addRequiredParamsIfPossible;
     private final boolean addDistanceParameter;
 
@@ -47,7 +47,7 @@ public class AccumulatingIntersector implements MimeTypesIntersector {
 
         Map<String, String> parameters = userType.getParameters();
         if (addRequiredParamsIfPossible) {
-            parameters = new LinkedHashMap<String, String>(parameters);
+            parameters = new LinkedHashMap<>(parameters);
             for (Map.Entry<String, String> entry : requiredType.getParameters().entrySet()) {
                 if (!parameters.containsKey(entry.getKey())) {
                     parameters.put(entry.getKey(), entry.getValue());

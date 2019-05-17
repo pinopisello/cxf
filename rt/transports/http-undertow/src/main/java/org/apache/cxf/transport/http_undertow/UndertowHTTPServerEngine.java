@@ -107,7 +107,7 @@ public class UndertowHTTPServerEngine implements ServerEngine {
     private boolean configFinalized;
 
     private ConcurrentMap<String, UndertowHTTPHandler> registedPaths =
-        new CopyOnWriteMap<String, UndertowHTTPHandler>();
+        new CopyOnWriteMap<>();
 
     private boolean continuationsEnabled = true;
 
@@ -259,7 +259,7 @@ public class UndertowHTTPServerEngine implements ServerEngine {
         if (tlsServerParameters != null
             && ("SSLv3".equals(tlsServerParameters.getSecureSocketProtocol())
                 || !tlsServerParameters.getIncludeProtocols().isEmpty())) {
-            List<String> protocols = new LinkedList<String>(Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"));
+            List<String> protocols = new LinkedList<>(Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2", "SSLv3"));
             for (String excludedProtocol : tlsServerParameters.getExcludeProtocols()) {
                 if (protocols.contains(excludedProtocol)) {
                     protocols.remove(excludedProtocol);
@@ -279,7 +279,8 @@ public class UndertowHTTPServerEngine implements ServerEngine {
             builder = builder.setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUIRED);
         }
         if (this.tlsServerParameters != null && this.tlsServerParameters.getClientAuthentication() != null
-            && this.tlsServerParameters.getClientAuthentication().isWant()) {
+            && this.tlsServerParameters.getClientAuthentication().isWant()
+            && !this.tlsServerParameters.getClientAuthentication().isRequired()) {
             builder = builder.setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
         }
         return builder;
@@ -472,7 +473,7 @@ public class UndertowHTTPServerEngine implements ServerEngine {
         return context;
     }
 
-    protected KeyManager[] getKeyManagersWithCertAlias(KeyManager keyManagers[]) throws Exception {
+    protected KeyManager[] getKeyManagersWithCertAlias(KeyManager[] keyManagers) throws Exception {
         if (tlsServerParameters.getCertAlias() != null) {
             for (int idx = 0; idx < keyManagers.length; idx++) {
                 if (keyManagers[idx] instanceof X509KeyManager) {

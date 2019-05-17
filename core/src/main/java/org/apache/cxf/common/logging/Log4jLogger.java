@@ -43,7 +43,7 @@ import org.apache.log4j.spi.LoggingEvent;
  */
 public class Log4jLogger extends AbstractDelegatingLogger {
     private static final Map<Level, org.apache.log4j.Level> TO_LOG4J =
-                                                new HashMap<Level, org.apache.log4j.Level>();
+                                                new HashMap<>();
     private static final org.apache.log4j.Level TRACE;
 
 
@@ -196,7 +196,7 @@ public class Log4jLogger extends AbstractDelegatingLogger {
         }
     }
     private static void getFullInfoForLogUtils(LogRecord lr, String cname) {
-        StackTraceElement el[] = Thread.currentThread().getStackTrace();
+        StackTraceElement[] el = Thread.currentThread().getStackTrace();
         for (int x = el.length - 2; x >= 0; x--) {
             if (LogUtils.class.getName().equals(el[x].getClassName())
                 || cname.equals(el[x].getClassName())) {

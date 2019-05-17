@@ -183,7 +183,7 @@ public class SamlTokenInterceptor extends AbstractTokenInterceptor {
         data.setMsgContext(message);
         data.setWssConfig(WSSConfig.getNewInstance());
 
-        data.setSigVerCrypto(getCrypto(null, SecurityConstants.SIGNATURE_CRYPTO,
+        data.setSigVerCrypto(getCrypto(SecurityConstants.SIGNATURE_CRYPTO,
                                      SecurityConstants.SIGNATURE_PROPERTIES, message));
 
         WSDocInfo wsDocInfo = new WSDocInfo(tokenElement.getOwnerDocument());
@@ -280,13 +280,17 @@ public class SamlTokenInterceptor extends AbstractTokenInterceptor {
                     (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.PASSWORD, message);
                 if (StringUtils.isEmpty(password)) {
                     password =
+                        (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SIGNATURE_PASSWORD, message);
+                }
+                if (StringUtils.isEmpty(password)) {
+                    password =
                         getPassword(issuerName, token, WSPasswordCallback.SIGNATURE, message);
                 }
             }
             Crypto crypto = samlCallback.getIssuerCrypto();
             if (crypto == null) {
                 crypto =
-                    getCrypto(token, SecurityConstants.SIGNATURE_CRYPTO,
+                    getCrypto(SecurityConstants.SIGNATURE_CRYPTO,
                               SecurityConstants.SIGNATURE_PROPERTIES, message);
             }
 
@@ -304,7 +308,6 @@ public class SamlTokenInterceptor extends AbstractTokenInterceptor {
     }
 
     private Crypto getCrypto(
-        SamlToken samlToken,
         String cryptoKey,
         String propKey,
         SoapMessage message

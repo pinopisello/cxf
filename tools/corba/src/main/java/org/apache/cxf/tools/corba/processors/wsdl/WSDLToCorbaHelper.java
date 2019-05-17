@@ -93,10 +93,10 @@ public class WSDLToCorbaHelper {
     public static final String IDL_VERSION = ":1.0";
 
     protected static final Logger LOG = LogUtils.getL7dLogger(WSDLToCorbaHelper.class);
-    protected static final String DISCRIMINATORTYPES[]
+    protected static final String[] DISCRIMINATORTYPES
         = new String[] {"long", "short", "boolean", "char"};
     protected static final Set<String> SUPPORTEDDISTYPES =
-        new TreeSet<String>(Arrays.asList(DISCRIMINATORTYPES));
+        new TreeSet<>(Arrays.asList(DISCRIMINATORTYPES));
 
     protected static final CorbaPrimitiveMap CORBAPRIMITIVEMAP = new CorbaPrimitiveMap();
 
@@ -288,7 +288,7 @@ public class WSDLToCorbaHelper {
             + IDL_VERSION;
         ((Union)corbatype).setRepositoryID(repoId);
 
-        if (!(choice.getMaxOccurs() == 1) || !(choice.getMinOccurs() == 1)) {
+        if (choice.getMaxOccurs() != 1 || choice.getMinOccurs() != 1) {
             QName name = createQNameTargetNamespace(corbatype.getQName().getLocalPart() + "Array");
             CorbaType arrayType =
                 createArray(name, corbatype.getQName(), corbatype.getQName(),
@@ -316,7 +316,7 @@ public class WSDLToCorbaHelper {
                 schemaType = findSchemaType(element.getSchemaTypeName());
             }
         }
-        if (schemaName.getNamespaceURI().equals("")) {
+        if (schemaName.getNamespaceURI().isEmpty()) {
             schemaName = new QName(uri, schemaName.getLocalPart());
         }
         QName elemName = schemaName;
@@ -365,7 +365,7 @@ public class WSDLToCorbaHelper {
             return null;
         }
 
-        if (!(element.getMaxOccurs() == 1) || !(element.getMinOccurs() == 1)) {
+        if (element.getMaxOccurs() != 1 || element.getMinOccurs() != 1) {
             QName name = createQNameCorbaNamespace(getModulePrefix(membertype)
                                                     + elemName.getLocalPart() + "Array");
             CorbaType arraytype = null;
@@ -420,7 +420,7 @@ public class WSDLToCorbaHelper {
 
     private String getModulePrefix(CorbaType type) {
         String name = type.getQName().getLocalPart();
-        int dotPos = name.lastIndexOf(".");
+        int dotPos = name.lastIndexOf('.');
         return dotPos == -1 ? "" : name.substring(0, dotPos + 1);
     }
 
@@ -535,7 +535,7 @@ public class WSDLToCorbaHelper {
             }
             XmlSchemaAttribute attribute = (XmlSchemaAttribute) aog;
             QName attrName = attribute.getQName();
-            if (attrName.getNamespaceURI().equals("")) {
+            if (attrName.getNamespaceURI().isEmpty()) {
                 attrName = new QName(uri, attrName.getLocalPart());
             }
             CorbaType membertype = null;
@@ -885,7 +885,7 @@ public class WSDLToCorbaHelper {
             if ((stype.getItems().size() == 1)
                 && (stype.getItems().get(0) instanceof XmlSchemaElement)) {
                 XmlSchemaElement el = (XmlSchemaElement)stype.getItems().get(0);
-                if (!(el.getMaxOccurs() == 1)) {
+                if (el.getMaxOccurs() != 1) {
                     // it's a literal array
                     array = true;
                 }
@@ -972,7 +972,7 @@ public class WSDLToCorbaHelper {
         QName schematypeName = checkPrefix(complex.getQName());
         if (schematypeName == null) {
             schematypeName = createQNameTargetNamespace(defaultName.getLocalPart());
-            if (defaultName.getNamespaceURI().equals("")) {
+            if (defaultName.getNamespaceURI().isEmpty()) {
                 schematypeName = checkPrefix(schematypeName);
             } else {
                 schematypeName = checkPrefix(defaultName);
@@ -1150,7 +1150,7 @@ public class WSDLToCorbaHelper {
         // Add base as a member of this struct
         MemberType memberType = new MemberType();
         memberType.setName(extName.getLocalPart() + "_f");
-        if (extName.getLocalPart().equals("anyType")) {
+        if ("anyType".equals(extName.getLocalPart())) {
             memberType.setIdltype(processPrimitiveType(extName).getQName());
         } else {
             memberType.setIdltype(createQNameCorbaNamespace(extName.getLocalPart()));
@@ -1319,7 +1319,7 @@ public class WSDLToCorbaHelper {
                     if (complex.getQName() != null) {
                         uri = complex.getQName().getNamespaceURI();
                     }
-                    if (elName.getNamespaceURI().equals("")) {
+                    if (elName.getNamespaceURI().isEmpty()) {
                         elName = new QName(uri, elName.getLocalPart());
                     }
                     QName arrayTypeName = elName;
@@ -1415,20 +1415,20 @@ public class WSDLToCorbaHelper {
                 caselist.add(enumerator.getValue());
             }
         } else if (SUPPORTEDDISTYPES.contains(disctype.getQName().getLocalPart())) {
-            if (disctype.getQName().getLocalPart().equals("long")
-                || disctype.getQName().getLocalPart().equals("short")) {
+            if ("long".equals(disctype.getQName().getLocalPart())
+                || "short".equals(disctype.getQName().getLocalPart())) {
                 for (int i = 0; i < fields.size(); i++) {
                     caselist.add(Integer.toString(i));
                 }
-            } else if (disctype.getQName().getLocalPart().equals("char")) {
+            } else if ("char".equals(disctype.getQName().getLocalPart())) {
                 for (int i = 0; i < fields.size(); i++) {
                     caselist.add(Integer.toString(i));
                 }
-            } else if (disctype.getQName().getLocalPart().equals("char")) {
+            } else if ("char".equals(disctype.getQName().getLocalPart())) {
                 for (int i = 0; i < fields.size(); i++) {
                     caselist.add(Integer.toString(i));
                 }
-            } else if (disctype.getQName().getLocalPart().equals("boolean")) {
+            } else if ("boolean".equals(disctype.getQName().getLocalPart())) {
                 if (fields.size() == 2) {
                     caselist.add("TRUE");
                     caselist.add("FALSE");
@@ -1550,7 +1550,7 @@ public class WSDLToCorbaHelper {
 
     protected QName checkPrefix(QName schematypeName) {
         QName name = schematypeName;
-        if ((name != null) && (name.getPrefix() == null || name.getPrefix().equals(""))) {
+        if ((name != null) && (name.getPrefix() == null || name.getPrefix().isEmpty())) {
             if (StringUtils.isEmpty(name.getNamespaceURI())) {
                 return name;
             }
@@ -1612,7 +1612,7 @@ public class WSDLToCorbaHelper {
             schemaName = element.getRef().getTargetQName();
         }
 
-        if (schemaName.getNamespaceURI().equals("")) {
+        if (schemaName.getNamespaceURI().isEmpty()) {
             schemaName = new QName(uri, schemaName.getLocalPart());
         }
         boolean qualified = false;

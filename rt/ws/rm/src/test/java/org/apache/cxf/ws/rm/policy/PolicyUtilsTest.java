@@ -36,14 +36,19 @@ import org.apache.cxf.ws.rmp.v200502.RMAssertion.InactivityTimeout;
 
 import org.easymock.EasyMock;
 import org.easymock.IMocksControl;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
  */
-public class PolicyUtilsTest extends Assert {
+public class PolicyUtilsTest {
 
     private IMocksControl control;
 
@@ -63,13 +68,13 @@ public class PolicyUtilsTest extends Assert {
         InactivityTimeout iat = new RMAssertion.InactivityTimeout();
         iat.setMilliseconds(Long.valueOf(10));
         a.setInactivityTimeout(iat);
-        assertTrue(!RMPolicyUtilities.equals(a, b));
+        assertFalse(RMPolicyUtilities.equals(a, b));
         b.setInactivityTimeout(iat);
         assertTrue(RMPolicyUtilities.equals(a, b));
 
         ExponentialBackoff eb = new RMAssertion.ExponentialBackoff();
         a.setExponentialBackoff(eb);
-        assertTrue(!RMPolicyUtilities.equals(a, b));
+        assertFalse(RMPolicyUtilities.equals(a, b));
         b.setExponentialBackoff(eb);
         assertTrue(RMPolicyUtilities.equals(a, b));
     }
@@ -146,7 +151,7 @@ public class PolicyUtilsTest extends Assert {
         BaseRetransmissionInterval bbri = new RMAssertion.BaseRetransmissionInterval();
         bbri.setMilliseconds(Long.valueOf(2000));
         b.setBaseRetransmissionInterval(bbri);
-        JaxbAssertion<RMAssertion> assertion = new JaxbAssertion<RMAssertion>();
+        JaxbAssertion<RMAssertion> assertion = new JaxbAssertion<>();
         assertion.setName(RM10Constants.RMASSERTION_QNAME);
         assertion.setData(b);
         AssertionInfo ai = new AssertionInfo(assertion);

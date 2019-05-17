@@ -53,7 +53,8 @@ public class SecurityConstants {
     public static final String USERNAME = "security.username";
 
     /**
-     * The user's password when a {@link CALLBACK_HANDLER} is not defined.
+     * The user's password when a {@link CALLBACK_HANDLER} is not defined. This is only used for the password
+     * in a WS-Security UsernameToken.
      */
     public static final String PASSWORD = "security.password";
 
@@ -65,6 +66,11 @@ public class SecurityConstants {
      * that key will be used.
      */
     public static final String SIGNATURE_USERNAME = "security.signature.username";
+
+    /**
+     * The user's password for signature when a {@link CALLBACK_HANDLER} is not defined.
+     */
+    public static final String SIGNATURE_PASSWORD = "security.signature.password";
 
     /**
      * The user's name for encryption. It is used as the alias name in the keystore to get the user's public
@@ -196,11 +202,17 @@ public class SecurityConstants {
     public static final String SAML_ROLE_ATTRIBUTENAME = "security.saml-role-attributename";
 
     /**
-     * A comma separated String of regular expressions which will be applied to the subject DN of
-     * the certificate used for signature validation, after trust verification of the certificate
-     * chain associated with the certificate.
+     * A String of regular expressions (separated by the value specified for CERT_CONSTRAINTS_SEPARATOR)
+     * which will be applied to the subject DN of the certificate used for signature validation, after trust
+     * verification of the certificate chain associated with the certificate.
      */
     public static final String SUBJECT_CERT_CONSTRAINTS = "security.subject.cert.constraints";
+
+    /**
+     * The separator that is used to parse certificate constraints configured in the SUBJECT_CERT_CONSTRAINTS
+     * tag. By default it is a comma - ",".
+     */
+    public static final String CERT_CONSTRAINTS_SEPARATOR = "security.cert.constraints.separator";
 
     //
     // STS Client Configuration tags

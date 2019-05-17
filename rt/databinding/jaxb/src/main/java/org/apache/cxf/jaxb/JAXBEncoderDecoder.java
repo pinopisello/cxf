@@ -244,7 +244,7 @@ public final class JAXBEncoderDecoder {
                         writeObject(marshaller, source, newJAXBElement(elName, cls, mObj));
                     }
                 } else if (byte[].class == cls && part.getTypeQName() != null
-                           && part.getTypeQName().getLocalPart().equals("hexBinary")) {
+                           && "hexBinary".equals(part.getTypeQName().getLocalPart())) {
                     mObj = new HexBinaryAdapter().marshal((byte[])mObj);
                     writeObject(marshaller, source, newJAXBElement(elName, String.class, mObj));
                 } else if (mObj instanceof JAXBElement) {
@@ -261,13 +261,11 @@ public final class JAXBEncoderDecoder {
             }
         } catch (Fault ex) {
             throw ex;
+        } catch (javax.xml.bind.MarshalException ex) {
+            Message faultMessage = new Message("MARSHAL_ERROR", LOG, ex.getLinkedException()
+                .getMessage());
+            throw new Fault(faultMessage, ex);
         } catch (Exception ex) {
-            if (ex instanceof javax.xml.bind.MarshalException) {
-                javax.xml.bind.MarshalException marshalEx = (javax.xml.bind.MarshalException)ex;
-                Message faultMessage = new Message("MARSHAL_ERROR", LOG, marshalEx.getLinkedException()
-                    .getMessage());
-                throw new Fault(faultMessage, ex);
-            }
             throw new Fault(new Message("MARSHAL_ERROR", LOG, ex.getMessage()), ex);
         }
     }
@@ -285,7 +283,7 @@ public final class JAXBEncoderDecoder {
     //TODO: cache the JAXBRIContext
     public static void marshalWithBridge(QName qname,
                                          Class<?> cls,
-                                         Annotation anns[],
+                                         Annotation[] anns,
                                          Set<Class<?>> ctxClasses,
                                          Object elValue,
                                          Object source, AttachmentMarshaller am) {
@@ -306,13 +304,11 @@ public final class JAXBEncoderDecoder {
             } else {
                 throw new Fault(new Message("UNKNOWN_SOURCE", LOG, source.getClass().getName()));
             }
+        } catch (javax.xml.bind.MarshalException ex) {
+            Message faultMessage = new Message("MARSHAL_ERROR", LOG, ex.getLinkedException()
+                .getMessage());
+            throw new Fault(faultMessage, ex);
         } catch (Exception ex) {
-            if (ex instanceof javax.xml.bind.MarshalException) {
-                javax.xml.bind.MarshalException marshalEx = (javax.xml.bind.MarshalException)ex;
-                Message faultMessage = new Message("MARSHAL_ERROR", LOG, marshalEx.getLinkedException()
-                    .getMessage());
-                throw new Fault(faultMessage, ex);
-            }
             throw new Fault(new Message("MARSHAL_ERROR", LOG, ex.getMessage()), ex);
         }
 
@@ -321,7 +317,7 @@ public final class JAXBEncoderDecoder {
 //  TODO: cache the JAXBRIContext
     public static Object unmarshalWithBridge(QName qname,
                                              Class<?> cls,
-                                             Annotation anns[],
+                                             Annotation[] anns,
                                              Set<Class<?>> ctxClasses,
                                              Object source,
                                              AttachmentUnmarshaller am) {
@@ -339,13 +335,11 @@ public final class JAXBEncoderDecoder {
             } else {
                 throw new Fault(new Message("UNKNOWN_SOURCE", LOG, source.getClass().getName()));
             }
+        } catch (javax.xml.bind.MarshalException ex) {
+            Message faultMessage = new Message("MARSHAL_ERROR", LOG, ex.getLinkedException()
+                .getMessage());
+            throw new Fault(faultMessage, ex);
         } catch (Exception ex) {
-            if (ex instanceof javax.xml.bind.MarshalException) {
-                javax.xml.bind.MarshalException marshalEx = (javax.xml.bind.MarshalException)ex;
-                Message faultMessage = new Message("MARSHAL_ERROR", LOG, marshalEx.getLinkedException()
-                    .getMessage());
-                throw new Fault(faultMessage, ex);
-            }
             throw new Fault(new Message("MARSHAL_ERROR", LOG, ex.getMessage()), ex);
         }
 
@@ -676,7 +670,7 @@ public final class JAXBEncoderDecoder {
     public static void marshallNullElement(Marshaller marshaller,
                                            Object source,
                                            MessagePartInfo part) {
-        Class<?> clazz = part != null ? (Class<?>)part.getTypeClass() : null;
+        Class<?> clazz = part != null ? part.getTypeClass() : null;
         try {
             writeObject(marshaller, source, newJAXBElement(part.getElementQName(), clazz, null));
         } catch (JAXBException e) {
@@ -689,7 +683,7 @@ public final class JAXBEncoderDecoder {
                                     Object source,
                                     MessagePartInfo part,
                                     boolean unwrap) {
-        Class<?> clazz = part != null ? (Class<?>)part.getTypeClass() : null;
+        Class<?> clazz = part != null ? part.getTypeClass() : null;
         if (clazz != null && Exception.class.isAssignableFrom(clazz) && part != null
             && Boolean.TRUE.equals(part.getProperty(JAXBDataBinding.class.getName() + ".CUSTOM_EXCEPTION"))) {
             return unmarshallException(u, source, part);
@@ -731,7 +725,7 @@ public final class JAXBEncoderDecoder {
                 return o;
             }
         } else if (byte[].class == clazz && part != null && part.getTypeQName() != null
-                   && part.getTypeQName().getLocalPart().equals("hexBinary")) {
+                   && "hexBinary".equals(part.getTypeQName().getLocalPart())) {
 
             String obj = (String)unmarshall(u, source, elName, String.class, unwrap);
             return new HexBinaryAdapter().unmarshal(obj);
@@ -744,7 +738,7 @@ public final class JAXBEncoderDecoder {
         Object o = unmarshall(u, source, elName, clazz, unwrap);
         if (o != null && o.getClass().isArray() && isList(part)) {
             List<Object> ret = createList(part);
-            ret.addAll(Arrays.asList((Object[])o));
+            Collections.addAll(ret, (Object[])o);
             o = ret;
         }
         return o;
@@ -857,8 +851,8 @@ public final class JAXBEncoderDecoder {
         }
 
         if (clazz != null
-            && (clazz.getName().equals("javax.xml.datatype.XMLGregorianCalendar")
-                || clazz.getName().equals("javax.xml.datatype.Duration"))) {
+            && ("javax.xml.datatype.XMLGregorianCalendar".equals(clazz.getName())
+                || "javax.xml.datatype.Duration".equals(clazz.getName()))) {
             // special treat two jaxb defined built-in abstract types
             unmarshalWithClass = true;
         }
@@ -958,7 +952,7 @@ public final class JAXBEncoderDecoder {
         //anyway.
 
         NamespaceContext c = source.getNamespaceContext();
-        final Map<String, String> nsMap = new TreeMap<String, String>();
+        final Map<String, String> nsMap = new TreeMap<>();
         try {
             if (c instanceof W3CNamespaceContext) {
                 Element element = ((W3CNamespaceContext)c).getElement();
@@ -966,7 +960,7 @@ public final class JAXBEncoderDecoder {
                     NamedNodeMap namedNodeMap = element.getAttributes();
                     for (int i = 0; i < namedNodeMap.getLength(); i++) {
                         Attr attr = (Attr)namedNodeMap.item(i);
-                        if (attr.getPrefix() != null && attr.getPrefix().equals("xmlns")) {
+                        if (attr.getPrefix() != null && "xmlns".equals(attr.getPrefix())) {
                             nsMap.put(attr.getLocalName(), attr.getValue());
                         }
                     }
@@ -983,7 +977,7 @@ public final class JAXBEncoderDecoder {
                 }
                 Field f = ReflectionUtil.getDeclaredField(c.getClass(), "mNamespaces");
                 ReflectionUtil.setAccessible(f);
-                String ns[] = (String[])f.get(c);
+                String[] ns = (String[])f.get(c);
                 for (int x = 0; x < ns.length; x += 2) {
                     if (ns[x] == null) {
                         nsMap.put("", ns[x + 1]);
@@ -1022,7 +1016,7 @@ public final class JAXBEncoderDecoder {
             }
             if (!nsMap.isEmpty()) {
                 @SuppressWarnings("unchecked")
-                final Map.Entry<String, String> namespaces[]
+                final Map.Entry<String, String>[] namespaces
                     = nsMap.entrySet().toArray(new Map.Entry[nsMap.size()]);
                 //OK. we have extra namespaces.  We'll need to wrapper the reader
                 //with a new one that will fake extra namespace events
@@ -1116,12 +1110,10 @@ public final class JAXBEncoderDecoder {
             return ret;
         } catch (Fault ex) {
             throw ex;
+        } catch (javax.xml.bind.MarshalException ex) {
+            throw new Fault(new Message("UNMARSHAL_ERROR", LOG, ex.getLinkedException()
+                .getMessage()), ex);
         } catch (Exception ex) {
-            if (ex instanceof javax.xml.bind.UnmarshalException) {
-                javax.xml.bind.UnmarshalException unmarshalEx = (javax.xml.bind.UnmarshalException)ex;
-                throw new Fault(new Message("UNMARSHAL_ERROR", LOG, unmarshalEx.getLinkedException()
-                    .getMessage()), ex);
-            }
             throw new Fault(new Message("UNMARSHAL_ERROR", LOG, ex.getMessage()), ex);
         }
     }

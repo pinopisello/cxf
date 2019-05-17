@@ -376,7 +376,7 @@ public class Java2WADLMojo extends AbstractMojo {
             throw new MojoExecutionException(
                 "either classResourceNames or basePackages should be specified");
         }
-        List<Class<?>> resourceClasses = new ArrayList<Class<?>>(
+        List<Class<?>> resourceClasses = new ArrayList<>(
             classResourceNames == null ? 0 : classResourceNames.size());
         if (classResourceNames != null) {
             for (String className : classResourceNames) {
@@ -389,7 +389,7 @@ public class Java2WADLMojo extends AbstractMojo {
         }
         if (resourceClasses.isEmpty() && basePackages != null) {
             try {
-                List<Class<? extends Annotation>> anns = new ArrayList<Class<? extends Annotation>>();
+                List<Class<? extends Annotation>> anns = new ArrayList<>();
                 anns.add(Path.class);
                 final Map< Class< ? extends Annotation >, Collection< Class< ? > > > discoveredClasses =
                     ClasspathScanner.findClasses(ClasspathScanner.parsePackages(basePackages),

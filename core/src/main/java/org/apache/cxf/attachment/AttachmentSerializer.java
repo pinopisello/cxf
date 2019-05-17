@@ -100,7 +100,7 @@ public class AttachmentSerializer {
         // Set transport mime type
         String requestMimeType = multipartType == null ? DEFAULT_MULTIPART_TYPE : multipartType;
 
-        StringBuilder ct = new StringBuilder();
+        StringBuilder ct = new StringBuilder(32);
         ct.append(requestMimeType);
 
         // having xop set to true implies multipart/related, but just in case...
@@ -114,14 +114,14 @@ public class AttachmentSerializer {
             if (xop) {
                 ct.append("; type=\"application/xop+xml\"");
             } else {
-                ct.append("; type=\"").append(bodyCt).append("\"");
+                ct.append("; type=\"").append(bodyCt).append('"');
             }
         }
 
         // boundary
         ct.append("; boundary=\"")
             .append(bodyBoundary)
-            .append("\"");
+            .append('"');
 
         String rootContentId = getHeaderValue("Content-ID", AttachmentUtil.BODY_ATTACHMENT_ID);
 
@@ -143,7 +143,7 @@ public class AttachmentSerializer {
             if (bodyCtParamsEscaped != null) {
                 ct.append(bodyCtParamsEscaped);
             }
-            ct.append("\"");
+            ct.append('"');
         }
 
 
@@ -171,7 +171,7 @@ public class AttachmentSerializer {
                 if (bodyCtParamsEscaped != null) {
                     mimeBodyCt.append(bodyCtParamsEscaped);
                 }
-                mimeBodyCt.append("\"");
+                mimeBodyCt.append('"');
             } else if (bodyCtParams != null) {
                 mimeBodyCt.append(bodyCtParams);
             }
@@ -261,7 +261,7 @@ public class AttachmentSerializer {
                 Map<String, List<String>> headers = null;
                 Iterator<String> it = a.getHeaderNames();
                 if (it.hasNext()) {
-                    headers = new LinkedHashMap<String, List<String>>();
+                    headers = new LinkedHashMap<>();
                     while (it.hasNext()) {
                         String key = it.next();
                         headers.put(key, Collections.singletonList(a.getHeader(key)));
@@ -304,8 +304,7 @@ public class AttachmentSerializer {
             bufferSize = avail;
         }
         final byte[] buffer = new byte[bufferSize];
-        int n = 0;
-        n = input.read(buffer);
+        int n = input.read(buffer);
         int total = 0;
         int left = 0;
         while (-1 != n) {

@@ -27,11 +27,15 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
         <cxf.module.name>org.apache.cxf.rs.search</cxf.module.name>
+        <cxf.osgi.import>
+            javax.persistence*;resolution:=optional,
+            org.apache.tika.*;resolution:=optional
+        </cxf.osgi.import>
     </properties>
     <dependencies>
         <dependency>
@@ -100,7 +104,15 @@
                 <exclusion>
                     <groupId>org.apache.poi</groupId>
                     <artifactId>poi-ooxml</artifactId>                
-                </exclusion>       
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.xml.bind</groupId>
+                    <artifactId>jaxb-core</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -125,6 +137,12 @@
             <artifactId>hibernate-entitymanager</artifactId>
             <version>${cxf.hibernate.em.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.hsqldb</groupId>

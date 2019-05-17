@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.cxf.common.util.SystemPropertyAction;
+
 public final class JavaUtils {
 
     /** Use this character as suffix */
@@ -51,9 +53,9 @@ public final class JavaUtils {
     private static boolean isJava8Before161;
 
     static {
-        String version = System.getProperty("java.version");
+        String version = SystemPropertyAction.getProperty("java.version");
         try {
-            isJava8Before161 = version != null && version.startsWith("1.8.0")
+            isJava8Before161 = version != null && version.startsWith("1.8.0_")
                 && Integer.parseInt(version.substring(6)) < 161;
         } catch (NumberFormatException ex) {
             isJava8Before161 = false;
@@ -62,8 +64,8 @@ public final class JavaUtils {
         if (version.indexOf('.') > 0) {
             version = version.substring(0, version.indexOf('.'));
         }            
-        if (version.indexOf("-") > 0) {
-            version = version.substring(0, version.indexOf("-"));
+        if (version.indexOf('-') > 0) {
+            version = version.substring(0, version.indexOf('-'));
         }
 
         setJava9Compatible(Integer.valueOf(version) >= 9);

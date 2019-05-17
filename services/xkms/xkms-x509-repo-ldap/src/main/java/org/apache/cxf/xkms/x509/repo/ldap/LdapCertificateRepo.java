@@ -110,9 +110,7 @@ public class LdapCertificateRepo implements CertificateRepo {
                 }
             }
             return certificates;
-        } catch (CertificateException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        } catch (NamingException e) {
+        } catch (CertificateException | NamingException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -133,11 +131,7 @@ public class LdapCertificateRepo implements CertificateRepo {
                 }
             }
             return crls;
-        } catch (CertificateException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        } catch (NamingException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        } catch (CRLException e) {
+        } catch (CertificateException | NamingException | CRLException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -186,11 +180,13 @@ public class LdapCertificateRepo implements CertificateRepo {
         } catch (NamingException e) {
              // Not found
         }
-        // Try to find certificate by search for uid attribute
-        try {
-            cert = getCertificateForUIDAttr(id);
-        } catch (NamingException e) {
-            // Not found
+        if (cert == null) {
+            // Try to find certificate by search for uid attribute
+            try {
+                cert = getCertificateForUIDAttr(id);
+            } catch (NamingException e) {
+                // Not found
+            }
         }
         return cert;
     }
@@ -204,12 +200,14 @@ public class LdapCertificateRepo implements CertificateRepo {
         } catch (NamingException e) {
             // Not found
         }
-        // Try to find certificate by search for uid attribute
-        try {
-            String uidAttr = String.format(ldapConfig.getServiceCertUIDTemplate(), serviceName);
-            cert = getCertificateForUIDAttr(uidAttr);
-        } catch (NamingException e) {
-            // Not found
+        if (cert == null) {
+            // Try to find certificate by search for uid attribute
+            try {
+                String uidAttr = String.format(ldapConfig.getServiceCertUIDTemplate(), serviceName);
+                cert = getCertificateForUIDAttr(uidAttr);
+            } catch (NamingException e) {
+                // Not found
+            }
         }
         return cert;
     }

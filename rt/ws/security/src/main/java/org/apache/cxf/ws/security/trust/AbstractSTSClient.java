@@ -643,7 +643,7 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
     protected String findMEXLocation(Element ref) {
         Element el = DOMUtils.getFirstElement(ref);
         while (el != null) {
-            if (el.getLocalName().equals("Address")
+            if ("Address".equals(el.getLocalName())
                 && VersionTransformer.isSupported(el.getNamespaceURI())
                 && "MetadataReference".equals(ref.getLocalName())) {
                 return DOMUtils.getContent(el);
@@ -871,7 +871,7 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
 
         writer.writeEndElement();
 
-        Object obj[] = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
+        Object[] obj = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
 
         return new STSResponse((DOMSource)obj[0], requestorEntropy, cert, crypto);
     }
@@ -1091,7 +1091,7 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
 
         writer.writeEndElement();
 
-        Object obj[] = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
+        Object[] obj = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
 
         return new STSResponse((DOMSource)obj[0], null);
     }
@@ -1164,7 +1164,7 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
             writer.writeEndElement();
             writer.writeEndElement();
 
-            Object o[] = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
+            Object[] o = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
 
             return new STSResponse((DOMSource)o[0], null);
         }
@@ -1211,7 +1211,7 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
         writer.writeEndElement();
         writer.writeEndElement();
 
-        Object o[] = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
+        Object[] o = client.invoke(boi, new DOMSource(writer.getDocument().getDocumentElement()));
 
         return new STSResponse((DOMSource)o[0], requestorEntropy, cert, crypto);
     }
@@ -1379,7 +1379,7 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
         CryptoType cryptoType = new CryptoType(CryptoType.TYPE.ALIAS);
         cryptoType.setAlias(alias);
 
-        X509Certificate certs[] = crypto.getX509Certificates(cryptoType);
+        X509Certificate[] certs = crypto.getX509Certificates(cryptoType);
         if (certs == null || certs.length == 0) {
             throw new Fault("Could not get X509Certificate for alias " + alias, LOG);
         }
@@ -1462,7 +1462,6 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
         Element entropy = null;
         String tt = null;
         String retKeySize = null;
-        String tokenData = null;
 
         while (el != null) {
             String ln = el.getLocalName();
@@ -1471,9 +1470,6 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
                     lte = el;
                 } else if ("RequestedSecurityToken".equals(ln)) {
                     rst = DOMUtils.getFirstElement(el);
-                    if (rst == null) {
-                        tokenData = el.getTextContent();
-                    }
                 } else if ("RequestedAttachedReference".equals(ln)) {
                     rar = DOMUtils.getFirstElement(el);
                 } else if ("RequestedUnattachedReference".equals(ln)) {
@@ -1501,9 +1497,6 @@ public abstract class AbstractSTSClient implements Configurable, InterceptorProv
         token.setUnattachedReference(rur);
         token.setIssuerAddress(location);
         token.setTokenType(tt);
-        if (tokenData != null) {
-            token.setData(tokenData.getBytes());
-        }
 
         byte[] secret = null;
 

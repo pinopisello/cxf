@@ -223,6 +223,15 @@ public class Java2WSMojo extends AbstractMojo {
      */
     private Boolean classpathAsEnvVar;
 
+    /**
+     * Disable garbage collection at the end of the execution.
+     *
+     * @parameter expression="${cxf.skipGarbageCollection}" default-value="false"
+     * @since 3.3.1
+     */
+    private boolean skipGarbageCollection;
+
+
     public void execute() throws MojoExecutionException {
         boolean requiresModules = JavaUtils.isJava9Compatible();
         if (requiresModules) {
@@ -275,7 +284,9 @@ public class Java2WSMojo extends AbstractMojo {
             classLoaderSwitcher.restoreClassLoader();
         }
 
-        System.gc();
+        if (!skipGarbageCollection) {
+            System.gc();
+        }
     }
 
     private List<String> initArgs(String cp) {
@@ -417,7 +428,7 @@ public class Java2WSMojo extends AbstractMojo {
             } catch (OutOfMemoryError e) {
                 getLog().debug(e);
 
-                StringBuilder msg = new StringBuilder();
+                StringBuilder msg = new StringBuilder(128);
                 msg.append(e.getMessage()).append('\n');
                 msg.append("Try to run this goal using the <fork>true</fork> and "
                         + "<additionalJvmArgs>-Xms128m -Xmx128m</additionalJvmArgs> parameters.");
@@ -510,6 +521,7 @@ public class Java2WSMojo extends AbstractMojo {
             File wsdlFile = new File(outputFile);
             if (wsdlFile.exists()) {
                 
+                
                 boolean hasWsdlAttached = false;
                 for (Artifact a : project.getAttachedArtifacts()) {
                     if ("wsdl".equals(a.getType()) && classifier != null && classifier.equals(a.getClassifier())) {
@@ -518,9 +530,9 @@ public class Java2WSMojo extends AbstractMojo {
                 }
                 if (!hasWsdlAttached) {
                     if (classifier != null) {
-                        projectHelper.attachArtifact(project, "wsdl", classifier, wsdlFile);
+                        projectHelper.attachArtifact(project, wsdlFile.getName(), classifier, wsdlFile);
                     } else {
-                        projectHelper.attachArtifact(project, "wsdl", wsdlFile);
+                        projectHelper.attachArtifact(project, wsdlFile.getName(), wsdlFile);
                     }
                 }
             }

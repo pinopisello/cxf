@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.security.auth.callback.CallbackHandler;
+import javax.xml.XMLConstants;
 import javax.xml.crypto.dsig.Reference;
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPException;
@@ -589,7 +590,11 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             throw new Fault(e1);
         }
 
-        String password = getPassword(uname, token, WSPasswordCallback.SIGNATURE);
+        String password =
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SIGNATURE_PASSWORD, message);
+        if (StringUtils.isEmpty(password)) {
+            password = getPassword(uname, token, WSPasswordCallback.SIGNATURE);
+        }
         sig.setUserInfo(uname, password);
         try {
             sig.prepare(secToken.getCrypto());
@@ -945,7 +950,11 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             }
             String password = samlCallback.getIssuerKeyPassword();
             if (password == null) {
-                password = getPassword(issuerName, token, WSPasswordCallback.SIGNATURE);
+                password =
+                    (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SIGNATURE_PASSWORD, message);
+                if (StringUtils.isEmpty(password)) {
+                    password = getPassword(issuerName, token, WSPasswordCallback.SIGNATURE);
+                }
             }
             Crypto crypto = samlCallback.getIssuerCrypto();
             if (crypto == null) {
@@ -1412,6 +1421,12 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                 );
 
             XPathFactory factory = XPathFactory.newInstance();
+            try {
+                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+            } catch (javax.xml.xpath.XPathFactoryConfigurationException ex) {
+                // ignore
+            }
+
             for (org.apache.wss4j.policy.model.XPath xPath : xpaths) {
                 XPath xpath = factory.newXPath();
                 if (xPath.getPrefixNamespaceMap() != null) {
@@ -1876,7 +1891,11 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
             }
         }
 
-        String password = getPassword(user, token, WSPasswordCallback.SIGNATURE);
+        String password =
+            (String)SecurityUtils.getSecurityPropertyValue(SecurityConstants.SIGNATURE_PASSWORD, message);
+        if (StringUtils.isEmpty(password)) {
+            password = getPassword(user, token, WSPasswordCallback.SIGNATURE);
+        }
         sig.setUserInfo(user, password);
         sig.setSignatureAlgorithm(binding.getAlgorithmSuite().getAsymmetricSignature());
         AlgorithmSuiteType algType = binding.getAlgorithmSuite().getAlgorithmSuiteType();
@@ -1949,8 +1968,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                         doSymmSignatureDerived(supportingToken.getToken(), token, sigParts,
                                                isTokenProtection, isSigProtect);
                     } else {
-                        doSymmSignature(supportingToken.getToken(), token, sigParts,
-                                        isTokenProtection, isSigProtect);
+                        doSymmSignature(supportingToken.getToken(), token, sigParts, isSigProtect);
                     }
                 } catch (Exception e) {
                     LOG.log(Level.FINE, e.getMessage(), e);
@@ -1978,8 +1996,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                         doSymmSignatureDerived(supportingToken.getToken(), secToken, sigParts,
                                                isTokenProtection, isSigProtect);
                     } else {
-                        doSymmSignature(supportingToken.getToken(), secToken, sigParts,
-                                        isTokenProtection, isSigProtect);
+                        doSymmSignature(supportingToken.getToken(), secToken, sigParts, isSigProtect);
                     }
                 } catch (Exception e) {
                     LOG.log(Level.FINE, e.getMessage(), e);
@@ -2078,7 +2095,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
     }
 
     private void doSymmSignature(AbstractToken policyToken, SecurityToken tok,
-                                         List<WSEncryptionPart> sigParts, boolean isTokenProtection,
+                                         List<WSEncryptionPart> sigParts,
                                          boolean isSigProtect)
         throws WSSecurityException {
 
@@ -2301,7 +2318,7 @@ public abstract class AbstractBindingBuilder extends AbstractCommonBindingHandle
                 if (signedPart.getId() == null && !"Token".equals(signedPart.getName())) {
                     throw new IllegalArgumentException(
                             "WSEncryptionPart must be ID based but no id was found.");
-                } else if (encryptedPart.getEncModifier().equals("Header")
+                } else if ("Header".equals(encryptedPart.getEncModifier())
                         && signedPart.getId().equals(encryptedPart.getId())) {
                     // We are to sign something that has already been encrypted.
                     // We need to preserve the original aspects of signedPart but

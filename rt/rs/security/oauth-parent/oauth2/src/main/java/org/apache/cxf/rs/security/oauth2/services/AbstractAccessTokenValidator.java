@@ -57,7 +57,7 @@ public abstract class AbstractAccessTokenValidator {
 
     private int maxValidationDataCacheSize;
     private ConcurrentHashMap<String, AccessTokenValidation> accessTokenValidations =
-        new ConcurrentHashMap<String, AccessTokenValidation>();
+        new ConcurrentHashMap<>();
     private JoseJwtConsumer jwtTokenConsumer;
     private boolean persistJwtEncoding = true;
 
@@ -118,8 +118,6 @@ public abstract class AbstractAccessTokenValidator {
                     // Convert the HTTP Authorization scheme data into a token
                     accessTokenV = handler.validateAccessToken(getMessageContext(), authScheme, authSchemeData,
                                                                extraProps);
-                } catch (OAuthServiceException ex) {
-                    AuthorizationUtils.throwAuthorizationFailure(Collections.singleton(authScheme), realm);
                 } catch (RuntimeException ex) {
                     AuthorizationUtils.throwAuthorizationFailure(Collections.singleton(authScheme), realm);
                 }

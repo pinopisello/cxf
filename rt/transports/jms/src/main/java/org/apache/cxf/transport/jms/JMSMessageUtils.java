@@ -40,7 +40,6 @@ import javax.jms.TextMessage;
 
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.PropertyUtils;
-import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.helpers.CastUtils;
 import org.apache.cxf.helpers.HttpHeaderHelper;
 import org.apache.cxf.message.MessageImpl;
@@ -106,7 +105,7 @@ final class JMSMessageUtils {
         if (responseCode != null) {
             inMessage.put(org.apache.cxf.message.Message.RESPONSE_CODE, Integer.valueOf(responseCode));
         }
-        Map<String, List<String>> protHeaders = new TreeMap<String, List<String>>();
+        Map<String, List<String>> protHeaders = new TreeMap<>();
         for (String name : messageHeaders.getPropertyKeys()) {
             String val = (String)messageHeaders.getProperty(name);
             protHeaders.put(name, Collections.singletonList(val));
@@ -129,18 +128,7 @@ final class JMSMessageUtils {
 
 
     static String getEncoding(String ct) throws UnsupportedEncodingException {
-        String contentType = ct.toLowerCase();
-        String enc = null;
-
-        String[] tokens = StringUtils.split(contentType, ";");
-        for (String token : tokens) {
-            int index = token.indexOf("charset=");
-            if (index >= 0) {
-                enc = token.substring(index + 8);
-                break;
-            }
-        }
-
+        String enc = HttpHeaderHelper.findCharset(ct);
         String normalizedEncoding = HttpHeaderHelper.mapCharset(enc, StandardCharsets.UTF_8.name());
         if (normalizedEncoding == null) {
             String m = new org.apache.cxf.common.i18n.Message("INVALID_ENCODING_MSG", LOG, new Object[] {
@@ -172,7 +160,7 @@ final class JMSMessageUtils {
         Map<String, List<String>> headers = CastUtils.cast((Map<?, ?>)message
             .get(org.apache.cxf.message.Message.PROTOCOL_HEADERS));
         if (null == headers) {
-            headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
+            headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             message.put(org.apache.cxf.message.Message.PROTOCOL_HEADERS, headers);
         }
         return contentType;

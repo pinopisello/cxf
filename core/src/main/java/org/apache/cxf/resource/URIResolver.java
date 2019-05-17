@@ -57,8 +57,7 @@ import org.apache.cxf.helpers.LoadingByteArrayOutputStream;
 public class URIResolver {
     private static final Logger LOG = LogUtils.getLogger(URIResolver.class);
 
-    private Map<String, LoadingByteArrayOutputStream> cache
-        = new HashMap<>();
+    private Map<String, LoadingByteArrayOutputStream> cache = new HashMap<>();
     private File file;
     private URI uri;
     private URL url;
@@ -174,28 +173,14 @@ public class URIResolver {
                 url = relative.toURL();
 
                 try {
-                    HttpURLConnection huc = (HttpURLConnection)url.openConnection();
-
-                    String host = SystemPropertyAction.getPropertyOrNull("http.proxyHost");
-                    if (host != null) {
-                        //comment out unused port to pass pmd check
-                        /*String ports = SystemPropertyAction.getProperty("http.proxyPort");
-                        int port = 80;
-                        if (ports != null) {
-                            port = Integer.parseInt(ports);
-                        }*/
-
-                        String username = SystemPropertyAction.getPropertyOrNull("http.proxy.user");
-                        String password = SystemPropertyAction.getPropertyOrNull("http.proxy.password");
-
-                        if (username != null && password != null) {
-                            String encoded = Base64Utility.encode((username + ":" + password).getBytes());
-                            huc.setRequestProperty("Proxy-Authorization", "Basic " + encoded);
-                        }
+                    HttpURLConnection huc = createInputStream();
+                    int status = huc.getResponseCode();
+                    if (status != HttpURLConnection.HTTP_OK && followRedirect(status)) {
+                        // only redirect once.
+                        uri = new URI(huc.getHeaderField("Location"));
+                        url = uri.toURL();
+                        createInputStream();
                     }
-                    huc.setConnectTimeout(30000);
-                    huc.setReadTimeout(60000);
-                    is = huc.getInputStream();
                 } catch (ClassCastException ex) {
                     is = url.openStream();
                 }
@@ -266,6 +251,39 @@ public class URIResolver {
         } else if (is == null) {
             tryClasspath(uriStr);
         }
+    }
+
+    private static boolean followRedirect(int status) {
+        return (status == HttpURLConnection.HTTP_MOVED_TEMP
+                || status == HttpURLConnection.HTTP_MOVED_PERM
+                || status == HttpURLConnection.HTTP_SEE_OTHER)
+              && Boolean.parseBoolean(SystemPropertyAction.getPropertyOrNull("http.autoredirect"));
+    }
+
+    private HttpURLConnection createInputStream() throws IOException {
+        HttpURLConnection huc = (HttpURLConnection)url.openConnection();
+
+        String host = SystemPropertyAction.getPropertyOrNull("http.proxyHost");
+        if (host != null) {
+            //comment out unused port to pass pmd check
+            /*String ports = SystemPropertyAction.getProperty("http.proxyPort");
+            int port = 80;
+            if (ports != null) {
+                port = Integer.parseInt(ports);
+            }*/
+
+            String username = SystemPropertyAction.getPropertyOrNull("http.proxy.user");
+            String password = SystemPropertyAction.getPropertyOrNull("http.proxy.password");
+
+            if (username != null && password != null) {
+                String encoded = Base64Utility.encode((username + ":" + password).getBytes());
+                huc.setRequestProperty("Proxy-Authorization", "Basic " + encoded);
+            }
+        }
+        huc.setConnectTimeout(30000);
+        huc.setReadTimeout(60000);
+        is = huc.getInputStream();
+        return huc;
     }
 
     /**
@@ -404,9 +422,7 @@ public class URIResolver {
                 cache.put(uriStr, bout);
             }
             is = bout.createInputStream();
-        } catch (MalformedURLException e) {
-            // do nothing
-        } catch (URISyntaxException e) {
+        } catch (MalformedURLException | URISyntaxException e) {
             // do nothing
         }
     }

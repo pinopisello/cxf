@@ -435,7 +435,7 @@ public class IDLToWSDLProcessor extends IDLProcessor {
                 if (bindingTokens.length > 1) {
                     StringBuilder name = new StringBuilder("");
                     for (int j = 0; j < bindingTokens.length - 2; j++) {
-                        name.append(bindingTokens[j] + ".");
+                        name.append(bindingTokens[j]).append('.');
                     }
                     name.append(bindingTokens[bindingTokens.length - 2] + "CORBAService");
                     serviceNames.put(ns, name.toString());
@@ -618,7 +618,7 @@ public class IDLToWSDLProcessor extends IDLProcessor {
                 StringTokenizer tokens = new StringTokenizer(mapping, ",;");
                 while (tokens.hasMoreTokens()) {
                     String token = tokens.nextToken();
-                    int pos = token.indexOf("=");
+                    int pos = token.indexOf('=');
                     if (pos == -1) {
                         throw new RuntimeException("Mapping of idl modules to namespaces "
                                                    + "is not specified correctly."
@@ -633,7 +633,7 @@ public class IDLToWSDLProcessor extends IDLProcessor {
                 try (BufferedReader reader = new BufferedReader(new FileReader(mapping))) {
                     String token = reader.readLine();
                     while (token != null) {
-                        int pos = token.indexOf("=");
+                        int pos = token.indexOf('=');
                         if (pos == -1) {
                             reader.close();
                             throw new RuntimeException("Mapping of idl modules to namespaces "

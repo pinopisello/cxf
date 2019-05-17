@@ -73,7 +73,7 @@ public final class OAuthUtils {
         String theURI = wildcard ? uri.substring(0, uri.length() - 1) : uri;
         try {
             URITemplate template = new URITemplate(theURI);
-            MultivaluedMap<String, String> map = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> map = new MetadataMap<>();
             if (template.match(servletPath, map)) {
                 String finalGroup = map.getFirst(URITemplate.FINAL_MATCH_GROUP);
                 if (wildcard || StringUtils.isEmpty(finalGroup) || "/".equals(finalGroup)) {
@@ -138,7 +138,7 @@ public final class OAuthUtils {
             InputStream stream = mc != null
                 ? mc.getContent(InputStream.class) : oAuthMessage.getBodyAsStream();
             String body = FormUtils.readBody(stream, enc);
-            MultivaluedMap<String, String> map = new MetadataMap<String, String>();
+            MultivaluedMap<String, String> map = new MetadataMap<>();
             FormUtils.populateMapFromString(map, PhaseInterceptorChain.getCurrentMessage(), body, enc, true,
                                             request);
             for (String key : map.keySet()) {
@@ -148,7 +148,7 @@ public final class OAuthUtils {
             // This path will most likely work only for the AuthorizationRequestService
             // when processing a user confirmation with only 3 parameters expected
             String ct = request.getContentType();
-            if (ct != null && MediaType.APPLICATION_FORM_URLENCODED.equals(ct)) {
+            if (MediaType.APPLICATION_FORM_URLENCODED.equals(ct)) {
                 Map<String, List<String>> map = new HashMap<>();
                 for (Entry<String, String> param : params) {
                     map.put(param.getKey(), Collections.singletonList(param.getValue()));

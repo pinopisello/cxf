@@ -151,21 +151,21 @@ public final class ResponseImpl extends Response {
     }
 
     public MultivaluedMap<String, String> getStringHeaders() {
-        MetadataMap<String, String> headers = new MetadataMap<String, String>(metadata.size());
+        MetadataMap<String, String> headers = new MetadataMap<>(metadata.size());
         for (Map.Entry<String, List<Object>> entry : metadata.entrySet()) {
             String headerName = entry.getKey();
-            headers.put(headerName, toListOfStrings(headerName, entry.getValue()));
+            headers.put(headerName, toListOfStrings(entry.getValue()));
         }
         return headers;
     }
 
     public String getHeaderString(String header) {
         List<Object> methodValues = metadata.get(header);
-        return HttpUtils.getHeaderString(toListOfStrings(header, methodValues));
+        return HttpUtils.getHeaderString(toListOfStrings(methodValues));
     }
 
     // This conversion is needed as some values may not be Strings
-    private List<String> toListOfStrings(String headerName, List<Object> values) {
+    private List<String> toListOfStrings(List<Object> values) {
         if (values == null) {
             return null;
         }
@@ -238,10 +238,10 @@ public final class ResponseImpl extends Response {
 
     public URI getLocation() {
         Object header = metadata.getFirst(HttpHeaders.LOCATION);
-        if (header == null) {
+        if (header == null && outMessage != null) {
             header = outMessage.get(Message.REQUEST_URI);
         }
-        return header == null || header instanceof URI ? (URI)header
+        return header == null || header instanceof URI ? (URI) header
             : URI.create(header.toString());
     }
 
@@ -288,7 +288,7 @@ public final class ResponseImpl extends Response {
         if (linkValues == null) {
             return Collections.emptySet();
         }
-        Set<Link> links = new LinkedHashSet<Link>();
+        Set<Link> links = new LinkedHashSet<>();
         for (Object o : linkValues) {
             Link link = o instanceof Link ? (Link)o : Link.valueOf(o.toString());
             if (!link.getUri().isAbsolute()) {

@@ -43,12 +43,15 @@ import org.apache.wss4j.common.principal.CustomTokenPrincipal;
 import org.apache.wss4j.common.util.DOM2Writer;
 import org.apache.wss4j.common.util.DateUtil;
 
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Some unit tests for creating SAML Tokens with lifetime
  */
-public class SAMLProviderLifetimeTest extends org.junit.Assert {
+public class SAMLProviderLifetimeTest {
 
     /**
      * Issue SAML 2 token with a valid requested lifetime
@@ -78,7 +81,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
         long duration = Duration.between(providerResponse.getCreated(), providerResponse.getExpires()).getSeconds();
         assertEquals(requestedLifetime, duration);
@@ -116,7 +119,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
         assertEquals(providerResponse.getExpires().toEpochMilli(), expirationTime.toEpochMilli());
     }
@@ -143,7 +146,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
         long duration = Duration.between(providerResponse.getCreated(), providerResponse.getExpires()).getSeconds();
         assertEquals(providerLifetime, duration);
@@ -263,7 +266,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         long duration = Duration.between(providerResponse.getCreated(), providerResponse.getExpires()).getSeconds();
@@ -304,7 +307,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
 
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         long duration = Duration.between(providerResponse.getCreated(), providerResponse.getExpires()).getSeconds();
@@ -354,7 +357,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
         conditionsProvider.setFutureTimeToLive(60L * 60L);
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
         Element token = (Element)providerResponse.getToken();
         String tokenString = DOM2Writer.nodeToString(token);
@@ -390,7 +393,7 @@ public class SAMLProviderLifetimeTest extends org.junit.Assert {
         assertTrue(samlTokenProvider.canHandleToken(WSS4JConstants.WSS_SAML2_TOKEN_TYPE));
 
         TokenProviderResponse providerResponse = samlTokenProvider.createToken(providerParameters);
-        assertTrue(providerResponse != null);
+        assertNotNull(providerResponse);
         assertTrue(providerResponse.getToken() != null && providerResponse.getTokenId() != null);
 
         long duration = Duration.between(providerResponse.getCreated(), providerResponse.getExpires()).getSeconds();

@@ -24,10 +24,9 @@ import java.io.PrintStream;
 import java.net.URL;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 
-public abstract class ToolTestBase extends Assert {
+public abstract class ToolTestBase {
 
     protected PrintStream oldStdErr;
     protected PrintStream oldStdOut;
@@ -38,7 +37,7 @@ public abstract class ToolTestBase extends Assert {
     protected ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
 
         oldStdErr = System.err;
         oldStdOut = System.out;
@@ -51,7 +50,7 @@ public abstract class ToolTestBase extends Assert {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
 
         System.setErr(oldStdErr);
         System.setOut(oldStdOut);

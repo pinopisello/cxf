@@ -94,7 +94,7 @@ public class Tag {
     private String formatAttribute(final Tag tag) {
         StringBuilder sb = new StringBuilder();
         sb.append(tag.getName().getLocalPart());
-        sb.append(" ");
+        sb.append(' ');
         for (Map.Entry<QName, String> attr : tag.getAttributes().entrySet()) {
             sb.append(attr.getKey());
             sb.append("=\"");
@@ -108,16 +108,16 @@ public class Tag {
         StringBuilder sb = new StringBuilder();
         sb.append(createIndent(indent));
         sb.append(indent);
-        sb.append("<");
+        sb.append('<');
         sb.append(formatAttribute(tag));
-        sb.append(">");
+        sb.append('>');
         if (tag.getParent() != null) {
             sb.append(" (" + tag.getParent().getName().getLocalPart() + ")");
         }
         if (text != null) {
             sb.append(text);
         }
-        sb.append("\n");
+        sb.append('\n');
 
         if (tag.getTags().size() > 0) {
             indent++;

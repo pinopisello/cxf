@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>3.3.0-SNAPSHOT</version>
+        <version>3.3.3-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
     <groupId>org.apache.cxf.osgi.itests</groupId>
@@ -98,6 +98,12 @@
             <groupId>org.apache.karaf.features</groupId>
             <artifactId>org.apache.karaf.features.core</artifactId>
             <version>${cxf.karaf.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.servicemix.specs</groupId>
@@ -108,7 +114,7 @@
         <dependency>
             <groupId>org.apache.servicemix.bundles</groupId>
             <artifactId>org.apache.servicemix.bundles.hibernate-validator</artifactId>
-            <version>5.0.2.Final_1</version>
+            <version>5.4.2.Final_1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
