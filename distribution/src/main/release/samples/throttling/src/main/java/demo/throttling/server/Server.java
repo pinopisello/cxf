@@ -34,7 +34,7 @@ import org.apache.cxf.throttling.ThrottlingFeature;
 import org.apache.cxf.throttling.ThrottlingManager;
 
 public class Server {
-
+    Map<String, Customer> customers = new HashMap<>();
     
     protected Server() throws Exception {
         System.out.println("Starting Server");

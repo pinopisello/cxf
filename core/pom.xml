@@ -59,11 +59,6 @@
             javax.xml.bind*;version="${cxf.osgi.javax.bind.version}",
             javax.xml.stream*;version="${cxf.osgi.javax.stream.version}",
             javax.validation*;resolution:=optional;version="${cxf.validation.api.package.version}", 
-            com.sun.xml.bind.api;resolution:=optional,
-            com.sun.xml.bind.api.impl;resolution:=optional,
-            com.sun.xml.internal.bind.api;resolution:=optional,
-            com.sun.xml.internal.bind.api.impl;resolution:=optional,
-            com.sun.xml.bind.v2.model.annotation;resolution:=optional,
             org.apache.aries*;version="${cxf.aries.version.range}";resolution:=optional
         </cxf.osgi.import>
         <cxf.osgi.dynamic.import>
@@ -283,7 +278,7 @@
                                         <extensionArg>-Xjavadoc</extensionArg>
                                     </extensionArgs>
                                 </xsdOption>
-                                 <xsdOption>
+                                <xsdOption>
                                     <xsd>${basedir}/src/main/resources/schemas/wsdl/ws-addr.xsd</xsd>
                                     <packagename>org.apache.cxf.ws.addressing</packagename>
                                     <extensionArgs>
@@ -330,7 +325,7 @@
                                         <extensionArg>-Xdv</extensionArg>
                                     </extensionArgs>
                                 </xsdOption>
-                            </xsdOptions> 
+                            </xsdOptions>
                         </configuration>
                     </execution>
                 </executions>

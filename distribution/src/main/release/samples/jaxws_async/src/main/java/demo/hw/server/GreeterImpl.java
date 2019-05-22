@@ -61,12 +61,8 @@ public class GreeterImpl implements GreeterAsync {
     public Future<?> greetMeSometimeAsync(final String me,   final AsyncHandler<GreetMeSometimeResponse> asyncHandler) {
         LOG.info("Executing operation greetMeSometimeAsync asynchronously");
         System.out.println("Executing operation greetMeSometimeAsync asynchronously\n");
-<<<<<<< HEAD
         final ServerAsyncResponse<GreetMeSometimeResponse> r   = new ServerAsyncResponse<GreetMeSometimeResponse>();
-=======
-        final ServerAsyncResponse<GreetMeSometimeResponse> r
-            = new ServerAsyncResponse<>();
->>>>>>> 5c4d446b66597dde2bf70e8971112547273bbf29
+
         new Thread() {
             public void run() {
                 GreetMeSometimeResponse resp = new GreetMeSometimeResponse();

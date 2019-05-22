@@ -281,16 +281,19 @@
                 </dependency>
             </dependencies>
         </profile>
+        
+        
     </profiles>
     <dependencies>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxws</artifactId>
-            </dependency>
+        </dependency>
+          <!--   
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http</artifactId> 
-        </dependency>
+        </dependency>--> 
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-management</artifactId>       

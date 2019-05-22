@@ -36,7 +36,7 @@
     <build>
         <defaultGoal>install</defaultGoal>
         <plugins>
-            <plugin>
+           <plugin>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-codegen-plugin</artifactId>
                 <version>${project.version}</version>
@@ -45,6 +45,7 @@
                         <id>generate-sources</id>
                         <phase>generate-sources</phase>
                         <configuration>
+						<sourceRoot>src/main/generated</sourceRoot> 
                             <wsdlOptions>
                                 <wsdlOption>
                                     <wsdl>src/main/resources/wsdl/bank.wsdl</wsdl>

@@ -24,15 +24,13 @@ import java.io.File;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.net.URL;
 
-import javax.xml.ws.BindingProvider;
-
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
 import org.apache.cxf.bus.spring.SpringBusFactory;
 import org.apache.cxf.hello_world_soap_http.Greeter;
 import org.apache.cxf.hello_world_soap_http.GreeterService;
 
-import demo.ws_rm.common.MessageLossInterceptor;
+
 
 
 public final class Client {

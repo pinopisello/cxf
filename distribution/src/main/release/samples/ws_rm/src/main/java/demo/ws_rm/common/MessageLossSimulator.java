@@ -36,46 +36,24 @@ import org.apache.cxf.phase.Phase;
 import org.apache.cxf.phase.PhaseInterceptor;
 import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.rm.RMContextUtils;
-import org.apache.cxf.ws.rm.RMProperties;
-import org.apache.cxf.ws.rm.v200702.SequenceType;
 
 /**
-<<<<<<< HEAD:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossInterceptor.java
- * Rimuove, previene l'invio messaggi con sequence pari lato client.
- * Ergo il client li inviera'2 volte non ricevendo ack per il primo.
-=======
  *
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossSimulator.java
  */
-public class MessageLossInterceptor extends AbstractPhaseInterceptor<Message> {
+public class MessageLossSimulator extends AbstractPhaseInterceptor<Message> {
 
-<<<<<<< HEAD:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossInterceptor.java
-    private static final Logger LOG = Logger.getLogger(MessageLossInterceptor.class.getName());
-    private int appMessageCount; 
-    private long lastrun=System.currentTimeMillis();
-    
-    
-    public MessageLossInterceptor() {
-=======
     private static final Logger LOG = Logger.getLogger(MessageLossSimulator.class.getName());
     private int appMessageCount;
 
     public MessageLossSimulator() {
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37:distribution/src/main/release/samples/ws_rm/src/main/java/demo/ws_rm/common/MessageLossSimulator.java
         super(Phase.PREPARE_SEND);
         addBefore(MessageSenderInterceptor.class.getName());
     }
 
     // CHECKSTYLE:OFF: ReturnCount 
     public void handleMessage(Message message) throws Fault {
-        System.out.println("Last run:  "+(System.currentTimeMillis() - lastrun) );
-        AddressingProperties maps =    RMContextUtils.retrieveMAPs(message, false, true);
-        
-        RMProperties rmps = RMContextUtils.retrieveRMProperties(message, true);
-        if(null !=rmps){
-            SequenceType st = rmps.getSequence();
-            Long messgaeNumber = st.getMessageNumber();
-        }
+        AddressingProperties maps =
+            RMContextUtils.retrieveMAPs(message, false, true);
         //Fixed the build error of ws_rm, now there is no ensureExposedVersion anymore
         //RMContextUtils.ensureExposedVersion(maps);
         String action = null;

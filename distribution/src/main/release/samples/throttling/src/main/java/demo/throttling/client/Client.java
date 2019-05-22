@@ -156,11 +156,9 @@ public final class Client implements Runnable {
         client = new Client("Jonas", ss);
         new Thread(client).start();
         c.add(client);
-<<<<<<< HEAD
-        */
-=======
 
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
+        */
+
         System.out.println("Sleeping on main thread for 60 seconds");
         Thread.sleep(60000);
         for (Client c2 : c) {

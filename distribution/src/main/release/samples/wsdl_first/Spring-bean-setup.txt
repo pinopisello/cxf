@@ -1,5 +1,5 @@
 
-===============   Parsing dello srpring.xml e registrazione BeanDefinition =========================================
+===============   Parsing dello spring.xml e registrazione BeanDefinition =========================================
 AbstractApplicationContext.refresh()  =>  beanFactory = obtainFreshBeanFactory();
 
 

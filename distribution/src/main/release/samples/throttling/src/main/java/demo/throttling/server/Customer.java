@@ -44,13 +44,7 @@ public abstract class Customer {
     }
 
     public abstract void throttle(ThrottleResponse r);
-<<<<<<< HEAD
-    
     //Accesso illimitato!
-=======
-
-
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
     public static class PremiumCustomer extends Customer {
         public PremiumCustomer(String n) {
             super(n);
@@ -85,11 +79,7 @@ public abstract class Customer {
             super(n);
         }
         public void throttle(ThrottleResponse m) {
-<<<<<<< HEAD
             //Regular customers are unthrottled until they hit 25req/sec, then start delaying by 250 ms [throughput = 4 req/sec]
-=======
-            //Regular customers are unthrottled until they hit 25req/sec, then start delaying by 0.25 seconds
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
             //(drops to max of 4req/sec until below the 25req/sec rate)
             if (metrics.getTotals().getOneMinuteRate() > 25) {
                 m.setDelay(250);

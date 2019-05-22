@@ -16,34 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package demo.hw.server;
 
-import java.util.Map;
+package demo.jaxrs.swagger.server;
 
-import javax.jws.WebService;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+public class Item {
+    private String name;
+    private String value;
 
-// START SNIPPET: service
+    public Item() {
+    }
 
-@WebService
-public interface HelloWorld {
+    public Item(final String name, final String value) {
+        this.name = name;
+        this.value = value;
+    }
 
-    String sayHi(String text);
+    public String getName() {
+        return name;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    /* Advanced usecase of passing an Interface in.  JAX-WS/JAXB does not
-     * support interfaces directly.  Special XmlAdapter classes need to
-     * be written to handle them
-     */
-    String sayHiToUser(User user);
+    public String getValue() {
+        return value;
+    }
 
-
-    /* Map passing
-     * JAXB also does not support Maps.  It handles Lists great, but Maps are
-     * not supported directly.  They also require use of a XmlAdapter to map
-     * the maps into beans that JAXB can use.
-     */
-    @XmlJavaTypeAdapter(IntegerUserMapAdapter.class)
-    Map<Integer, User> getUsers();
+    public void setValue(String value) {
+        this.value = value;
+    }
 }
-// END SNIPPET: service

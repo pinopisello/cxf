@@ -37,7 +37,7 @@ mvn tomcat7:run
 
 =============  Lanciare Client ===========
 
-1)Non Spring standard transport cxf-rt-transports-http [CustomerServiceClient.java chiamata da command line]
+1)Non Spring standard transport cxf-rt-transports-http {URLConnectionHTTPConduit} [CustomerServiceClient.java chiamata da command line]
 
 mvn -Pclient
 

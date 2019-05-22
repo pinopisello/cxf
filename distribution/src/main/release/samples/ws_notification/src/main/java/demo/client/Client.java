@@ -56,20 +56,11 @@ public final class Client {
                     System.out.println(((Element)o).getTextContent());
                 }
             }
-<<<<<<< HEAD
         }, "http://localhost:9001/MyConsumer");//Dove il consumer attende le notifiche
         
         
         // Create a subscription for a Topic on the broker
         NotificationBroker notificationBroker   = new NotificationBroker("http://localhost:" + wsnPort + "/wsn/NotificationBroker");
-=======
-        }, "http://localhost:9001/MyConsumer");
-
-
-        // Create a subscription for a Topic on the broker
-        NotificationBroker notificationBroker
-            = new NotificationBroker("http://localhost:" + wsnPort + "/wsn/NotificationBroker");
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         Subscription subscription = notificationBroker.subscribe(consumer, "MyTopic");
 
 
@@ -79,13 +70,9 @@ public final class Client {
                                           String.class, "Hello World!"));
 
         // Just sleep for a bit to make sure the notification gets delivered
-<<<<<<< HEAD
         Thread.sleep(10000);
         
-=======
-        Thread.sleep(5000);
 
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         // Cleanup and exit
         subscription.unsubscribe();  //Invia un unsubscrive soap message verso http://localhost:9000/wsn/subscriptions/ID-127-0-0-1-152fac1f002-0-7 
         consumer.stop();

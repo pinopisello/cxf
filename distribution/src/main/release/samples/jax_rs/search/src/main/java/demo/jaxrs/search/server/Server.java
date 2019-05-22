@@ -39,7 +39,7 @@ public class Server {
         final ServletHolder staticHolder = new ServletHolder(new DefaultServlet());
         // Register and map the dispatcher servlet
         final ServletHolder servletHolder = new ServletHolder(new CXFNonSpringJaxrsServlet());
-<<<<<<< HEAD
+
         
         
         final ServletContextHandler context = new ServletContextHandler();      
@@ -51,16 +51,10 @@ public class Server {
         
         //configurazione cxf servlet
         servletHolder.setInitParameter("redirects-list", "/ /index.html /js/fileinput.min.js /css/fileinput.min.css");
-=======
-        final ServletContextHandler context = new ServletContextHandler();
-        context.setContextPath("/");
-        context.addServlet(staticHolder, "/static/*");
-        context.addServlet(servletHolder, "/*");
-        context.setResourceBase(getClass().getResource("/browser").toURI().toString());
 
+   
         servletHolder.setInitParameter("redirects-list",
             "/ /index.html /js/fileinput.min.js /css/fileinput.min.css");
->>>>>>> 3bacad35e53d71c904838e9b825096010e927c37
         servletHolder.setInitParameter("redirect-servlet-name", staticHolder.getName());
         servletHolder.setInitParameter("redirect-attributes", "javax.servlet.include.request_uri");
         servletHolder.setInitParameter("jaxrs.serviceClasses", Catalog.class.getName());            //registra jax-rs endpoint /catalog
