@@ -66,7 +66,7 @@ even if the service needs some time to process the request.
 
 The classes CustomerServiceClient and CustomerServiceSpringClient show how to
 get a service proxy using JAX-WS or Spring and how to wire it to your business
-class (in this case CustomerServiceTester).
+class (in this case CustomerServiceTester).   
 
 Prerequisite
 ------------

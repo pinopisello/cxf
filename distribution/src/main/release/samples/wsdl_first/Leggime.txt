@@ -13,7 +13,7 @@ Il codice generato e' in :wsdl_first/src/main/generated
 
 =============  Lanciare Server ===========
 
-1)Non Spring jetty transport cxf-rt-transports-http-jetty [http://localhost:9090/CustomerServicePort]
+1)Non Spring [jaxws-api-2.3.0.jar+cxf-rt-frontend-jaxws] jetty transport cxf-rt-transports-http-jetty [http://localhost:9090/CustomerServicePort]
 
 mvn -Pserver 
 
